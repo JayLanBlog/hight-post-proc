@@ -537,6 +537,12 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 
     if (nb > 0) {
         // ---- UBO path (SPIR-V or NVIDIA-baked) ----
+        // Ensure the "Params" uniform block is bound to binding point 1
+        GLuint blockIndex = glGetUniformBlockIndex(program, "Params");
+        if (blockIndex != GL_INVALID_INDEX) {
+            glUniformBlockBinding(program, blockIndex, 1);
+        }
+
         const size_t UBO_SIZE = 48;
         uint8_t ubo[UBO_SIZE] = {};
         for (size_t i = 0; i < params.uniformFloats.size() && i < 6; ++i) {
@@ -1028,6 +1034,17 @@ GLuint OpenGLBackend::GetOrCreateProgram(GLuint vs, GLuint fs) {
     // Detach shaders after linking (they can be deleted if no longer needed)
     glDetachShader(program, vs);
     glDetachShader(program, fs);
+
+    // Explicitly bind "Params" uniform block to binding point 1
+    // (GLSL layout(binding=1) may not be honored by all drivers)
+    GLint nb = 0;
+    glGetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &nb);
+    if (nb > 0) {
+        GLuint blockIndex = glGetUniformBlockIndex(program, "Params");
+        if (blockIndex != GL_INVALID_INDEX) {
+            glUniformBlockBinding(program, blockIndex, 1);
+        }
+    }
 
     m_programCache[key] = program;
     return program;
