@@ -81,7 +81,7 @@ private:
     GLuint GetGLFramebuffer(TextureHandle textureHandle) const;
 
     /// Get or create a linked GL program from vs+fs handles. Cached.
-    GLuint GetOrCreateProgram(GLuint vs, GLuint fs);
+    GLuint GetOrCreateProgram(GLuint vsKey, GLuint fsKey, GLuint vsGL, GLuint fsGL);
 
     static GLint  GLInternalFormat(TextureFormat fmt);
     static GLenum GLFormat(TextureFormat fmt);

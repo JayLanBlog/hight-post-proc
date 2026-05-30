@@ -474,9 +474,9 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         return;
     }
 
-    // Use our auto-increment IDs (not GL object IDs) for program cache key,
-    // so DestroyShader can correctly match and remove cached programs.
-    GLuint program = GetOrCreateProgram(vert.id, frag.id);
+    // Use our auto-increment IDs for program cache key (matches DestroyShader cleanup),
+    // and GL shader object IDs for glAttachShader.
+    GLuint program = GetOrCreateProgram(vert.id, frag.id, vs, fs);
     if (program == 0) {
         fprintf(stderr, "[OpenGL] Failed to create shader program\n");
         return;
@@ -943,7 +943,7 @@ void OpenGLBackend::BindPipeline(PipelineHandle handle) {
     GLuint fs = GetGLShader({fsId});
 
     if (vs != 0 && fs != 0) {
-        GLuint program = GetOrCreateProgram(vsId, fsId);
+        GLuint program = GetOrCreateProgram(vsId, fsId, vs, fs);
         if (program != 0) {
             glUseProgram(program);
         }
@@ -1022,8 +1022,8 @@ GLuint OpenGLBackend::GetGLFramebuffer(TextureHandle textureHandle) const {
     return fbo;
 }
 
-GLuint OpenGLBackend::GetOrCreateProgram(GLuint vs, GLuint fs) {
-    uint64_t key = (static_cast<uint64_t>(vs) << 32) | fs;
+GLuint OpenGLBackend::GetOrCreateProgram(GLuint vsKey, GLuint fsKey, GLuint vsGL, GLuint fsGL) {
+    uint64_t key = (static_cast<uint64_t>(vsKey) << 32) | fsKey;
 
     auto it = m_programCache.find(key);
     if (it != m_programCache.end()) {
@@ -1033,8 +1033,8 @@ GLuint OpenGLBackend::GetOrCreateProgram(GLuint vs, GLuint fs) {
     GLuint program = glCreateProgram();
     if (program == 0) return 0;
 
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
+    glAttachShader(program, vsGL);
+    glAttachShader(program, fsGL);
     glLinkProgram(program);
 
     GLint success = 0;
@@ -1048,8 +1048,8 @@ GLuint OpenGLBackend::GetOrCreateProgram(GLuint vs, GLuint fs) {
     }
 
     // Detach shaders after linking (they can be deleted if no longer needed)
-    glDetachShader(program, vs);
-    glDetachShader(program, fs);
+    glDetachShader(program, vsGL);
+    glDetachShader(program, fsGL);
 
     // Explicitly bind "Params" uniform block to binding point 1
     // (GLSL layout(binding=1) may not be honored by all drivers)
