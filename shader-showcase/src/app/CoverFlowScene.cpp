@@ -442,7 +442,7 @@ void CoverFlowScene::OnImGui()
             // Draw thumbnail image first (tint with white, alpha controls visibility)
             dl->AddImageRounded(m_thumbIds[i],
                 ImVec2(x0, y0), ImVec2(x1, y1),
-                ImVec2(0, 0), ImVec2(1, 1),
+                ImVec2(0, 1), ImVec2(1, 0),
                 IM_COL32(255, 255, 255, ai), r);
         } else {
             dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), bg, r);

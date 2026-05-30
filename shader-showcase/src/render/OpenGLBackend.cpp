@@ -38,11 +38,11 @@ struct UniformData {
 // Fullscreen quad vertex data
 // ============================================================================
 static const float kQuadVertices[] = {
-    // Position (2D)    // UV coords (Y-flipped for correct display)
-    -1.0f, -1.0f,       0.0f, 1.0f,
-     1.0f, -1.0f,       1.0f, 1.0f,
-     1.0f,  1.0f,       1.0f, 0.0f,
-    -1.0f,  1.0f,       0.0f, 0.0f
+    // Position (2D)    // UV coords
+    -1.0f, -1.0f,       0.0f, 0.0f,
+     1.0f, -1.0f,       1.0f, 0.0f,
+     1.0f,  1.0f,       1.0f, 1.0f,
+    -1.0f,  1.0f,       0.0f, 1.0f
 };
 
 static const unsigned int kQuadIndices[] = {
