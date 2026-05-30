@@ -26,7 +26,49 @@ void EffectDetailScene::OnEnter()
         return;
     }
 
-    // Load SPIR-V shaders
+    // Determine if rendering is supported (OpenGL only currently)
+    bool canRender = (dynamic_cast<OpenGLBackend*>(m_backend) != nullptr);
+
+    // Initialize debug panel with effect parameters (works on all backends)
+    m_debugPanel.SetParams(m_card.params);
+    
+    // Initialize uniform values from card params defaults
+    m_uniformFloats.clear();
+    m_uniformInts.clear();
+    for (const auto& p : m_card.params) {
+        switch (p.type) {
+        case ParamType::Float:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            break;
+        case ParamType::Int:
+        case ParamType::Bool:
+            m_uniformInts.push_back(static_cast<int32_t>(p.defaultVal[0]));
+            break;
+        case ParamType::Float2:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            break;
+        case ParamType::Float3:
+        case ParamType::Color:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            m_uniformFloats.push_back(p.defaultVal[2]);
+            break;
+        case ParamType::Float4:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            m_uniformFloats.push_back(p.defaultVal[2]);
+            m_uniformFloats.push_back(p.defaultVal[3]);
+            break;
+        }
+    }
+    m_expectedFloatCount = m_uniformFloats.size();
+
+    // Skip shader/texture loading if rendering not supported
+    if (!canRender) {
+        printf("[EffectDetailScene] Rendering not available on this backend; controls UI only\n");
+        return;
+    }
     auto vertSpirv = ShaderLoader::LoadSPIRV(m_card.vertSpirvPath);
     auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);
 
@@ -175,43 +217,6 @@ void EffectDetailScene::OnEnter()
         fprintf(stderr, "[EffectDetailScene] Failed to create shaders\n");
         return;
     }
-
-    // Initialize debug panel with effect parameters
-    m_debugPanel.SetParams(m_card.params);
-    
-    // Initialize uniform values from card params defaults
-    // Always pad to 6 floats to match SPIR-V UBO layout
-    m_uniformFloats.clear();
-    m_uniformInts.clear();
-    for (const auto& p : m_card.params) {
-        switch (p.type) {
-        case ParamType::Float:
-            m_uniformFloats.push_back(p.defaultVal[0]);
-            break;
-        case ParamType::Int:
-        case ParamType::Bool:
-            m_uniformInts.push_back(static_cast<int32_t>(p.defaultVal[0]));
-            break;
-        case ParamType::Float2:
-            m_uniformFloats.push_back(p.defaultVal[0]);
-            m_uniformFloats.push_back(p.defaultVal[1]);
-            break;
-        case ParamType::Float3:
-        case ParamType::Color:
-            m_uniformFloats.push_back(p.defaultVal[0]);
-            m_uniformFloats.push_back(p.defaultVal[1]);
-            m_uniformFloats.push_back(p.defaultVal[2]);
-            break;
-        case ParamType::Float4:
-            m_uniformFloats.push_back(p.defaultVal[0]);
-            m_uniformFloats.push_back(p.defaultVal[1]);
-            m_uniformFloats.push_back(p.defaultVal[2]);
-            m_uniformFloats.push_back(p.defaultVal[3]);
-            break;
-        }
-    }
-    // Save expected float count (actual shader params, NOT padded)
-    m_expectedFloatCount = m_uniformFloats.size();
 }
 
 void EffectDetailScene::OnExit()
@@ -272,7 +277,8 @@ void EffectDetailScene::OnUpdate(float dt)
     }
 
     // ---- Video player: update frames ----
-    if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
+    if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend
+        && dynamic_cast<OpenGLBackend*>(m_backend)) {
         double now = ImGui::GetTime();
         double frameInterval = 1.0 / m_videoPlayer->GetFPS();
         if (now - m_videoLastFrameTime >= frameInterval) {
@@ -304,6 +310,8 @@ void EffectDetailScene::EnsureEffectTexture()
 void EffectDetailScene::OnRender(IRenderBackend* backend)
 {
     if (!backend) return;
+    // Rendering only available on OpenGL backend
+    if (!dynamic_cast<OpenGLBackend*>(backend)) return;
     if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) return;
 
     // Sync uniform values from debug panel
@@ -484,6 +492,11 @@ void EffectDetailScene::OnImGui()
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.7f, 0.7f), "%s", LanguageManager::Instance().EscReturn());
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 0.8f), "%s", LanguageManager::Instance().CardDesc(m_card.id));
+        // Show rendering status indicator
+        if (!m_effectTex.id) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.0f, 0.85f), "[Controls only - rendering not available on this backend]");
+        }
         ImGui::End();
     }
 

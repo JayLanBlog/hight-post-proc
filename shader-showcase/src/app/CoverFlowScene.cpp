@@ -617,11 +617,6 @@ void CoverFlowScene::OpenSelectedEffect()
         fprintf(stderr, "[CoverFlowScene] Cannot open effect: no backend set\n");
         return;
     }
-    // Detail scene requires OpenGL rendering path
-    if (!dynamic_cast<OpenGLBackend*>(m_backend)) {
-        fprintf(stderr, "[CoverFlowScene] Detail scene not supported on this backend\n");
-        return;
-    }
 
     const auto& card = m_cards[m_selectedIndex];
     EffectCard resolvedCard = card;
