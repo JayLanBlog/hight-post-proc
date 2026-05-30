@@ -22,19 +22,32 @@ void main() {
     float Amount = uParamFloat0;
     float Radius = uParamFloat1;
 
-    // Sample surrounding pixels for unsharp mask
+    // Early exit if no sharpening
+    if (Amount <= 0.0) {
+        outColor = vec4(color, 1.0);
+        return;
+    }
+
+    // Gaussian-weighted radius-dependent blur (3x3 kernel)
+    // Larger radius = wider blur = more sharpening effect
     vec2 texelSize = 1.0 / uResolution;
-    vec3 tl = texture(uInputTex, vUV + vec2(-1.0, -1.0) * texelSize * Radius).rgb;
-    vec3 t  = texture(uInputTex, vUV + vec2( 0.0, -1.0) * texelSize * Radius).rgb;
-    vec3 tr = texture(uInputTex, vUV + vec2( 1.0, -1.0) * texelSize * Radius).rgb;
-    vec3 l  = texture(uInputTex, vUV + vec2(-1.0,  0.0) * texelSize * Radius).rgb;
-    vec3 r  = texture(uInputTex, vUV + vec2( 1.0,  0.0) * texelSize * Radius).rgb;
-    vec3 bl = texture(uInputTex, vUV + vec2(-1.0,  1.0) * texelSize * Radius).rgb;
-    vec3 b  = texture(uInputTex, vUV + vec2( 0.0,  1.0) * texelSize * Radius).rgb;
-    vec3 br = texture(uInputTex, vUV + vec2( 1.0,  1.0) * texelSize * Radius).rgb;
+    float sigma = Radius * 0.6;
+    float sigma2 = 2.0 * sigma * sigma;
+    float total = 0.0;
+    vec3 blur = vec3(0.0);
+
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            float dist2 = float(x * x + y * y);
+            float w = exp(-dist2 / sigma2);
+            vec2 offset = vec2(float(x), float(y)) * texelSize;
+            blur += texture(uInputTex, vUV + offset).rgb * w;
+            total += w;
+        }
+    }
+    blur /= max(total, 0.001);
 
     // Unsharp mask: original + amount * (original - blur)
-    vec3 blur = (tl + tr + bl + br) * 0.0625 + (t + l + r + b) * 0.125 + color * 0.25;
     vec3 sharpened = color + (color - blur) * Amount;
 
     outColor = vec4(clamp(sharpened, 0.0, 1.0), 1.0);
