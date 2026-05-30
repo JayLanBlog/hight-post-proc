@@ -1,0 +1,13 @@
+{
+  "name": "CRT显示器",
+  "category": "Retro",
+  "description": "CRT monitor simulation with scanlines, phosphor RGB mask, barrel distortion and flicker",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "扫描线强度", "type": "Float", "min": 0.0, "max": 1.0, "default": 0.15, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "屏幕弯曲", "type": "Float", "min": 0.0, "max": 0.05, "default": 0.01, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "RGB遮罩", "type": "Float", "min": 0.0, "max": 1.0, "default": 0.3, "ui_type": "slider"},
+    {"name": "uParamFloat3", "label": "亮度", "type": "Float", "min": 0.0, "max": 2.0, "default": 1.0, "ui_type": "slider"},
+    {"name": "uParamFloat4", "label": "闪烁", "type": "Float", "min": 0.0, "max": 0.1, "default": 0.01, "ui_type": "slider"}
+  ]
+}

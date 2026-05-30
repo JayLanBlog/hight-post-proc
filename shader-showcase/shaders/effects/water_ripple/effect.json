@@ -1,0 +1,12 @@
+{
+  "name": "水波纹",
+  "category": "Distort",
+  "description": "Animated water ripple with sine wave displacement, refraction and specular highlights",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "振幅", "type": "Float", "min": 0.0, "max": 0.05, "default": 0.01, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "频率", "type": "Float", "min": 1.0, "max": 50.0, "default": 15.0, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "速度", "type": "Float", "min": 0.0, "max": 5.0, "default": 2.0, "ui_type": "slider"},
+    {"name": "uParamFloat3", "label": "折射强度", "type": "Float", "min": 0.0, "max": 0.1, "default": 0.02, "ui_type": "slider"}
+  ]
+}

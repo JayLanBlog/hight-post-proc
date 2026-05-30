@@ -1,0 +1,35 @@
+{
+  "name": "泛光",
+  "category": "Lighting",
+  "description": "Single-pass bloom effect with brightness threshold extraction, 13-tap Gaussian blur approximation, and additive blending",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "泛光强度",
+      "type": "Float",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 0.8,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "阈值",
+      "type": "Float",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.7,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "模糊大小",
+      "type": "Float",
+      "min": 1.0,
+      "max": 10.0,
+      "default": 4.0,
+      "ui_type": "slider"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "卡通着色",
+  "category": "Stylize",
+  "description": "Cartoon/toon shader with color posterization and edge outline detection",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "色阶数", "type": "Float", "min": 2.0, "max": 16.0, "default": 5.0, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "边缘阈值", "type": "Float", "min": 0.0, "max": 0.5, "default": 0.1, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "描边宽度", "type": "Float", "min": 0.5, "max": 4.0, "default": 1.0, "ui_type": "slider"}
+  ]
+}
