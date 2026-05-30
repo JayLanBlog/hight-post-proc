@@ -474,7 +474,9 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         return;
     }
 
-    GLuint program = GetOrCreateProgram(vs, fs);
+    // Use our auto-increment IDs (not GL object IDs) for program cache key,
+    // so DestroyShader can correctly match and remove cached programs.
+    GLuint program = GetOrCreateProgram(vert.id, frag.id);
     if (program == 0) {
         fprintf(stderr, "[OpenGL] Failed to create shader program\n");
         return;
@@ -941,7 +943,7 @@ void OpenGLBackend::BindPipeline(PipelineHandle handle) {
     GLuint fs = GetGLShader({fsId});
 
     if (vs != 0 && fs != 0) {
-        GLuint program = GetOrCreateProgram(vs, fs);
+        GLuint program = GetOrCreateProgram(vsId, fsId);
         if (program != 0) {
             glUseProgram(program);
         }
