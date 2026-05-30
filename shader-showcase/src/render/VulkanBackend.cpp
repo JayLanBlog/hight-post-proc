@@ -734,7 +734,7 @@ void VulkanBackend::BeginFrame() {
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapchainExtent;
 
-    VkClearValue clearColor = {{{0.1f, 0.1f, 0.15f, 1.0f}}};
+    VkClearValue clearColor = {{{0.15f, 0.18f, 0.25f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
@@ -1600,6 +1600,8 @@ void VulkanBackend::ImGuiInit(GLFWwindow* window) {
 void VulkanBackend::ImGuiNewFrame() {
     if (!m_imguiInitialized) return;
     ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 }
 
 void VulkanBackend::ImGuiRender() {
