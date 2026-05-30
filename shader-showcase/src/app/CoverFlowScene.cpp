@@ -5,7 +5,7 @@
 #include "shader/ShaderLoader.h"
 #include "input/ScreenCapture.h"
 #include "input/VideoPlayer.h"
-#include "render/OpenGLBackend.h"
+#include "render/IRenderBackend.h"
 
 #include <imgui.h>
 #include <cstdio>
@@ -148,12 +148,8 @@ void CoverFlowScene::OnEnter()
     printf("[CoverFlowScene] Entered with %zu cards, selected=%d\n",
            m_cards.size(), m_selectedIndex);
 
-    // Skip thumbnail initialization for non-OpenGL backends
-    // (Vulkan thumbnails require shader/pipeline which are TODO)
-    auto* glBackend = dynamic_cast<OpenGLBackend*>(m_backend);
-    if (glBackend) {
-        InitializeThumbnails();
-    }
+    // Initialize thumbnails for all backends (OpenGL and Vulkan)
+    InitializeThumbnails();
 }
 
 void CoverFlowScene::OnExit()
@@ -212,37 +208,32 @@ void CoverFlowScene::OnUpdate(float dt)
 
     // ---- Video player: update frames ----
     if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
-        // Only update video textures for OpenGL backend
-        if (dynamic_cast<OpenGLBackend*>(m_backend)) {
-            double now = ImGui::GetTime();
-            // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
-            double frameInterval = 1.0 / 30.0;
-            if (now - m_videoLastFrameTime >= frameInterval) {
-                if (m_videoPlayer->ReadFrame()) {
-                    m_backend->UpdateTexture(m_videoTex, 0, 0,
-                        m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
-                        m_videoPlayer->GetPixels());
-                    m_inputTex = m_videoTex;
-                    m_videoLastFrameTime = now;
-                } else {
-                    // Video ended — loop
-                    printf("[CoverFlowScene] Video ended, looping\n");
-                    // For simplicity, just stop
-                    StopVideo();
-                }
+        double now = ImGui::GetTime();
+        // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
+        double frameInterval = 1.0 / 30.0;
+        if (now - m_videoLastFrameTime >= frameInterval) {
+            if (m_videoPlayer->ReadFrame()) {
+                m_backend->UpdateTexture(m_videoTex, 0, 0,
+                    m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
+                    m_videoPlayer->GetPixels());
+                m_inputTex = m_videoTex;
+                m_videoLastFrameTime = now;
+            } else {
+                // Video ended — loop
+                printf("[CoverFlowScene] Video ended, looping\n");
+                // For simplicity, just stop
+                StopVideo();
             }
         }
     }
 
     // ---- Screen capture: update input texture if active ----
     if (m_captureActive && m_screenCapture && m_screenCapture->IsReady()) {
-        if (dynamic_cast<OpenGLBackend*>(m_backend)) {
-            bool newFrame = m_screenCapture->CaptureFrame();
-            if (newFrame && m_backend) {
-                m_backend->UpdateTexture(m_captureTex, 0, 0,
-                    m_captureWidth, m_captureHeight,
-                    m_screenCapture->GetPixels());
-            }
+        bool newFrame = m_screenCapture->CaptureFrame();
+        if (newFrame && m_backend) {
+            m_backend->UpdateTexture(m_captureTex, 0, 0,
+                m_captureWidth, m_captureHeight,
+                m_screenCapture->GetPixels());
         }
         // Use capture texture as input (even if no new frame, texture has previous capture)
     }
@@ -886,9 +877,6 @@ void CoverFlowScene::RenderVisibleThumbnails()
 {
     if (!m_thumbInitialized || !m_backend) return;
 
-    auto* glBackend = dynamic_cast<OpenGLBackend*>(m_backend);
-    if (!glBackend) return;
-
     const int vr = 3;
 
     for (int i = m_selectedIndex - vr; i <= m_selectedIndex + vr; i++) {
@@ -913,7 +901,7 @@ void CoverFlowScene::RenderVisibleThumbnails()
         m_backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
         m_backend->EndRenderToTexture();
 
-        m_thumbIds[i] = glBackend->GetImTextureID(state.thumbTex);
+        m_thumbIds[i] = m_backend->GetImTextureID(state.thumbTex);
     }
 }
 

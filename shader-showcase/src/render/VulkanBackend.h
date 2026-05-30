@@ -25,6 +25,8 @@ struct VulkanTexture {
     bool isFBO = false;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
+    // ImGui descriptor set (cached for GetImTextureID)
+    VkDescriptorSet imguiDescriptorSet = VK_NULL_HANDLE;
 };
 
 struct VulkanPipeline {
@@ -167,6 +169,7 @@ private:
     // ImGui Vulkan Resources
     // ============================================================================
     VkDescriptorPool m_imguiDescriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_imguiDescSetLayout = VK_NULL_HANDLE;
     bool m_imguiInitialized = false;
     bool m_imguiRenderPending = false;  // Flag to indicate ImGui render is pending
 

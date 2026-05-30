@@ -1063,10 +1063,37 @@ void* VulkanBackend::GetImTextureID(TextureHandle handle) {
     auto it = m_textures.find(handle.id);
     if (it == m_textures.end()) return nullptr;
 
-    // Return a pointer to the texture's descriptor set or image view
-    // For ImGui Vulkan backend, we typically need a VkDescriptorSet
-    // This is a placeholder - actual implementation depends on ImGui integration
-    return reinterpret_cast<void*>(it->second->view);
+    auto* tex = it->second.get();
+
+    // Create ImGui descriptor set if not yet created
+    if (tex->imguiDescriptorSet == VK_NULL_HANDLE && m_imguiDescriptorPool != VK_NULL_HANDLE) {
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = m_imguiDescriptorPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &m_imguiDescSetLayout;
+
+        if (vkAllocateDescriptorSets(m_device, &allocInfo, &tex->imguiDescriptorSet) == VK_SUCCESS) {
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.sampler = tex->sampler;
+            imageInfo.imageView = tex->view;
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = tex->imguiDescriptorSet;
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pImageInfo = &imageInfo;
+
+            vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
+        }
+    }
+
+    // ImGui Vulkan backend expects ImTextureID = VkDescriptorSet pointer
+    return reinterpret_cast<void*>(tex->imguiDescriptorSet);
 }
 
 // ============================================================================
@@ -1416,31 +1443,27 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         }
     }
 
-    // Push constants for uniforms
-    // Layout: vec2 resolution (8 bytes), float time (4 bytes), uint frameCount (4 bytes)
-    // followed by uniformFloats and uniformInts
+    // Push constants for uniforms — must match shader UBO std140 layout:
+    // float uParamFloat0..5 (24 bytes), vec2 uResolution (8 bytes),
+    // float uTime (4 bytes), float uFrameCount (4 bytes) = 40 bytes total
     struct PushConstants {
-        float resolution[2];
-        float time;
-        uint32_t frameCount;
-        float floats[8];  // Space for 8 floats
-        int32_t ints[8];  // Space for 8 ints
+        float params[6];     // uParamFloat0..5
+        float resolution[2]; // uResolution
+        float time;          // uTime
+        float frameCount;    // uFrameCount
     } pc;
+
+    memset(&pc, 0, sizeof(pc));
+
+    // Copy uniform floats (up to 6)
+    for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
+        pc.params[i] = params.uniformFloats[i];
+    }
 
     pc.resolution[0] = static_cast<float>(params.viewportWidth);
     pc.resolution[1] = static_cast<float>(params.viewportHeight);
     pc.time = params.time;
     pc.frameCount = params.frameCount;
-
-    // Copy uniform floats
-    for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(8)); i++) {
-        pc.floats[i] = params.uniformFloats[i];
-    }
-
-    // Copy uniform ints
-    for (size_t i = 0; i < std::min(params.uniformInts.size(), size_t(8)); i++) {
-        pc.ints[i] = params.uniformInts[i];
-    }
 
     auto pipeIt = m_pipelines.find(pipeHandle.id);
     if (pipeIt != m_pipelines.end()) {
@@ -1628,6 +1651,21 @@ void VulkanBackend::ImGuiInit(GLFWwindow* window) {
 
     VK_CHECK(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_imguiDescriptorPool));
 
+    // Create a descriptor set layout for ImGui texture display
+    // (single combined image sampler at binding 0)
+    VkDescriptorSetLayoutBinding imguiSamplerBinding{};
+    imguiSamplerBinding.binding = 0;
+    imguiSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    imguiSamplerBinding.descriptorCount = 1;
+    imguiSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo imguiLayoutInfo{};
+    imguiLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    imguiLayoutInfo.bindingCount = 1;
+    imguiLayoutInfo.pBindings = &imguiSamplerBinding;
+
+    VK_CHECK(vkCreateDescriptorSetLayout(m_device, &imguiLayoutInfo, nullptr, &m_imguiDescSetLayout));
+
     // Initialize ImGui Vulkan backend
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.Instance = m_instance;
@@ -1673,6 +1711,10 @@ void VulkanBackend::ImGuiShutdown() {
     if (m_imguiDescriptorPool != VK_NULL_HANDLE) {
         vkDestroyDescriptorPool(m_device, m_imguiDescriptorPool, nullptr);
         m_imguiDescriptorPool = VK_NULL_HANDLE;
+    }
+    if (m_imguiDescSetLayout != VK_NULL_HANDLE) {
+        vkDestroyDescriptorSetLayout(m_device, m_imguiDescSetLayout, nullptr);
+        m_imguiDescSetLayout = VK_NULL_HANDLE;
     }
     m_imguiInitialized = false;
     printf("[Vulkan] ImGui Vulkan backend shutdown complete\n");

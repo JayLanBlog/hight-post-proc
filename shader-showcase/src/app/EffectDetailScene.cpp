@@ -3,7 +3,7 @@
 #include "app/Application.h"
 #include "app/LanguageManager.h"
 #include "shader/ShaderLoader.h"
-#include "render/OpenGLBackend.h"
+#include "render/IRenderBackend.h"
 #include "input/VideoPlayer.h"
 
 #include <imgui.h>
@@ -183,8 +183,7 @@ void EffectDetailScene::OnUpdate(float dt)
     }
 
     // ---- Video player: update frames ----
-    if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend
-        && dynamic_cast<OpenGLBackend*>(m_backend)) {
+    if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
         double now = ImGui::GetTime();
         // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
         double frameInterval = 1.0 / 30.0;
