@@ -1622,11 +1622,18 @@ void VulkanBackend::ImGuiInit(GLFWwindow* window) {
 
     ImGui_ImplVulkan_Init(&initInfo);
 
+    // ---- Disable ImTextureData-based texture management --------------------
+    // ImGui_ImplVulkan_Init() sets RendererHasTextures which expects
+    // platform_io.Renderer_UpdateTexture callbacks (not registered here).
+    // Without them, ImGui tries to re-create font textures every frame
+    // through ImTextureData, conflicting with our manual upload below.
+    // Clear the flag so ImGui uses the legacy TexID approach.
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasTextures | ImGuiBackendFlags_RendererHasViewports);
+    }
+
     // ---- Manually upload font atlas texture -------------------------------
-    // Newer imgui_impl_vulkan (2025-06-11) uses ImGuiBackendFlags_RendererHasTextures
-    // but does NOT register Renderer_UpdateTexture callback. Font atlas is built
-    // by ImGui but never uploaded to Vulkan, causing black screen.
-    // We manually build + upload the font atlas here.
     {
         ImGuiIO& io = ImGui::GetIO();
         io.Fonts->Build();  // Ensure font atlas is built
