@@ -212,31 +212,36 @@ void CoverFlowScene::OnUpdate(float dt)
 
     // ---- Video player: update frames ----
     if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
-        double now = ImGui::GetTime();
-        double frameInterval = 1.0 / m_videoPlayer->GetFPS();
-        if (now - m_videoLastFrameTime >= frameInterval) {
-            if (m_videoPlayer->ReadFrame()) {
-                m_backend->UpdateTexture(m_videoTex, 0, 0,
-                    m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
-                    m_videoPlayer->GetPixels());
-                m_inputTex = m_videoTex;
-                m_videoLastFrameTime = now;
-            } else {
-                // Video ended — loop
-                printf("[CoverFlowScene] Video ended, looping\n");
-                // For simplicity, just stop
-                StopVideo();
+        // Only update video textures for OpenGL backend
+        if (dynamic_cast<OpenGLBackend*>(m_backend)) {
+            double now = ImGui::GetTime();
+            double frameInterval = 1.0 / m_videoPlayer->GetFPS();
+            if (now - m_videoLastFrameTime >= frameInterval) {
+                if (m_videoPlayer->ReadFrame()) {
+                    m_backend->UpdateTexture(m_videoTex, 0, 0,
+                        m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
+                        m_videoPlayer->GetPixels());
+                    m_inputTex = m_videoTex;
+                    m_videoLastFrameTime = now;
+                } else {
+                    // Video ended — loop
+                    printf("[CoverFlowScene] Video ended, looping\n");
+                    // For simplicity, just stop
+                    StopVideo();
+                }
             }
         }
     }
 
     // ---- Screen capture: update input texture if active ----
     if (m_captureActive && m_screenCapture && m_screenCapture->IsReady()) {
-        bool newFrame = m_screenCapture->CaptureFrame();
-        if (newFrame && m_backend) {
-            m_backend->UpdateTexture(m_captureTex, 0, 0,
-                m_captureWidth, m_captureHeight,
-                m_screenCapture->GetPixels());
+        if (dynamic_cast<OpenGLBackend*>(m_backend)) {
+            bool newFrame = m_screenCapture->CaptureFrame();
+            if (newFrame && m_backend) {
+                m_backend->UpdateTexture(m_captureTex, 0, 0,
+                    m_captureWidth, m_captureHeight,
+                    m_screenCapture->GetPixels());
+            }
         }
         // Use capture texture as input (even if no new frame, texture has previous capture)
     }
@@ -610,6 +615,11 @@ void CoverFlowScene::OpenSelectedEffect()
     if (m_selectedIndex < 0 || m_selectedIndex >= (int)m_cards.size()) return;
     if (!m_backend) {
         fprintf(stderr, "[CoverFlowScene] Cannot open effect: no backend set\n");
+        return;
+    }
+    // Detail scene requires OpenGL rendering path
+    if (!dynamic_cast<OpenGLBackend*>(m_backend)) {
+        fprintf(stderr, "[CoverFlowScene] Detail scene not supported on this backend\n");
         return;
     }
 

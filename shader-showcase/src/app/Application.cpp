@@ -298,25 +298,6 @@ void Application::MainLoop()
             m_frameCallback(dt);
         }
 
-        // --- No-scene status panel (shown when scene is absent) ---
-        if (!m_currentScene)
-        {
-            ImGui::SetNextWindowPos(ImVec2(10, 50));
-            ImGui::SetNextWindowSize(ImVec2(350, 200));
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.09f, 0.12f, 0.95f));
-            ImGui::Begin("##StatusPanel", nullptr,
-                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                ImGuiWindowFlags_NoMove);
-            ImGui::TextColored(ImVec4(0.2f, 0.8f, 1.0f, 1.0f), "%s", m_backend->GetName());
-            ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::TextWrapped("Scene rendering is not yet implemented for this backend. The 3D card rendering (DrawCards) and thumbnail effects are TODO stubs.");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Press Ctrl+1 to switch to OpenGL for full functionality.");
-            ImGui::End();
-            ImGui::PopStyleColor();
-        }
-
         // Always render performance panel (visible even without a scene)
         m_perfPanel.Render(this, m_backend.get());
 
