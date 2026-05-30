@@ -605,7 +605,11 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     glDrawElements(GL_TRIANGLES, kFullscreenQuadVertexCount, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 
-    // Cleanup
+    // Cleanup: unbind all texture units and reset state
+    for (size_t i = 0; i < 8; ++i) {
+        glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
     glActiveTexture(GL_TEXTURE0);
     glUseProgram(0);
 }

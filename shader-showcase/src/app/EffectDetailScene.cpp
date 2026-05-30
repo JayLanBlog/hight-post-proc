@@ -19,6 +19,27 @@ EffectDetailScene::EffectDetailScene(const EffectCard& card, TextureHandle input
 {
 }
 
+EffectDetailScene::~EffectDetailScene()
+{
+    // Release GL resources to prevent accumulation across scene switches
+    if (m_backend) {
+        if (m_vertShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_vertShader);
+            m_vertShader = INVALID_SHADER;
+        }
+        if (m_fragShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_fragShader);
+            m_fragShader = INVALID_SHADER;
+        }
+        if (m_effectTexCreated && m_effectTex.id != INVALID_TEXTURE.id) {
+            m_backend->DestroyTexture(m_effectTex);
+            m_effectTex = {0};
+            m_effectTexCreated = false;
+        }
+    }
+    StopVideo();
+}
+
 void EffectDetailScene::SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime) {
     m_videoPlayer = std::move(player);
     m_videoTex = videoTex;
@@ -98,11 +119,22 @@ void EffectDetailScene::OnExit()
     // Stop video playback
     StopVideo();
 
-    // Don't destroy shaders here — let the backend handle cleanup.
-    // Destroying shaders during scene transition can cause GL state issues.
-    // The backend will clean up all resources on shutdown.
-    m_vertShader = INVALID_SHADER;
-    m_fragShader = INVALID_SHADER;
+    // Release GL resources (destructor also does this as safety net)
+    if (m_backend) {
+        if (m_vertShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_vertShader);
+            m_vertShader = INVALID_SHADER;
+        }
+        if (m_fragShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_fragShader);
+            m_fragShader = INVALID_SHADER;
+        }
+        if (m_effectTexCreated && m_effectTex.id != INVALID_TEXTURE.id) {
+            m_backend->DestroyTexture(m_effectTex);
+            m_effectTex = {0};
+            m_effectTexCreated = false;
+        }
+    }
 
     printf("[EffectDetailScene] Exited: %s\n", m_card.name.c_str());
 }
@@ -501,6 +533,10 @@ void EffectDetailScene::LoadImageFromFile(const std::string& path)
     stbi_image_free(data);
 
     if (newTex.id != INVALID_TEXTURE.id) {
+        // Destroy old input texture to prevent leak
+        if (m_inputTex.id != INVALID_TEXTURE.id) {
+            m_backend->DestroyTexture(m_inputTex);
+        }
         m_inputTex = newTex;
         // Also update saved state so CoverFlow gets the new texture
         m_savedState.inputTex = newTex;

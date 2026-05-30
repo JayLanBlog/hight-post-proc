@@ -18,6 +18,7 @@ class VideoPlayer;
 class EffectDetailScene : public Scene {
 public:
     EffectDetailScene(const EffectCard& card, TextureHandle inputTex);
+    ~EffectDetailScene();
 
     void SetBackend(IRenderBackend* backend) { m_backend = backend; }
     void SetApplication(Application* app) { m_app = app; }

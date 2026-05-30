@@ -785,10 +785,11 @@ void CoverFlowScene::LoadImageFromFile(const std::string& path)
 
     printf("[CoverFlowScene] Loading image: %s (%d x %d)\n", path.c_str(), iw, ih);
 
-    // Destroy old input texture if we own it
-    // Note: we don't track ownership cleanly here, but for simplicity
-    // we just create a new texture and let the old one leak.
-    // A proper implementation would track texture ownership.
+    // Destroy old input texture if valid
+    if (m_inputTex.id != INVALID_TEXTURE.id) {
+        m_backend->DestroyTexture(m_inputTex);
+        m_inputTex = INVALID_TEXTURE;
+    }
 
     TextureHandle newTex = m_backend->CreateTexture(iw, ih, TextureFormat::RGBA8, data);
     stbi_image_free(data);
