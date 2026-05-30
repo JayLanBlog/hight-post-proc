@@ -16,5 +16,5 @@ private:
 
     void UpdateFPS();
     void RenderBackendButtons(Application* app);
-    void RenderFPSDisplay();
+    void RenderFPSDisplay(Application* app);
 };

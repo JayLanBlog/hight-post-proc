@@ -24,7 +24,7 @@ void PerformancePanel::Render(Application* app, IRenderBackend* backend) {
 
     if (ImGui::Begin("##PerformancePanel", nullptr, flags)) {
         RenderBackendButtons(app);
-        RenderFPSDisplay();
+        RenderFPSDisplay(app);
     }
     ImGui::End();
 
@@ -88,12 +88,13 @@ void PerformancePanel::RenderBackendButtons(Application* app) {
     ImGui::PopStyleVar();
 }
 
-void PerformancePanel::RenderFPSDisplay() {
+void PerformancePanel::RenderFPSDisplay(Application* app) {
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.33f, 1.0f, 0.33f, 1.0f));
     ImGui::Text("%.1f FPS", m_lastFps);
     ImGui::PopStyleColor();
 
+    const char* backendLabel = (app->GetBackendType() == BackendType::Vulkan) ? "Vulkan 1.2" : "OpenGL 4.6";
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.53f, 0.53f, 0.53f, 1.0f));
-    ImGui::TextUnformatted("OpenGL 4.6");
+    ImGui::TextUnformatted(backendLabel);
     ImGui::PopStyleColor();
 }

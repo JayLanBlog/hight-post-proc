@@ -170,11 +170,6 @@ private:
     bool m_imguiInitialized = false;
     bool m_imguiRenderPending = false;  // Flag to indicate ImGui render is pending
 
-    // Font atlas resources (manually uploaded, see ImGuiInit)
-    VkImage m_fontImage = VK_NULL_HANDLE;
-    VkImageView m_fontImageView = VK_NULL_HANDLE;
-    VkDeviceMemory m_fontImageMemory = VK_NULL_HANDLE;
-
     // ============================================================================
     // Initialization Helpers
     // ============================================================================
