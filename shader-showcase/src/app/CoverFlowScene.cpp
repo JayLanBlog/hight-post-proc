@@ -145,15 +145,15 @@ void CoverFlowScene::OnEnter()
     m_fpsFrameCount  = 0;
     m_fpsDisplay     = 0.0f;
 
-    // Initialize image pool from assets directory
-    // (paths are resolved in main.cpp via FindAssetDir, passed as full paths)
-    if (m_imagePool.empty()) {
-        // We'll populate on first image load; the initial test.jpg is already loaded
-    }
-
     printf("[CoverFlowScene] Entered with %zu cards, selected=%d\n",
            m_cards.size(), m_selectedIndex);
-    InitializeThumbnails();
+
+    // Skip thumbnail initialization for non-OpenGL backends
+    // (Vulkan thumbnails require shader/pipeline which are TODO)
+    auto* glBackend = dynamic_cast<OpenGLBackend*>(m_backend);
+    if (glBackend) {
+        InitializeThumbnails();
+    }
 }
 
 void CoverFlowScene::OnExit()

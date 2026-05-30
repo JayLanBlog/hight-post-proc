@@ -38,7 +38,6 @@ const std::vector<const char*> DEVICE_EXTENSIONS = {
     VkResult err = (x); \
     if (err != VK_SUCCESS) { \
         fprintf(stderr, "[Vulkan] VK_CHECK failed at %s:%d: %d\n", __FILE__, __LINE__, err); \
-        throw std::runtime_error("Vulkan error"); \
     } \
 } while(0)
 
@@ -728,7 +727,8 @@ void VulkanBackend::BeginFrame() {
         RecreateSwapchain();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("Failed to acquire swap chain image");
+        fprintf(stderr, "[Vulkan] Failed to acquire swapchain image: %d\n", result);
+        return;
     }
 
     // Reset and begin command buffer
@@ -810,7 +810,7 @@ void VulkanBackend::EndFrame() {
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
         RecreateSwapchain();
     } else if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to present swap chain image");
+        fprintf(stderr, "[Vulkan] Failed to present swapchain image: %d\n", result);
     }
 }
 

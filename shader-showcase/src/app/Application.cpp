@@ -2,6 +2,7 @@
 #include "app/Scene.h"
 #include "app/LanguageManager.h"
 #include "ui/PerformancePanel.h"
+#include <exception>
 
 // GL 4.6 types must be available before GLFW and backend headers
 #include "render/gl_core_46.h"
@@ -234,6 +235,7 @@ void Application::MainLoop()
 
     while (m_running && m_window && !glfwWindowShouldClose(m_window))
     {
+        try {
         glfwPollEvents();
 
         // Process pending backend switch (deferred to avoid corruption during ImGui rendering)
@@ -296,6 +298,25 @@ void Application::MainLoop()
             m_frameCallback(dt);
         }
 
+        // --- No-scene status panel (shown when scene is absent) ---
+        if (!m_currentScene)
+        {
+            ImGui::SetNextWindowPos(ImVec2(10, 50));
+            ImGui::SetNextWindowSize(ImVec2(350, 200));
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.09f, 0.12f, 0.95f));
+            ImGui::Begin("##StatusPanel", nullptr,
+                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove);
+            ImGui::TextColored(ImVec4(0.2f, 0.8f, 1.0f, 1.0f), "%s", m_backend->GetName());
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::TextWrapped("Scene rendering is not yet implemented for this backend. The 3D card rendering (DrawCards) and thumbnail effects are TODO stubs.");
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Press Ctrl+1 to switch to OpenGL for full functionality.");
+            ImGui::End();
+            ImGui::PopStyleColor();
+        }
+
         // Always render performance panel (visible even without a scene)
         m_perfPanel.Render(this, m_backend.get());
 
@@ -330,6 +351,13 @@ void Application::MainLoop()
         }
         
         m_backend->EndFrame();
+        } catch (const std::exception& e) {
+            fprintf(stderr, "[Application] EXCEPTION in main loop: %s\n", e.what());
+            m_running = false;
+        } catch (...) {
+            fprintf(stderr, "[Application] UNKNOWN EXCEPTION in main loop\n");
+            m_running = false;
+        }
     }
 
     printf("[Application] Main loop exited: m_running=%d, m_window=%p, shouldClose=%d\n",

@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
         (void)dt;
         // Re-create scene if it was destroyed (e.g., after backend switch)
         if (app.GetCurrentScene() != nullptr) return;
-        // Only recreate scene for OpenGL backend (Vulkan scene not supported yet)
+        // Skip scene creation for Vulkan (DrawCards/thumbnail rendering are TODO stubs)
         if (app.GetBackendType() != BackendType::OpenGL) return;
 
         IRenderBackend* backend = app.GetBackend();
