@@ -28,19 +28,22 @@ void main() {
         return;
     }
 
+    // Scale effective radius with strength for responsive slider feel
+    float effectiveRadius = BlurRadius * BlurStrength;
+
     // 9-tap approximate Gaussian blur
     vec2 texelSize = 1.0 / uResolution;
     vec3 result = vec3(0.0);
     float total = 0.0;
     
-    float sigma = BlurRadius * 0.5;
+    float sigma = effectiveRadius * 0.5;
     float sigma2 = 2.0 * sigma * sigma;
 
     for (int x = -4; x <= 4; x++) {
         for (int y = -4; y <= 4; y++) {
             float dist2 = float(x * x + y * y);
             float w = exp(-dist2 / sigma2);
-            vec2 offset = vec2(float(x), float(y)) * texelSize * BlurRadius * 0.3;
+            vec2 offset = vec2(float(x), float(y)) * texelSize * effectiveRadius * 0.3;
             result += texture(uInputTex, vUV + offset).rgb * w;
             total += w;
         }
