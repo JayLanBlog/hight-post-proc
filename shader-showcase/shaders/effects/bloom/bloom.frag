@@ -21,44 +21,45 @@ void main() {
 
     float BloomIntensity = uParamFloat0;
     float Threshold = uParamFloat1;
-    float BlurSize = max(uParamFloat2, 0.1);
+    float BlurSize = max(uParamFloat2, 1.0);
 
-    // Extract bright areas above threshold
-    float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    float bright = max(luma - Threshold, 0.0);
-    
-    // Early exit if no bloom needed
+    // Early exit if no bloom
     if (BloomIntensity <= 0.0) {
         outColor = vec4(color, 1.0);
         return;
     }
 
-    // Gaussian blur the bright contributions from neighboring pixels
     vec2 texelSize = 1.0 / uResolution;
-    float total = 0.0;
-    vec3 blurred = vec3(0.0);
     
-    float sigma = BlurSize * 0.5;
+    // BlurSize controls kernel range for dramatic visual effect
+    int range = int(ceil(BlurSize));
+    float sigma = BlurSize;
     float sigma2 = 2.0 * sigma * sigma;
+    
+    vec3 bloom = vec3(0.0);
+    float weightSum = 0.0;
 
-    for (int x = -6; x <= 6; x++) {
-        for (int y = -6; y <= 6; y++) {
+    for (int x = -range; x <= range; x++) {
+        for (int y = -range; y <= range; y++) {
+            // Gaussian weight
             float dist2 = float(x * x + y * y);
             float w = exp(-dist2 / sigma2);
-            vec2 offset = vec2(float(x), float(y)) * texelSize * BlurSize * 0.3;
             
-            // Sample neighbor pixel and extract its bright contribution
-            vec3 neighborColor = texture(uInputTex, vUV + offset).rgb;
-            float neighborLuma = dot(neighborColor, vec3(0.2126, 0.7152, 0.0722));
-            float neighborBright = max(neighborLuma - Threshold, 0.0);
+            // Sample offset scaled by BlurSize
+            vec2 offset = vec2(float(x), float(y)) * texelSize * BlurSize;
+            vec3 sampleColor = texture(uInputTex, vUV + offset).rgb;
             
-            // Only add bright contributions (threshold filtering)
-            vec3 brightContribution = neighborColor * neighborBright;
-            blurred += brightContribution * w;
-            total += w;
+            // Threshold filtering: only bright pixels contribute
+            float sampleLuma = dot(sampleColor, vec3(0.2126, 0.7152, 0.0722));
+            if (sampleLuma > Threshold) {
+                // Brightness above threshold contributes to bloom
+                float brightness = (sampleLuma - Threshold) / (1.0 - Threshold + 0.001);
+                bloom += sampleColor * brightness * w;
+            }
+            weightSum += w;
         }
     }
-    blurred /= max(total, 0.001);
+    bloom /= max(weightSum, 0.001);
 
-    outColor = vec4(color + blurred * BloomIntensity, 1.0);
+    outColor = vec4(color + bloom * BloomIntensity, 1.0);
 }
