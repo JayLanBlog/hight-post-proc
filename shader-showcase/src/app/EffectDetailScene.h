@@ -70,7 +70,7 @@ private:
     int m_autoTestHoldFrames = 0; // >0 means auto-exit after this many frames
 
     // Compare mode (slider before/after)
-    bool m_compareMode = true;        // show before/after comparison (enabled by default)
+    bool m_compareMode = false;       // before/after comparison (toggle with C key)
     float m_compareSplitPos = 0.5f;   // split position (0=left all original, 1=right all effect)
     bool m_compareDragging = false;  // is user dragging the split handle?
     TextureHandle m_effectTex = {0};  // FBO texture for effect output

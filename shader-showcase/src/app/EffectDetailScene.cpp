@@ -26,9 +26,6 @@ void EffectDetailScene::OnEnter()
         return;
     }
 
-    // Determine if rendering is supported (OpenGL only currently)
-    bool canRender = (dynamic_cast<OpenGLBackend*>(m_backend) != nullptr);
-
     // Initialize debug panel with effect parameters (works on all backends)
     m_debugPanel.SetParams(m_card.params);
     
@@ -64,11 +61,7 @@ void EffectDetailScene::OnEnter()
     }
     m_expectedFloatCount = m_uniformFloats.size();
 
-    // Skip shader/texture loading if rendering not supported
-    if (!canRender) {
-        printf("[EffectDetailScene] Rendering not available on this backend; controls UI only\n");
-        return;
-    }
+    // Load SPIR-V shaders (works on all backends)
     auto vertSpirv = ShaderLoader::LoadSPIRV(m_card.vertSpirvPath);
     auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);
 
@@ -77,140 +70,129 @@ void EffectDetailScene::OnEnter()
         return;
     }
 
-    // Create shaders via backend
-    // Try GLSL source first (more reliable for UBO in OpenGL), fallback to SPIR-V
-    std::string vertGlslPath = m_card.vertSpirvPath;
-    {
-        size_t pos = vertGlslPath.rfind(".vert.spv");
-        if (pos != std::string::npos) {
-            vertGlslPath = vertGlslPath.substr(0, pos) + ".vert";
-        } else {
-            pos = vertGlslPath.rfind(".spv");
+    // OpenGL: try GLSL first (better UBO support), fallback to SPIR-V
+    auto* glBackend = dynamic_cast<OpenGLBackend*>(m_backend);
+    if (glBackend) {
+        // --- Vertex shader GLSL path ---
+        std::string vertGlslPath = m_card.vertSpirvPath;
+        {
+            size_t pos = vertGlslPath.rfind(".vert.spv");
             if (pos != std::string::npos) {
                 vertGlslPath = vertGlslPath.substr(0, pos) + ".vert";
+            } else {
+                pos = vertGlslPath.rfind(".spv");
+                if (pos != std::string::npos) {
+                    vertGlslPath = vertGlslPath.substr(0, pos) + ".vert";
+                }
             }
         }
-    }
-    
-    // Build alternative path: source shaders are at project_root/shaders/, not build/shaders/
-    // The SPIR-V path resolves to: <project>/shader-showcase/build/shaders/common/fullscreen.vert
-    // Source GLSL is at:            <project>/shader-showcase/shaders/common/fullscreen.vert
-    // Strategy: normalize the path, then remove "build" component
-    std::string vertGlslPathAlt;
-    {
-        // Simple path normalization: replace / with \ and resolve ..
-        std::string norm = vertGlslPath;
-        for (auto& c : norm) { if (c == '/') c = '\\'; }
-        // Remove "..\" by going up one directory
-        while (true) {
-            size_t dotdot = norm.find("..\\");
-            if (dotdot == std::string::npos) break;
-            // Find the directory before ..
-            size_t prevSlash = norm.rfind('\\', dotdot - 2);
-            if (prevSlash == std::string::npos) break;
-            norm = norm.substr(0, prevSlash) + norm.substr(dotdot + 2);
+        
+        std::string vertGlslPathAlt;
+        {
+            std::string norm = vertGlslPath;
+            for (auto& c : norm) { if (c == '/') c = '\\'; }
+            while (true) {
+                size_t dotdot = norm.find("..\\");
+                if (dotdot == std::string::npos) break;
+                size_t prevSlash = norm.rfind('\\', dotdot - 2);
+                if (prevSlash == std::string::npos) break;
+                norm = norm.substr(0, prevSlash) + norm.substr(dotdot + 2);
+            }
+            size_t bp = norm.find("\\build\\");
+            if (bp != std::string::npos) {
+                vertGlslPathAlt = norm.substr(0, bp + 1) + norm.substr(bp + 7);
+            } else {
+                vertGlslPathAlt = norm;
+            }
         }
-        // Now norm should be like: E:\...\shader-showcase\build\shaders\common\fullscreen.vert
-        // Remove "build\" component
-        size_t bp = norm.find("\\build\\");
-        if (bp != std::string::npos) {
-            vertGlslPathAlt = norm.substr(0, bp + 1) + norm.substr(bp + 7); // keep the leading \, skip "build\"
+        
+        std::string vertGlslSource;
+        for (const auto& tryPath : {vertGlslPath, vertGlslPathAlt}) {
+            std::string normPath = tryPath;
+            for (auto& c : normPath) { if (c == '/') c = '\\'; }
+            FILE* f = fopen(normPath.c_str(), "rb");
+            if (f) {
+                fseek(f, 0, SEEK_END);
+                long size = ftell(f);
+                fseek(f, 0, SEEK_SET);
+                vertGlslSource.resize(size);
+                fread(&vertGlslSource[0], 1, size, f);
+                fclose(f);
+                break;
+            }
+        }
+        
+        if (!vertGlslSource.empty()) {
+            m_vertShader = glBackend->CreateVertexShaderFromGLSL(vertGlslSource);
+            printf("[EffectDetailScene] Using GLSL vertex shader\n");
         } else {
-            vertGlslPathAlt = norm;
+            m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
+            printf("[EffectDetailScene] Using SPIR-V vertex shader\n");
         }
-    }
-    
-    // Try loading vertex GLSL source
-    std::string vertGlslSource;
-    for (const auto& tryPath : {vertGlslPath, vertGlslPathAlt}) {
-        std::string normPath = tryPath;
-        for (auto& c : normPath) { if (c == '/') c = '\\'; }
-        FILE* f = fopen(normPath.c_str(), "rb");
-        if (f) {
-            fseek(f, 0, SEEK_END);
-            long size = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            vertGlslSource.resize(size);
-            fread(&vertGlslSource[0], 1, size, f);
-            fclose(f);
-            break;
-        }
-    }
-    
-    // Use GLSL for vertex shader (SPIR-V UBO reflection broken on NVIDIA)
-    auto* glBackend = dynamic_cast<OpenGLBackend*>(m_backend);
-    if (!vertGlslSource.empty() && glBackend) {
-        m_vertShader = glBackend->CreateVertexShaderFromGLSL(vertGlslSource);
-        printf("[EffectDetailScene] Using GLSL vertex shader\n");
-    } else {
-        m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
-        printf("[EffectDetailScene] Using SPIR-V vertex shader\n");
-    }
-    
-    // Try GLSL source first (more reliable for UBO in OpenGL), fallback to SPIR-V
-    // GLSL source files are in the source tree, not in the build directory.
-    // The SPIR-V path is like: build/bin/Release/../../shaders/effects/bloom/bloom.frag.spv
-    // The GLSL source is at: shaders/effects/bloom/bloom.frag (relative to project root)
-    // We need to go up one more level from the build directory.
-    std::string fragGlslPath = m_card.fragSpirvPath;
-    {
-        size_t pos = fragGlslPath.rfind(".frag.spv");
-        if (pos != std::string::npos) {
-            fragGlslPath = fragGlslPath.substr(0, pos) + ".frag";
-        } else {
-            pos = fragGlslPath.rfind(".spv");
+        
+        // --- Fragment shader GLSL path ---
+        std::string fragGlslPath = m_card.fragSpirvPath;
+        {
+            size_t pos = fragGlslPath.rfind(".frag.spv");
             if (pos != std::string::npos) {
                 fragGlslPath = fragGlslPath.substr(0, pos) + ".frag";
+            } else {
+                pos = fragGlslPath.rfind(".spv");
+                if (pos != std::string::npos) {
+                    fragGlslPath = fragGlslPath.substr(0, pos) + ".frag";
+                }
             }
         }
-    }
-    
-    // Also try source directory (one level up from build dir)
-    std::string fragGlslPathAlt;
-    {
-        std::string norm = fragGlslPath;
-        for (auto& c : norm) { if (c == '/') c = '\\'; }
-        while (true) {
-            size_t dotdot = norm.find("..\\");
-            if (dotdot == std::string::npos) break;
-            size_t prevSlash = norm.rfind('\\', dotdot - 2);
-            if (prevSlash == std::string::npos) break;
-            norm = norm.substr(0, prevSlash) + norm.substr(dotdot + 2);
+        
+        std::string fragGlslPathAlt;
+        {
+            std::string norm = fragGlslPath;
+            for (auto& c : norm) { if (c == '/') c = '\\'; }
+            while (true) {
+                size_t dotdot = norm.find("..\\");
+                if (dotdot == std::string::npos) break;
+                size_t prevSlash = norm.rfind('\\', dotdot - 2);
+                if (prevSlash == std::string::npos) break;
+                norm = norm.substr(0, prevSlash) + norm.substr(dotdot + 2);
+            }
+            size_t bp = norm.find("\\build\\");
+            if (bp != std::string::npos) {
+                fragGlslPathAlt = norm.substr(0, bp + 1) + norm.substr(bp + 7);
+            } else {
+                fragGlslPathAlt = norm;
+            }
         }
-        size_t bp = norm.find("\\build\\");
-        if (bp != std::string::npos) {
-            fragGlslPathAlt = norm.substr(0, bp + 1) + norm.substr(bp + 7);
+        
+        std::string fragGlslSource;
+        for (const auto& tryPath : {fragGlslPathAlt, fragGlslPath}) {
+            std::string normPath = tryPath;
+            for (auto& c : normPath) { if (c == '/') c = '\\'; }
+            printf("[EffectDetailScene] Trying GLSL path: %s\n", normPath.c_str());
+            FILE* f = fopen(normPath.c_str(), "rb");
+            if (f) {
+                printf("[EffectDetailScene] Found GLSL: %s\n", normPath.c_str());
+                fseek(f, 0, SEEK_END);
+                long size = ftell(f);
+                fseek(f, 0, SEEK_SET);
+                fragGlslSource.resize(size);
+                fread(&fragGlslSource[0], 1, size, f);
+                fclose(f);
+                break;
+            }
+        }
+        
+        if (!fragGlslSource.empty()) {
+            m_fragShader = glBackend->CreateFragmentShaderFromGLSL(fragGlslSource);
+            printf("[EffectDetailScene] Using GLSL fragment shader\n");
         } else {
-            fragGlslPathAlt = norm;
+            m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
+            printf("[EffectDetailScene] GLSL not found, falling back to SPIR-V fragment shader\n");
         }
-    }
-    
-    // Try loading GLSL source (try source dir first, then build dir)
-    std::string fragGlslSource;
-    for (const auto& tryPath : {fragGlslPathAlt, fragGlslPath}) {
-        std::string normPath = tryPath;
-        for (auto& c : normPath) { if (c == '/') c = '\\'; }
-        printf("[EffectDetailScene] Trying GLSL path: %s\n", normPath.c_str());
-        FILE* f = fopen(normPath.c_str(), "rb");
-        if (f) {
-            printf("[EffectDetailScene] Found GLSL: %s\n", normPath.c_str());
-            fseek(f, 0, SEEK_END);
-            long size = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            fragGlslSource.resize(size);
-            fread(&fragGlslSource[0], 1, size, f);
-            fclose(f);
-            break;
-        }
-    }
-    
-    // Use GLSL source for fragment shader (SPIR-V UBO reflection broken on NVIDIA)
-    if (!fragGlslSource.empty() && glBackend) {
-        m_fragShader = glBackend->CreateFragmentShaderFromGLSL(fragGlslSource);
-        printf("[EffectDetailScene] Using GLSL fragment shader\n");
     } else {
+        // Vulkan: SPIR-V only (GLSL compilation not supported by this backend)
+        m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
         m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
-        printf("[EffectDetailScene] GLSL not found, falling back to SPIR-V fragment shader\n");
+        printf("[EffectDetailScene] Using SPIR-V shaders (Vulkan backend)\n");
     }
 
     if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) {
@@ -310,8 +292,6 @@ void EffectDetailScene::EnsureEffectTexture()
 void EffectDetailScene::OnRender(IRenderBackend* backend)
 {
     if (!backend) return;
-    // Rendering only available on OpenGL backend
-    if (!dynamic_cast<OpenGLBackend*>(backend)) return;
     if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) return;
 
     // Sync uniform values from debug panel
