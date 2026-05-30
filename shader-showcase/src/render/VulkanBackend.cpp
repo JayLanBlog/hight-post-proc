@@ -695,6 +695,14 @@ void VulkanBackend::CleanupSwapchain() {
 }
 
 void VulkanBackend::RecreateSwapchain() {
+    // Handle minimization: wait until window has valid dimensions
+    int fbWidth = 0, fbHeight = 0;
+    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+    while (fbWidth == 0 || fbHeight == 0) {
+        glfwWaitEvents();
+        glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+    }
+
     WaitIdle();
 
     printf("[Vulkan] Recreating swapchain...\n");
@@ -714,6 +722,13 @@ void VulkanBackend::RecreateSwapchain() {
 // Frame Management
 // ============================================================================
 void VulkanBackend::BeginFrame() {
+    // Guard against 0-dimension swapchain (window minimized during switch)
+    if (m_swapchainExtent.width == 0 || m_swapchainExtent.height == 0) {
+        RecreateSwapchain();
+        if (m_swapchainExtent.width == 0 || m_swapchainExtent.height == 0)
+            return;
+    }
+
     // Wait for previous frame
     vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(m_device, 1, &m_inFlightFence);
@@ -748,7 +763,7 @@ void VulkanBackend::BeginFrame() {
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapchainExtent;
 
-    VkClearValue clearColor = {{{0.15f, 0.18f, 0.25f, 1.0f}}};
+    VkClearValue clearColor = {{{0.08f, 0.12f, 0.22f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 

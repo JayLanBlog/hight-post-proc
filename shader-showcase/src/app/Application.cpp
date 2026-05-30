@@ -262,9 +262,6 @@ void Application::MainLoop()
             m_currentScene->OnUpdate(dt);
             m_currentScene->OnRender(m_backend.get());
 
-            // 渲染性能面板（全局可见）
-            m_perfPanel.Render(this, m_backend.get());
-
             m_currentScene->OnImGui();
 
             // Check for scene transition
@@ -298,6 +295,9 @@ void Application::MainLoop()
             // Fallback: legacy frame callback
             m_frameCallback(dt);
         }
+
+        // Always render performance panel (visible even without a scene)
+        m_perfPanel.Render(this, m_backend.get());
 
         m_backend->ImGuiRender();
         
