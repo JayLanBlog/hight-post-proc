@@ -19,6 +19,16 @@ EffectDetailScene::EffectDetailScene(const EffectCard& card, TextureHandle input
 {
 }
 
+void EffectDetailScene::SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime) {
+    m_videoPlayer = std::move(player);
+    m_videoTex = videoTex;
+    m_videoActive = active;
+    m_videoLastFrameTime = lastFrameTime;
+    if (active) {
+        m_inputTex = m_videoTex;  // Use video texture as input for effect rendering
+    }
+}
+
 void EffectDetailScene::OnEnter()
 {
     if (!m_backend) {
@@ -262,7 +272,8 @@ void EffectDetailScene::OnUpdate(float dt)
     if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend
         && dynamic_cast<OpenGLBackend*>(m_backend)) {
         double now = ImGui::GetTime();
-        double frameInterval = 1.0 / m_videoPlayer->GetFPS();
+        // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
+        double frameInterval = 1.0 / 30.0;
         if (now - m_videoLastFrameTime >= frameInterval) {
             if (m_videoPlayer->ReadFrame()) {
                 m_backend->UpdateTexture(m_videoTex, 0, 0,
@@ -568,6 +579,14 @@ std::unique_ptr<Scene> EffectDetailScene::GetNextScene()
         // Restore auto-test state
         if (m_savedState.autoTest) {
             coverFlow->ResumeAutoTest(m_savedState.autoTestHoldFrames, m_savedState.autoTestCardIndex);
+        }
+
+        // Transfer video player back to CoverFlowScene
+        if (m_videoActive && m_videoPlayer) {
+            coverFlow->SetVideoPlayer(std::move(m_videoPlayer), m_videoTex, true, m_videoLastFrameTime);
+            m_videoActive = false;
+            m_videoTex = {0};
+            printf("[EffectDetailScene] Transferred video player back to CoverFlow\n");
         }
 
         printf("[EffectDetailScene] CoverFlowScene restored (thumbs=%zu, pool=%zu)\n",

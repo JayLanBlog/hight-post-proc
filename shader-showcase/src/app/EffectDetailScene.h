@@ -31,6 +31,9 @@ public:
         }
     }
 
+    /// Transfer video player ownership from CoverFlowScene (for dynamic video playback).
+    void SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime);
+
     void OnEnter() override;
     void OnExit() override;
     void OnUpdate(float dt) override;

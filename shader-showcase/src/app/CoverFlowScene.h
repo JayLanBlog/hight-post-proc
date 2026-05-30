@@ -44,6 +44,9 @@ public:
     /// Set test image base directory (for thumbnail input textures)
     void SetTestImageBaseDir(const std::string& dir) { m_testImageBaseDir = dir; }
 
+    /// Transfer video player back from detail scene.
+    void SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime);
+
     /// Enable auto-test mode: cycle through all cards, holdFrames per card.
     void EnableAutoTest(int holdFrames);
 

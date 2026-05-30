@@ -215,7 +215,8 @@ void CoverFlowScene::OnUpdate(float dt)
         // Only update video textures for OpenGL backend
         if (dynamic_cast<OpenGLBackend*>(m_backend)) {
             double now = ImGui::GetTime();
-            double frameInterval = 1.0 / m_videoPlayer->GetFPS();
+            // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
+            double frameInterval = 1.0 / 30.0;
             if (now - m_videoLastFrameTime >= frameInterval) {
                 if (m_videoPlayer->ReadFrame()) {
                     m_backend->UpdateTexture(m_videoTex, 0, 0,
@@ -648,6 +649,15 @@ void CoverFlowScene::OpenSelectedEffect()
     ds->SetBackend(m_backend);
     ds->SetApplication(m_app);
     ds->SetCoverFlowState(GetState());
+
+    // Transfer video player to detail scene (for dynamic playback in compare view)
+    if (m_videoActive && m_videoPlayer) {
+        ds->SetVideoPlayer(std::move(m_videoPlayer), m_videoTex, true, m_videoLastFrameTime);
+        m_videoActive = false;
+        m_videoTex = {0};
+        printf("[CoverFlowScene] Transferred video player to detail scene\n");
+    }
+
     printf("[CoverFlowScene] Opening effect: %s (%s)\n",
            resolvedCard.name.c_str(), resolvedCard.id.c_str());
 
@@ -928,6 +938,20 @@ CoverFlowState CoverFlowScene::GetState() const
     s.autoTestCardIndex  = m_autoTestCardIndex;
     s.testImageBaseDir = m_testImageBaseDir;
     return s;
+}
+
+// ============================================================================
+// SetVideoPlayer — transfer video player ownership from detail scene
+// ============================================================================
+
+void CoverFlowScene::SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime) {
+    m_videoPlayer = std::move(player);
+    m_videoTex = videoTex;
+    m_videoActive = active;
+    m_videoLastFrameTime = lastFrameTime;
+    if (active) {
+        m_inputTex = m_videoTex;
+    }
 }
 
 // ============================================================================
