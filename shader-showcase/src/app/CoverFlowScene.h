@@ -41,6 +41,9 @@ public:
     /// Set pre-rendered thumbnail ImTextureIDs (one per card, same order as RegisterCards).
     void SetThumbnails(const std::vector<void*>& imTexIds) { m_thumbIds = imTexIds; }
 
+    /// Restore selected card index and scroll offset (used when returning from detail scene).
+    void SetSelectedIndex(int index) { m_selectedIndex = index; m_targetOffset = 0.0f; m_scrollOffset = 0.0f; }
+
     /// Set test image base directory (for thumbnail input textures)
     void SetTestImageBaseDir(const std::string& dir) { m_testImageBaseDir = dir; }
 

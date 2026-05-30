@@ -485,6 +485,9 @@ std::unique_ptr<Scene> EffectDetailScene::GetNextScene()
         // Thumbnails are now initialized internally by CoverFlowScene::OnEnter
         coverFlow->SetTestImageBaseDir(m_savedState.testImageBaseDir);
 
+        // Restore selected card index so user returns to the same card
+        coverFlow->SetSelectedIndex(m_savedState.selectedIndex);
+
         // Restore image pool
         for (const auto& img : m_savedState.imagePool) {
             coverFlow->AddImageToPool(img);
