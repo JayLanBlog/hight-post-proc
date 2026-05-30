@@ -15,8 +15,9 @@ layout(std140, binding=1) uniform Params {
 };
 
 void main() {
-    vec2 pixelCount = uResolution / uParamFloat0;
-    vec2 uv = floor(vUV * pixelCount) / pixelCount;
+    vec2 pixelCount = uResolution / max(uParamFloat0, 1.0);
+    // Sample at block center to avoid edge bleeding with linear filtering
+    vec2 uv = (floor(vUV * pixelCount) + 0.5) / pixelCount;
     vec3 color = texture(uInputTex, uv).rgb;
     outColor = vec4(color, 1.0);
 }
