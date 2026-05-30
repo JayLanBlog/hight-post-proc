@@ -364,12 +364,8 @@ void EffectDetailScene::OnImGui()
 
     // --- Compare mode: slider before/after overlay view ---
     if (m_compareMode && m_effectTex.id != INVALID_TEXTURE.id && m_backend) {
-        void* origImTex = nullptr;
-        void* effectImTex = nullptr;
-        if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend)) {
-            origImTex = gl->GetImTextureID(m_inputTex);
-            effectImTex = gl->GetImTextureID(m_effectTex);
-        }
+        void* origImTex = m_backend->GetImTextureID(m_inputTex);
+        void* effectImTex = m_backend->GetImTextureID(m_effectTex);
 
         if (origImTex && effectImTex) {
             ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -472,11 +468,6 @@ void EffectDetailScene::OnImGui()
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.7f, 0.7f), "%s", LanguageManager::Instance().EscReturn());
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 0.8f), "%s", LanguageManager::Instance().CardDesc(m_card.id));
-        // Show rendering status indicator
-        if (!m_effectTex.id) {
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.0f, 0.85f), "[Controls only - rendering not available on this backend]");
-        }
         ImGui::End();
     }
 
