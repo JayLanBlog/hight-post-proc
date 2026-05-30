@@ -28,19 +28,20 @@ void main() {
         return;
     }
 
-    // Gaussian-weighted radius-dependent blur (3x3 kernel)
-    // Larger radius = wider blur = more sharpening effect
+    // Gaussian-weighted radius-dependent blur (5x5 kernel)
+    // Radius scales both sample spread and sigma for dramatic effect
     vec2 texelSize = 1.0 / uResolution;
-    float sigma = Radius * 0.6;
+    float sigma = Radius * 0.5;
     float sigma2 = 2.0 * sigma * sigma;
     float total = 0.0;
     vec3 blur = vec3(0.0);
 
-    for (int x = -1; x <= 1; x++) {
-        for (int y = -1; y <= 1; y++) {
+    int range = int(ceil(Radius));
+    for (int x = -range; x <= range; x++) {
+        for (int y = -range; y <= range; y++) {
             float dist2 = float(x * x + y * y);
             float w = exp(-dist2 / sigma2);
-            vec2 offset = vec2(float(x), float(y)) * texelSize;
+            vec2 offset = vec2(float(x), float(y)) * texelSize * Radius;
             blur += texture(uInputTex, vUV + offset).rgb * w;
             total += w;
         }
