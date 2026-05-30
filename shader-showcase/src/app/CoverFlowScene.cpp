@@ -216,7 +216,7 @@ void CoverFlowScene::OnUpdate(float dt)
         double frameInterval = 1.0 / m_videoPlayer->GetFPS();
         if (now - m_videoLastFrameTime >= frameInterval) {
             if (m_videoPlayer->ReadFrame()) {
-                m_backend->UpdateTexture(m_videoTex,
+                m_backend->UpdateTexture(m_videoTex, 0, 0,
                     m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
                     m_videoPlayer->GetPixels());
                 m_inputTex = m_videoTex;
@@ -234,7 +234,7 @@ void CoverFlowScene::OnUpdate(float dt)
     if (m_captureActive && m_screenCapture && m_screenCapture->IsReady()) {
         bool newFrame = m_screenCapture->CaptureFrame();
         if (newFrame && m_backend) {
-            m_backend->UpdateTexture(m_captureTex,
+            m_backend->UpdateTexture(m_captureTex, 0, 0,
                 m_captureWidth, m_captureHeight,
                 m_screenCapture->GetPixels());
         }
@@ -838,7 +838,7 @@ void CoverFlowScene::InitializeThumbnails()
         fprintf(stderr, "[CoverFlowScene] Cannot load vertex shader for thumbnails\n");
         return;
     }
-    m_sharedVertShader = m_backend->CreateVertexShader(vertSpv);
+    m_sharedVertShader = m_backend->CreateVertexShader(vertSpv.data(), vertSpv.size());
     if (m_sharedVertShader.id == INVALID_SHADER.id) {
         fprintf(stderr, "[CoverFlowScene] Cannot create vertex shader for thumbnails\n");
         return;
@@ -853,7 +853,7 @@ void CoverFlowScene::InitializeThumbnails()
 
         auto fragSpv = ShaderLoader::LoadSPIRV(m_cards[i].fragSpirvPath);
         if (!fragSpv.empty()) {
-            state.fragShader = m_backend->CreateFragmentShader(fragSpv);
+            state.fragShader = m_backend->CreateFragmentShader(fragSpv.data(), fragSpv.size());
         }
 
         state.thumbTex = m_backend->CreateTexture(m_thumbWidth, m_thumbHeight, TextureFormat::RGBA8, nullptr);

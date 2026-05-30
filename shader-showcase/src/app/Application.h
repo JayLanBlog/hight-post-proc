@@ -16,12 +16,15 @@ struct ScreenshotRequest {
     static bool Consume() { if (pending) { pending = false; return true; } return false; }
 };
 
+#include "ui/PerformancePanel.h"
+
 class Application {
 public:
     Application();
     ~Application();
     int Run(int argc, char* argv[]);
     void SwitchBackend(BackendType type);
+    BackendType GetBackendType() const { return m_backendType; }
     IRenderBackend* GetBackend() const { return m_backend.get(); }
     GLFWwindow* GetWindow() const { return m_window; }
 
@@ -47,12 +50,17 @@ private:
     GLFWwindow* m_window = nullptr;
     std::unique_ptr<IRenderBackend> m_backend;
     BackendType m_backendType = BackendType::OpenGL;
+    BackendType m_pendingBackend = BackendType::OpenGL;
+    bool m_pendingBackendSwitch = false;
     FrameCallback m_frameCallback;
     std::unique_ptr<Scene> m_currentScene;
     bool m_running = false;
 
     // Drag-drop state
     std::string m_droppedFilePath;
+
+    // UI panels
+    PerformancePanel m_perfPanel;
 
     static void FramebufferSizeCallback(GLFWwindow* w, int width, int height);
     static void KeyCallback(GLFWwindow* w, int key, int scancode, int action, int mods);

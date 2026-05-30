@@ -4,9 +4,19 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 // Forward declaration
 struct GLFWwindow;
+
+// Pipeline description for creating pipelines
+struct PipelineDesc {
+    ShaderHandle vertShader;
+    ShaderHandle fragShader;
+    int width;
+    int height;
+    bool blendEnable = true;
+};
 
 // ---------------------------------------------------------------------------
 // ShaderParams — data passed per fullscreen-quad draw
@@ -49,14 +59,22 @@ public:
     virtual void GetFramebufferSize(int& width, int& height) = 0;
 
     // ---- Shaders -----------------------------------------------------------
-    virtual ShaderHandle CreateVertexShader(const std::vector<uint32_t>& spirv)   = 0;
-    virtual ShaderHandle CreateFragmentShader(const std::vector<uint32_t>& spirv) = 0;
+    virtual ShaderHandle CreateVertexShader(const uint32_t* spirv, size_t size)   = 0;
+    virtual ShaderHandle CreateFragmentShader(const uint32_t* spirv, size_t size) = 0;
+    virtual ShaderHandle CreateVertexShaderFromGLSL(const std::string& source)    = 0;
+    virtual ShaderHandle CreateFragmentShaderFromGLSL(const std::string& source)  = 0;
     virtual void         DestroyShader(ShaderHandle handle)                        = 0;
 
     // ---- Textures ----------------------------------------------------------
     virtual TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) = 0;
+    virtual void          UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) = 0;
     virtual void          DestroyTexture(TextureHandle handle)                                        = 0;
-    virtual void          UpdateTexture(TextureHandle handle, int width, int height, const void* data) = 0;
+    virtual void*         GetImTextureID(TextureHandle handle)                                        = 0;
+
+    // ---- Pipelines ---------------------------------------------------------
+    virtual PipelineHandle CreatePipeline(const PipelineDesc& desc) = 0;
+    virtual void           DestroyPipeline(PipelineHandle handle)  = 0;
+    virtual void           BindPipeline(PipelineHandle handle)     = 0;
 
     // ---- Fullscreen quad ---------------------------------------------------
     virtual void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) = 0;
@@ -65,11 +83,15 @@ public:
     virtual void DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) = 0;
 
     // ---- Blit --------------------------------------------------------------
-    virtual void BlitToScreen(TextureHandle texture) = 0;
+    virtual void BlitToScreen(TextureHandle src) = 0;
 
     // ---- Render targets ----------------------------------------------------
     virtual void BeginRenderToTexture(TextureHandle target) = 0;
     virtual void EndRenderToTexture()                       = 0;
+
+    // ---- Utility -----------------------------------------------------------
+    virtual void SetViewport(int x, int y, int width, int height) = 0;
+    virtual void Clear(float r, float g, float b, float a)        = 0;
 
     // ---- ImGui -------------------------------------------------------------
     virtual void ImGuiInit(GLFWwindow* window) = 0;

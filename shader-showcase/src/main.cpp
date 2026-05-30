@@ -51,9 +51,11 @@ int main(int argc, char* argv[]) {
     Application app;
 
     app.SetFrameCallback([&](float dt) {
-        static bool initialized = false;
         (void)dt;
-        if (initialized) return;
+        // Re-create scene if it was destroyed (e.g., after backend switch)
+        if (app.GetCurrentScene() != nullptr) return;
+        // Only recreate scene for OpenGL backend (Vulkan scene not supported yet)
+        if (app.GetBackendType() != BackendType::OpenGL) return;
 
         IRenderBackend* backend = app.GetBackend();
         if (!backend) return;
@@ -209,7 +211,6 @@ int main(int argc, char* argv[]) {
 
         app.SetScene(std::move(coverFlow));
         printf("[main] CoverFlowScene started (autoTest=%d)\n", autoTest);
-        initialized = true;
     });
 
     return app.Run(argc, argv);

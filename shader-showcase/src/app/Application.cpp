@@ -1,6 +1,7 @@
 #include "app/Application.h"
 #include "app/Scene.h"
 #include "app/LanguageManager.h"
+#include "ui/PerformancePanel.h"
 
 // GL 4.6 types must be available before GLFW and backend headers
 #include "render/gl_core_46.h"
@@ -215,7 +216,12 @@ void Application::SwitchBackend(BackendType type)
     {
         return; // Already on the requested backend
     }
-    InitBackend(type);
+    // Defer the actual switch to the start of the next frame
+    // to avoid ImGui/Vulkan state corruption during rendering
+    m_pendingBackend = type;
+    m_pendingBackendSwitch = true;
+    printf("[Application] Backend switch to %s scheduled for next frame\n",
+           type == BackendType::OpenGL ? "OpenGL" : "Vulkan");
 }
 
 // ============================================================================
@@ -229,6 +235,13 @@ void Application::MainLoop()
     while (m_running && m_window && !glfwWindowShouldClose(m_window))
     {
         glfwPollEvents();
+
+        // Process pending backend switch (deferred to avoid corruption during ImGui rendering)
+        if (m_pendingBackendSwitch) {
+            m_pendingBackendSwitch = false;
+            printf("[Application] Processing deferred backend switch...\n");
+            InitBackend(m_pendingBackend);
+        }
 
         // Compute delta time
         auto now      = std::chrono::high_resolution_clock::now();
@@ -248,6 +261,10 @@ void Application::MainLoop()
         {
             m_currentScene->OnUpdate(dt);
             m_currentScene->OnRender(m_backend.get());
+
+            // 渲染性能面板（全局可见）
+            m_perfPanel.Render(this, m_backend.get());
+
             m_currentScene->OnImGui();
 
             // Check for scene transition

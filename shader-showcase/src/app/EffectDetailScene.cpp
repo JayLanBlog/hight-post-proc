@@ -9,6 +9,7 @@
 #include <imgui.h>
 #include <cstdio>
 #include <algorithm>
+#include <cmath>
 
 #include "stb_image.h"
 
@@ -100,7 +101,7 @@ void EffectDetailScene::OnEnter()
         m_vertShader = glBackend->CreateVertexShaderFromGLSL(vertGlslSource);
         printf("[EffectDetailScene] Using GLSL vertex shader\n");
     } else {
-        m_vertShader = m_backend->CreateVertexShader(vertSpirv);
+        m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
         printf("[EffectDetailScene] Using SPIR-V vertex shader\n");
     }
     
@@ -166,7 +167,7 @@ void EffectDetailScene::OnEnter()
         m_fragShader = glBackend->CreateFragmentShaderFromGLSL(fragGlslSource);
         printf("[EffectDetailScene] Using GLSL fragment shader\n");
     } else {
-        m_fragShader = m_backend->CreateFragmentShader(fragSpirv);
+        m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
         printf("[EffectDetailScene] GLSL not found, falling back to SPIR-V fragment shader\n");
     }
 
@@ -276,7 +277,7 @@ void EffectDetailScene::OnUpdate(float dt)
         double frameInterval = 1.0 / m_videoPlayer->GetFPS();
         if (now - m_videoLastFrameTime >= frameInterval) {
             if (m_videoPlayer->ReadFrame()) {
-                m_backend->UpdateTexture(m_videoTex,
+                m_backend->UpdateTexture(m_videoTex, 0, 0,
                     m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
                     m_videoPlayer->GetPixels());
                 m_inputTex = m_videoTex;
@@ -317,29 +318,43 @@ void EffectDetailScene::OnRender(IRenderBackend* backend)
     int width = 0, height = 0;
     backend->GetFramebufferSize(width, height);
     if (width <= 0 || height <= 0) return;
+    m_viewportWidth = width;
+    m_viewportHeight = height;
 
-    // Ensure effect texture exists and matches size
-    EnsureEffectTexture();
+    if (m_compareMode) {
+        RenderCompareView(backend);
+    } else {
+        RenderFullscreenEffect(backend);
+    }
+}
 
-    // Fill ShaderParams
+void EffectDetailScene::RenderFullscreenEffect(IRenderBackend* backend)
+{
     ShaderParams params;
     params.inputTextures.push_back(m_inputTex);
-    params.uniformFloats  = m_uniformFloats;
-    params.uniformInts    = m_uniformInts;
-    params.viewportWidth  = width;
-    params.viewportHeight = height;
-    params.time           = m_time;
-    params.frameCount     = m_frameCount;
+    params.uniformFloats = m_uniformFloats;
+    params.uniformInts = m_uniformInts;
+    params.time = m_time;
+    params.frameCount = m_frameCount;
+    params.viewportWidth = m_viewportWidth;
+    params.viewportHeight = m_viewportHeight;
 
-    if (m_compareMode && m_effectTex.id != INVALID_TEXTURE.id) {
-        // Render effect to FBO texture
-        backend->BeginRenderToTexture(m_effectTex);
-        backend->DrawFullscreenQuad(m_vertShader, m_fragShader, params);
-        backend->EndRenderToTexture();
-    } else {
-        // Render effect directly to screen
-        backend->DrawFullscreenQuad(m_vertShader, m_fragShader, params);
-    }
+    backend->DrawFullscreenQuad(m_vertShader, m_fragShader, params);
+}
+
+void EffectDetailScene::RenderCompareView(IRenderBackend* backend)
+{
+    // 1. Ensure effect texture FBO exists and matches size
+    EnsureEffectTexture();
+
+    if (m_effectTex.id == INVALID_TEXTURE.id) return;
+
+    // 2. Render effect to FBO texture
+    backend->BeginRenderToTexture(m_effectTex);
+    RenderFullscreenEffect(backend);
+    backend->EndRenderToTexture();
+
+    // 3. ImGui will handle the compare view display in OnImGui
 }
 
 void EffectDetailScene::OnImGui()
@@ -359,7 +374,7 @@ void EffectDetailScene::OnImGui()
         m_backend->GetFramebufferSize(width, height);
     }
 
-    // --- Compare mode: before/after split view ---
+    // --- Compare mode: slider before/after overlay view ---
     if (m_compareMode && m_effectTex.id != INVALID_TEXTURE.id && m_backend) {
         void* origImTex = nullptr;
         void* effectImTex = nullptr;
@@ -376,31 +391,81 @@ void EffectDetailScene::OnImGui()
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-            ImVec2 avail = ImGui::GetContentRegionAvail();
+            // Calculate display region
+            ImVec2 winPos   = ImGui::GetWindowPos();
+            ImVec2 regionMin = ImGui::GetWindowContentRegionMin();
+            ImVec2 regionMax = ImGui::GetWindowContentRegionMax();
+            ImVec2 displayMin = ImVec2(winPos.x + regionMin.x, winPos.y + regionMin.y);
+            ImVec2 displayMax = ImVec2(winPos.x + regionMax.x, winPos.y + regionMax.y);
+            ImVec2 displaySize(displayMax.x - displayMin.x, displayMax.y - displayMin.y);
 
-            // Draw original (left side)
-            ImGui::Image(origImTex, ImVec2(avail.x * m_compareSplitPos, avail.y), ImVec2(0,0), ImVec2(1,1));
-            ImGui::SameLine(0, 0);
-
-            // Draw effect (right side)
-            ImGui::Image(effectImTex, ImVec2(avail.x * (1.0f - m_compareSplitPos), avail.y), ImVec2(0,0), ImVec2(1,1));
-
-            // Draggable split line
-            ImGui::SetCursorScreenPos(ImVec2(avail.x * m_compareSplitPos - 2.0f, 0));
-            ImGui::InvisibleButton("##split", ImVec2(4, (float)height));
-            if (ImGui::IsItemActive()) {
-                float delta = ImGui::GetIO().MouseDelta.x / avail.x;
-                m_compareSplitPos = std::clamp(m_compareSplitPos + delta, 0.05f, 0.95f);
-            }
-            // Draw split line indicator
             ImDrawList* dl = ImGui::GetWindowDrawList();
-            float lineX = avail.x * m_compareSplitPos;
-            dl->AddLine(ImVec2(lineX, 0), ImVec2(lineX, (float)height),
-                        IM_COL32(255, 255, 255, 200), 2.0f);
 
-            // Labels
-            dl->AddText(ImVec2(10, 10), IM_COL32(255,255,255,180), LanguageManager::Instance().CompareOriginal());
-            dl->AddText(ImVec2(lineX + 10, 10), IM_COL32(255,255,255,180), LanguageManager::Instance().CompareEffect());
+            // Split position in screen coordinates
+            float splitX = displayMin.x + displaySize.x * m_compareSplitPos;
+
+            // Draw original image as the base layer (full display area)
+            dl->AddImage(origImTex, displayMin, displayMax, ImVec2(0, 0), ImVec2(1, 1));
+
+            // Draw effect image on the right side of the split (clipped)
+            // UV mapping: the left edge of the effect image maps to splitX
+            float uvMinX = m_compareSplitPos;
+            dl->AddImage(effectImTex,
+                ImVec2(splitX, displayMin.y), displayMax,
+                ImVec2(uvMinX, 0), ImVec2(1, 1));
+
+            // Draw split line (blue, 3px)
+            dl->AddLine(ImVec2(splitX, displayMin.y), ImVec2(splitX, displayMax.y),
+                        IM_COL32(68, 175, 255, 255), 3.0f);
+
+            // Draw drag handle (circle at center of display height)
+            float handleY = (displayMin.y + displayMax.y) * 0.5f;
+            dl->AddCircleFilled(ImVec2(splitX, handleY), 14.0f, IM_COL32(68, 175, 255, 255));
+            dl->AddCircleFilled(ImVec2(splitX, handleY), 12.0f, IM_COL32(255, 255, 255, 255));
+
+            // Draw handle icon (left/right arrows)
+            dl->AddTriangleFilled(
+                ImVec2(splitX - 6, handleY - 3), ImVec2(splitX - 2, handleY), ImVec2(splitX - 6, handleY + 3),
+                IM_COL32(68, 175, 255, 255));
+            dl->AddTriangleFilled(
+                ImVec2(splitX + 6, handleY - 3), ImVec2(splitX + 2, handleY), ImVec2(splitX + 6, handleY + 3),
+                IM_COL32(68, 175, 255, 255));
+
+            // Labels: "Before" on left, "After" on right
+            dl->AddText(ImVec2(displayMin.x + 10, displayMin.y + 10),
+                        IM_COL32(255, 255, 255, 200), "Before");
+            dl->AddText(ImVec2(displayMax.x - 60, displayMin.y + 10),
+                        IM_COL32(255, 255, 255, 200), "After");
+
+            // Handle mouse interaction for dragging the split
+            ImVec2 mousePos = ImGui::GetIO().MousePos;
+            bool mouseInWindow = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
+
+            // Check if mouse is near the split line
+            bool nearSplit = mouseInWindow &&
+                std::abs(mousePos.x - splitX) < 20.0f &&
+                mousePos.y >= displayMin.y && mousePos.y <= displayMax.y;
+
+            // Set cursor to resize east-west when near split
+            if (nearSplit || m_compareDragging) {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+            }
+
+            // Handle drag start (on mouse down)
+            if (nearSplit && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                m_compareDragging = true;
+            }
+
+            // Handle drag update
+            if (m_compareDragging && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                float newSplit = (mousePos.x - displayMin.x) / displaySize.x;
+                m_compareSplitPos = std::clamp(newSplit, 0.1f, 0.9f);
+            }
+
+            // Handle drag end
+            if (m_compareDragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                m_compareDragging = false;
+            }
 
             ImGui::End();
         }

@@ -191,8 +191,8 @@ void OpenGLBackend::GetFramebufferSize(int& width, int& height) {
 // ============================================================================
 // Shaders
 // ============================================================================
-ShaderHandle OpenGLBackend::CreateVertexShader(const std::vector<uint32_t>& spirv) {
-    if (spirv.empty()) {
+ShaderHandle OpenGLBackend::CreateVertexShader(const uint32_t* spirv, size_t size) {
+    if (spirv == nullptr || size == 0) {
         fprintf(stderr, "[OpenGL] Empty SPIR-V data for vertex shader\n");
         return INVALID_SHADER;
     }
@@ -205,7 +205,7 @@ ShaderHandle OpenGLBackend::CreateVertexShader(const std::vector<uint32_t>& spir
 
     // Load SPIR-V binary
     glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V,
-                   spirv.data(), static_cast<GLsizei>(spirv.size() * sizeof(uint32_t)));
+                   spirv, static_cast<GLsizei>(size * sizeof(uint32_t)));
 
     // Specialize with default entry point "main"
     glSpecializeShader(shader, "main", 0, nullptr, nullptr);
@@ -226,8 +226,8 @@ ShaderHandle OpenGLBackend::CreateVertexShader(const std::vector<uint32_t>& spir
     return ShaderHandle{id};
 }
 
-ShaderHandle OpenGLBackend::CreateFragmentShader(const std::vector<uint32_t>& spirv) {
-    if (spirv.empty()) {
+ShaderHandle OpenGLBackend::CreateFragmentShader(const uint32_t* spirv, size_t size) {
+    if (spirv == nullptr || size == 0) {
         fprintf(stderr, "[OpenGL] Empty SPIR-V data for fragment shader\n");
         return INVALID_SHADER;
     }
@@ -240,7 +240,7 @@ ShaderHandle OpenGLBackend::CreateFragmentShader(const std::vector<uint32_t>& sp
 
     // Load SPIR-V binary
     glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V,
-                   spirv.data(), static_cast<GLsizei>(spirv.size() * sizeof(uint32_t)));
+                   spirv, static_cast<GLsizei>(size * sizeof(uint32_t)));
 
     // Specialize with default entry point "main"
     glSpecializeShader(shader, "main", 0, nullptr, nullptr);
@@ -404,7 +404,7 @@ void OpenGLBackend::DestroyTexture(TextureHandle handle) {
     }
 }
 
-void OpenGLBackend::UpdateTexture(TextureHandle handle, int width, int height, const void* data) {
+void OpenGLBackend::UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) {
     if (handle.id == 0 || !data) return;
 
     GLuint tex = GetGLTexture(handle);
@@ -418,18 +418,20 @@ void OpenGLBackend::UpdateTexture(TextureHandle handle, int width, int height, c
     GLenum glType = GLType(format);
 
     glBindTexture(GL_TEXTURE_2D, tex);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, glType, data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, glFormat, glType, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Update stored dimensions
-    m_texWidths[handle.id] = width;
-    m_texHeights[handle.id] = height;
+    // Update stored dimensions if updating full texture
+    if (x == 0 && y == 0) {
+        m_texWidths[handle.id] = width;
+        m_texHeights[handle.id] = height;
+    }
 }
 
 // ============================================================================
 // ImGui helpers
 // ============================================================================
-void* OpenGLBackend::GetImTextureID(TextureHandle handle) const {
+void* OpenGLBackend::GetImTextureID(TextureHandle handle) {
     GLuint tex = GetGLTexture(handle);
     return reinterpret_cast<void*>(static_cast<uintptr_t>(tex));
 }
@@ -892,6 +894,50 @@ void OpenGLBackend::ImGuiShutdown() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+
+// ============================================================================
+// Pipelines (OpenGL doesn't use pipeline objects, but we implement for interface compatibility)
+// ============================================================================
+PipelineHandle OpenGLBackend::CreatePipeline(const PipelineDesc& desc) {
+    // OpenGL doesn't have pipeline objects like Vulkan
+    // We just return a handle that combines the shaders
+    // The actual program is created lazily in DrawFullscreenQuad
+    uint32_t id = (desc.vertShader.id << 16) | desc.fragShader.id;
+    return PipelineHandle{id};
+}
+
+void OpenGLBackend::DestroyPipeline(PipelineHandle handle) {
+    // Nothing to destroy in OpenGL - programs are cached and cleaned up on shader destroy
+    (void)handle;
+}
+
+void OpenGLBackend::BindPipeline(PipelineHandle handle) {
+    // Extract shader IDs from pipeline handle
+    uint32_t vsId = handle.id >> 16;
+    uint32_t fsId = handle.id & 0xFFFF;
+
+    GLuint vs = GetGLShader({vsId});
+    GLuint fs = GetGLShader({fsId});
+
+    if (vs != 0 && fs != 0) {
+        GLuint program = GetOrCreateProgram(vs, fs);
+        if (program != 0) {
+            glUseProgram(program);
+        }
+    }
+}
+
+// ============================================================================
+// Utility
+// ============================================================================
+void OpenGLBackend::SetViewport(int x, int y, int width, int height) {
+    glViewport(x, y, width, height);
+}
+
+void OpenGLBackend::Clear(float r, float g, float b, float a) {
+    glClearColor(r, g, b, a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 // ============================================================================

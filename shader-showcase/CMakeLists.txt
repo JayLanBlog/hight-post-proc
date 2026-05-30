@@ -81,13 +81,15 @@ if(USE_VULKAN)
     endif()
 
     if(Vulkan_INCLUDE_DIR AND Vulkan_LIBRARY)
-        set(VULKAN_FOUND TRUE)
+        set(VULKAN_FOUND TRUE CACHE BOOL "Vulkan found" FORCE)
         message(STATUS "Vulkan include: ${Vulkan_INCLUDE_DIR}")
         message(STATUS "Vulkan library: ${Vulkan_LIBRARY}")
     else()
         message(WARNING "Vulkan not found — building without Vulkan support")
-        set(VULKAN_FOUND FALSE)
+        set(VULKAN_FOUND FALSE CACHE BOOL "Vulkan found" FORCE)
     endif()
+else()
+    set(VULKAN_FOUND FALSE CACHE BOOL "Vulkan found" FORCE)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -110,6 +112,13 @@ set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui")
 if(NOT EXISTS "${IMGUI_DIR}/imgui.h")
     message(FATAL_ERROR "ImGui not found at ${IMGUI_DIR}. "
                         "Clone https://github.com/ocornut/imgui (docking branch)")
+endif()
+
+# Pass Vulkan variables to ImGui subdirectory
+if(VULKAN_FOUND)
+    set(IMGUI_VULKAN_FOUND TRUE)
+    set(IMGUI_Vulkan_INCLUDE_DIR ${Vulkan_INCLUDE_DIR})
+    set(IMGUI_Vulkan_LIBRARY ${Vulkan_LIBRARY})
 endif()
 
 add_subdirectory(external/imgui)
@@ -164,10 +173,13 @@ set(SRC_FILES
     src/shader/ShaderLoader.h
     src/ui/DebugPanel.cpp
     src/ui/DebugPanel.h
+    src/ui/PerformancePanel.cpp
+    src/ui/PerformancePanel.h
     src/input/ScreenCapture.h
     src/input/ScreenCapture.cpp
     src/input/VideoPlayer.h
     src/input/VideoPlayer.cpp
+    external/imgui/backends/imgui_impl_vulkan.cpp
 )
 
 add_executable(ShaderShowcase ${SRC_FILES})

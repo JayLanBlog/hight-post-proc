@@ -50,6 +50,8 @@ private:
 
     float    m_time       = 0.0f;
     uint32_t m_frameCount = 0;
+    int      m_viewportWidth  = 0;
+    int      m_viewportHeight = 0;
 
     bool      m_showDebug = true;
     DebugPanel m_debugPanel;
@@ -67,10 +69,11 @@ private:
     // Auto-test
     int m_autoTestHoldFrames = 0; // >0 means auto-exit after this many frames
 
-    // Compare mode
-    bool m_compareMode = false;       // show before/after comparison (disabled by default to fix black screen)
-    float m_compareSplitPos = 0.5f;  // split position (0=left all original, 1=right all effect)
-    TextureHandle m_effectTex = {0}; // FBO texture for effect output
+    // Compare mode (slider before/after)
+    bool m_compareMode = true;        // show before/after comparison (enabled by default)
+    float m_compareSplitPos = 0.5f;   // split position (0=left all original, 1=right all effect)
+    bool m_compareDragging = false;  // is user dragging the split handle?
+    TextureHandle m_effectTex = {0};  // FBO texture for effect output
     bool m_effectTexCreated = false;
     
     // Screenshot counter (per-scene instance)
@@ -86,4 +89,8 @@ private:
     void LoadVideoFromFile(const std::string& path);
     void StopVideo();
     void EnsureEffectTexture();
+
+    // Compare view rendering
+    void RenderCompareView(IRenderBackend* backend);
+    void RenderFullscreenEffect(IRenderBackend* backend);
 };

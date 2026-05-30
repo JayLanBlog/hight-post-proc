@@ -25,21 +25,23 @@ public:
     void GetFramebufferSize(int& width, int& height) override;
 
     // ---- Shaders -----------------------------------------------------------
-    ShaderHandle CreateVertexShader(const std::vector<uint32_t>& spirv) override;
-    ShaderHandle CreateFragmentShader(const std::vector<uint32_t>& spirv) override;
+    ShaderHandle CreateVertexShader(const uint32_t* spirv, size_t size) override;
+    ShaderHandle CreateFragmentShader(const uint32_t* spirv, size_t size) override;
     /// Create shader from GLSL source (fallback when SPIR-V UBO query fails)
-    ShaderHandle CreateVertexShaderFromGLSL(const std::string& glslSource);
-    ShaderHandle CreateFragmentShaderFromGLSL(const std::string& glslSource);
+    ShaderHandle CreateVertexShaderFromGLSL(const std::string& glslSource) override;
+    ShaderHandle CreateFragmentShaderFromGLSL(const std::string& glslSource) override;
     void         DestroyShader(ShaderHandle handle) override;
 
     // ---- Textures ----------------------------------------------------------
     TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) override;
+    void          UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) override;
     void          DestroyTexture(TextureHandle handle) override;
-    void          UpdateTexture(TextureHandle handle, int width, int height, const void* data) override;
+    void*         GetImTextureID(TextureHandle handle) override;
 
-    // ---- ImGui helpers -----------------------------------------------------
-    /// Return the underlying GL texture id suitable for ImGui::Image/AddImage.
-    void* GetImTextureID(TextureHandle handle) const;
+    // ---- Pipelines ---------------------------------------------------------
+    PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
+    void           DestroyPipeline(PipelineHandle handle) override;
+    void           BindPipeline(PipelineHandle handle) override;
 
     /// Save current framebuffer to PPM file for debugging.
     void SaveScreenshot(const char* path) const;
@@ -51,11 +53,15 @@ public:
     void DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) override;
 
     // ---- Blit --------------------------------------------------------------
-    void BlitToScreen(TextureHandle texture) override;
+    void BlitToScreen(TextureHandle src) override;
 
     // ---- Render targets ----------------------------------------------------
     void BeginRenderToTexture(TextureHandle target) override;
     void EndRenderToTexture() override;
+
+    // ---- Utility -----------------------------------------------------------
+    void SetViewport(int x, int y, int width, int height) override;
+    void Clear(float r, float g, float b, float a) override;
 
     // ---- ImGui -------------------------------------------------------------
     void ImGuiInit(GLFWwindow* window) override;
