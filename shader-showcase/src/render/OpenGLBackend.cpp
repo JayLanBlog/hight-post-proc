@@ -558,35 +558,45 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         // ---- Individual uniform path (GLSL) ----
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, 0); // unbind any UBO from previous draw
         GLint loc;
+
+        // Helper: try bare name first, then Params. prefix (named block uniforms)
+        auto getLoc = [&](const char* name) -> GLint {
+            GLint l = glGetUniformLocation(program, name);
+            if (l >= 0) return l;
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Params.%s", name);
+            return glGetUniformLocation(program, buf);
+        };
+
         if (params.uniformFloats.size() > 0) {
-            loc = glGetUniformLocation(program, "uParamFloat0");
+            loc = getLoc("uParamFloat0");
             if (loc >= 0) glUniform1f(loc, params.uniformFloats[0]);
         }
         if (params.uniformFloats.size() > 1) {
-            loc = glGetUniformLocation(program, "uParamFloat1");
+            loc = getLoc("uParamFloat1");
             if (loc >= 0) glUniform1f(loc, params.uniformFloats[1]);
         }
         if (params.uniformFloats.size() > 2) {
-            loc = glGetUniformLocation(program, "uParamFloat2");
+            loc = getLoc("uParamFloat2");
             if (loc >= 0) glUniform1f(loc, params.uniformFloats[2]);
         }
         if (params.uniformFloats.size() > 3) {
-            loc = glGetUniformLocation(program, "uParamFloat3");
+            loc = getLoc("uParamFloat3");
             if (loc >= 0) glUniform1f(loc, params.uniformFloats[3]);
         }
         if (params.uniformFloats.size() > 4) {
-            loc = glGetUniformLocation(program, "uParamFloat4");
+            loc = getLoc("uParamFloat4");
             if (loc >= 0) glUniform1f(loc, params.uniformFloats[4]);
         }
         if (params.uniformFloats.size() > 5) {
-            loc = glGetUniformLocation(program, "uParamFloat5");
+            loc = getLoc("uParamFloat5");
             if (loc >= 0) glUniform1f(loc, params.uniformFloats[5]);
         }
-        loc = glGetUniformLocation(program, "uResolution");
+        loc = getLoc("uResolution");
         if (loc >= 0) glUniform2f(loc, (float)params.viewportWidth, (float)params.viewportHeight);
-        loc = glGetUniformLocation(program, "uTime");
+        loc = getLoc("uTime");
         if (loc >= 0) glUniform1f(loc, params.time);
-        loc = glGetUniformLocation(program, "uFrameCount");
+        loc = getLoc("uFrameCount");
         if (loc >= 0) glUniform1ui(loc, params.frameCount);
     }
 

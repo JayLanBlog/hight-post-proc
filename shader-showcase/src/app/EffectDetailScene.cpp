@@ -140,69 +140,16 @@ void EffectDetailScene::OnEnter()
             printf("[EffectDetailScene] Using SPIR-V vertex shader\n");
         }
         
-        // --- Fragment shader GLSL path ---
-        std::string fragGlslPath = m_card.fragSpirvPath;
-        {
-            size_t pos = fragGlslPath.rfind(".frag.spv");
-            if (pos != std::string::npos) {
-                fragGlslPath = fragGlslPath.substr(0, pos) + ".frag";
-            } else {
-                pos = fragGlslPath.rfind(".spv");
-                if (pos != std::string::npos) {
-                    fragGlslPath = fragGlslPath.substr(0, pos) + ".frag";
-                }
-            }
-        }
-        
-        std::string fragGlslPathAlt;
-        {
-            std::string norm = fragGlslPath;
-            for (auto& c : norm) { if (c == '/') c = '\\'; }
-            while (true) {
-                size_t dotdot = norm.find("..\\");
-                if (dotdot == std::string::npos) break;
-                size_t prevSlash = norm.rfind('\\', dotdot - 2);
-                if (prevSlash == std::string::npos) break;
-                norm = norm.substr(0, prevSlash) + norm.substr(dotdot + 2);
-            }
-            size_t bp = norm.find("\\build\\");
-            if (bp != std::string::npos) {
-                fragGlslPathAlt = norm.substr(0, bp + 1) + norm.substr(bp + 7);
-            } else {
-                fragGlslPathAlt = norm;
-            }
-        }
-        
-        std::string fragGlslSource;
-        for (const auto& tryPath : {fragGlslPathAlt, fragGlslPath}) {
-            std::string normPath = tryPath;
-            for (auto& c : normPath) { if (c == '/') c = '\\'; }
-            printf("[EffectDetailScene] Trying GLSL path: %s\n", normPath.c_str());
-            FILE* f = fopen(normPath.c_str(), "rb");
-            if (f) {
-                printf("[EffectDetailScene] Found GLSL: %s\n", normPath.c_str());
-                fseek(f, 0, SEEK_END);
-                long size = ftell(f);
-                fseek(f, 0, SEEK_SET);
-                fragGlslSource.resize(size);
-                fread(&fragGlslSource[0], 1, size, f);
-                fclose(f);
-                break;
-            }
-        }
-        
-        if (!fragGlslSource.empty()) {
-            m_fragShader = glBackend->CreateFragmentShaderFromGLSL(fragGlslSource);
-            printf("[EffectDetailScene] Using GLSL fragment shader\n");
-        } else {
-            m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
-            printf("[EffectDetailScene] GLSL not found, falling back to SPIR-V fragment shader\n");
-        }
+        // Fragment shader: always use SPIR-V (GLSL UBO reflection unreliable on NVIDIA
+        // when mixed with SPIR-V vertex shader; SPIR-V path works correctly, as proven
+        // by CoverFlowScene thumbnails)
+        m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
+        printf("[EffectDetailScene] Using SPIR-V fragment shader\n");
     } else {
-        // Vulkan: SPIR-V only (GLSL compilation not supported by this backend)
+        // Vulkan or non-OpenGL: SPIR-V only
         m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
         m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
-        printf("[EffectDetailScene] Using SPIR-V shaders (Vulkan backend)\n");
+        printf("[EffectDetailScene] Using SPIR-V shaders (non-OpenGL backend)\n");
     }
 
     if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) {
