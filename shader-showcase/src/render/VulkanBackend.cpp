@@ -606,6 +606,20 @@ void VulkanBackend::Shutdown() {
     }
     m_shaders.clear();
 
+    // Clean up font atlas resources
+    if (m_fontImageView != VK_NULL_HANDLE) {
+        vkDestroyImageView(m_device, m_fontImageView, nullptr);
+        m_fontImageView = VK_NULL_HANDLE;
+    }
+    if (m_fontImage != VK_NULL_HANDLE) {
+        vkDestroyImage(m_device, m_fontImage, nullptr);
+        m_fontImage = VK_NULL_HANDLE;
+    }
+    if (m_fontImageMemory != VK_NULL_HANDLE) {
+        vkFreeMemory(m_device, m_fontImageMemory, nullptr);
+        m_fontImageMemory = VK_NULL_HANDLE;
+    }
+
     // Destroy sync objects
     if (m_inFlightFence != VK_NULL_HANDLE) {
         vkDestroyFence(m_device, m_inFlightFence, nullptr);
@@ -1592,6 +1606,58 @@ void VulkanBackend::ImGuiInit(GLFWwindow* window) {
     initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
     ImGui_ImplVulkan_Init(&initInfo);
+
+    // ---- Manually upload font atlas texture -------------------------------
+    // Newer imgui_impl_vulkan (2025-06-11) uses ImGuiBackendFlags_RendererHasTextures
+    // but does NOT register Renderer_UpdateTexture callback. Font atlas is built
+    // by ImGui but never uploaded to Vulkan, causing black screen.
+    // We manually build + upload the font atlas here.
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.Fonts->Build();  // Ensure font atlas is built
+        unsigned char* pixels;
+        int fontWidth, fontHeight;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
+
+        VkDeviceSize uploadSize = fontWidth * fontHeight * 4;
+
+        // Staging buffer
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        CreateBuffer(uploadSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBuffer, stagingBufferMemory);
+
+        void* mappedData;
+        vkMapMemory(m_device, stagingBufferMemory, 0, uploadSize, 0, &mappedData);
+        memcpy(mappedData, pixels, static_cast<size_t>(uploadSize));
+        vkUnmapMemory(m_device, stagingBufferMemory);
+
+        // Font image
+        CreateImage(fontWidth, fontHeight, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_fontImage, m_fontImageMemory);
+
+        // Layout transitions + copy
+        TransitionImageLayout(m_fontImage, VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        CopyBufferToImage(stagingBuffer, m_fontImage, fontWidth, fontHeight);
+        TransitionImageLayout(m_fontImage, VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        // Image view
+        m_fontImageView = CreateImageView(m_fontImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+        // Register with ImGui Vulkan backend
+        VkDescriptorSet fontDS = ImGui_ImplVulkan_AddTexture(m_fontImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        io.Fonts->TexID = (ImTextureID)(intptr_t)fontDS;
+
+        // Cleanup staging buffer
+        vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+        vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+
+        printf("[Vulkan] Font atlas uploaded: %dx%d\n", fontWidth, fontHeight);
+    }
 
     m_imguiInitialized = true;
     printf("[Vulkan] ImGui Vulkan backend initialized successfully\n");
