@@ -389,14 +389,15 @@ void EffectDetailScene::OnImGui()
             float splitX = displayMin.x + displaySize.x * m_compareSplitPos;
 
             // Draw original image as the base layer (full display area)
-            dl->AddImage(origImTex, displayMin, displayMax, ImVec2(0, 0), ImVec2(1, 1));
+            // GL textures have bottom-left origin, ImGui expects top-left → flip Y
+            dl->AddImage(origImTex, displayMin, displayMax, ImVec2(0, 1), ImVec2(1, 0));
 
             // Draw effect image on the right side of the split (clipped)
             // UV mapping: the left edge of the effect image maps to splitX
             float uvMinX = m_compareSplitPos;
             dl->AddImage(effectImTex,
                 ImVec2(splitX, displayMin.y), displayMax,
-                ImVec2(uvMinX, 0), ImVec2(1, 1));
+                ImVec2(uvMinX, 1), ImVec2(1, 0));
 
             // Draw split line (blue, 3px)
             dl->AddLine(ImVec2(splitX, displayMin.y), ImVec2(splitX, displayMax.y),
