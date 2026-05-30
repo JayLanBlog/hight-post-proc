@@ -80,77 +80,12 @@ void EffectDetailScene::OnEnter()
         return;
     }
 
-    // OpenGL: try GLSL first (better UBO support), fallback to SPIR-V
-    auto* glBackend = dynamic_cast<OpenGLBackend*>(m_backend);
-    if (glBackend) {
-        // --- Vertex shader GLSL path ---
-        std::string vertGlslPath = m_card.vertSpirvPath;
-        {
-            size_t pos = vertGlslPath.rfind(".vert.spv");
-            if (pos != std::string::npos) {
-                vertGlslPath = vertGlslPath.substr(0, pos) + ".vert";
-            } else {
-                pos = vertGlslPath.rfind(".spv");
-                if (pos != std::string::npos) {
-                    vertGlslPath = vertGlslPath.substr(0, pos) + ".vert";
-                }
-            }
-        }
-        
-        std::string vertGlslPathAlt;
-        {
-            std::string norm = vertGlslPath;
-            for (auto& c : norm) { if (c == '/') c = '\\'; }
-            while (true) {
-                size_t dotdot = norm.find("..\\");
-                if (dotdot == std::string::npos) break;
-                size_t prevSlash = norm.rfind('\\', dotdot - 2);
-                if (prevSlash == std::string::npos) break;
-                norm = norm.substr(0, prevSlash) + norm.substr(dotdot + 2);
-            }
-            size_t bp = norm.find("\\build\\");
-            if (bp != std::string::npos) {
-                vertGlslPathAlt = norm.substr(0, bp + 1) + norm.substr(bp + 7);
-            } else {
-                vertGlslPathAlt = norm;
-            }
-        }
-        
-        std::string vertGlslSource;
-        for (const auto& tryPath : {vertGlslPath, vertGlslPathAlt}) {
-            std::string normPath = tryPath;
-            for (auto& c : normPath) { if (c == '/') c = '\\'; }
-            FILE* f = fopen(normPath.c_str(), "rb");
-            if (f) {
-                fseek(f, 0, SEEK_END);
-                long size = ftell(f);
-                fseek(f, 0, SEEK_SET);
-                vertGlslSource.resize(size);
-                fread(&vertGlslSource[0], 1, size, f);
-                fclose(f);
-                break;
-            }
-        }
-        
-        if (!vertGlslSource.empty()) {
-            m_vertShader = glBackend->CreateVertexShaderFromGLSL(vertGlslSource);
-            printf("[EffectDetailScene] Using GLSL vertex shader\n");
-        } else {
-            m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
-            printf("[EffectDetailScene] Using SPIR-V vertex shader\n");
-        }
-        
-        // Fragment shader: always use SPIR-V (GLSL UBO reflection unreliable on NVIDIA
-        // when mixed with SPIR-V vertex shader; SPIR-V path works correctly, as proven
-        // by CoverFlowScene thumbnails)
-        m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
-        printf("[EffectDetailScene] Using SPIR-V fragment shader\n");
-    } else {
-        // Vulkan or non-OpenGL: SPIR-V only
-        m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
-        m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
-        printf("[EffectDetailScene] Using SPIR-V shaders (non-OpenGL backend)\n");
-    }
+    // Always use SPIR-V shaders (consistent with CoverFlowScene thumbnail path).
+    // GLSL+UBO has unreliable reflection on NVIDIA when vertex/fragment shader
+    // types are mixed (SPIR-V vs GLSL). Pure SPIR-V works correctly in all cases.
+    m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
+    m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
+    printf("[EffectDetailScene] Using SPIR-V shaders\n");
 
     if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) {
         fprintf(stderr, "[EffectDetailScene] Failed to create shaders\n");
