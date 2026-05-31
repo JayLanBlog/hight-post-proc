@@ -1331,7 +1331,8 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipeline->layout;
-    pipelineInfo.renderPass = m_renderPass;
+    // Use current render pass (swapchain or render-to-texture)
+    pipelineInfo.renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
     pipelineInfo.subpass = 0;
 
     VK_CHECK(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline));
