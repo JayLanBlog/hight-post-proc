@@ -34,9 +34,10 @@ struct VulkanPipeline {
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool descPool = VK_NULL_HANDLE;
+    VkDescriptorSet descSet = VK_NULL_HANDLE;   // pre-allocated: binds texture(0)+UBO(1)
     ShaderHandle vertShader;
     ShaderHandle fragShader;
-    // UBO for shader Params block (binding=1)
+    // UBO for shader Params block (binding=1), reused every frame
     VkBuffer uboBuffer = VK_NULL_HANDLE;
     VkDeviceMemory uboMemory = VK_NULL_HANDLE;
 };

@@ -1366,6 +1366,23 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     // Add to cache for reuse
     m_pipelineCache[cacheKey] = PipelineHandle{id};
 
+    // --- Create per-pipeline UBO and descriptor set (reused every frame) ---
+    auto& pp = m_pipelines[id];
+    const size_t UBO_SIZE = 48; // float param[6] + vec2 res + float time + float frame
+    CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 pp->uboBuffer, pp->uboMemory);
+
+    // Allocate one descriptor set for this pipeline
+    {
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = pp->descPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &pp->descSetLayout;
+        VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo, &pp->descSet));
+    }
+
     printf("[Vulkan] Pipeline created (id=%u)\n", id);
     return {id};
 }
@@ -1441,50 +1458,13 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     scissor.extent = {static_cast<uint32_t>(params.viewportWidth), static_cast<uint32_t>(params.viewportHeight)};
     vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-    // Allocate descriptor set with texture (binding=0) + UBO (binding=1)
+    // Bind pre-allocated descriptor set (UBO is pipeline-owned, texture is per-frame)
     auto pipeIt = m_pipelines.find(pipeHandle.id);
-    if (pipeIt != m_pipelines.end() && pipeIt->second->descPool != VK_NULL_HANDLE) {
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = pipeIt->second->descPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = &pipeIt->second->descSetLayout;
+    if (pipeIt != m_pipelines.end() && pipeIt->second->descSet != VK_NULL_HANDLE) {
+        const size_t UBO_SIZE = 48;
 
-        VkDescriptorSet descSet;
-        if (vkAllocateDescriptorSets(m_device, &allocInfo, &descSet) == VK_SUCCESS) {
-            std::vector<VkWriteDescriptorSet> writes;
-
-            // These must stay in scope until vkUpdateDescriptorSets!
-            VkDescriptorImageInfo imageInfo{};
-            VkDescriptorBufferInfo bufferInfo{};
-
-            // binding=0: texture sampler
-            if (!params.inputTextures.empty()) {
-                auto texIt = m_textures.find(params.inputTextures[0].id);
-                if (texIt != m_textures.end()) {
-                    imageInfo.sampler = texIt->second->sampler;
-                    imageInfo.imageView = texIt->second->view;
-                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-                    VkWriteDescriptorSet texWrite{};
-                    texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    texWrite.dstSet = descSet;
-                    texWrite.dstBinding = 0;
-                    texWrite.dstArrayElement = 0;
-                    texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    texWrite.descriptorCount = 1;
-                    texWrite.pImageInfo = &imageInfo;
-                    writes.push_back(texWrite);
-                } else {
-                    fprintf(stderr, "[Vulkan] DrawFullscreenQuad: texture %u not found!\n", params.inputTextures[0].id);
-                }
-            } else {
-                fprintf(stderr, "[Vulkan] DrawFullscreenQuad: no input textures provided!\n");
-            }
-
-            // binding=1: UBO with Params data (std140 layout, 48 bytes)
-            // float uParamFloat0..5 (24) + vec2 uResolution (8) + float uTime (4) + float uFrameCount (4)
-            const size_t UBO_SIZE = 48;
+        // --- Update UBO data via map/memcpy/unmap (HOST_COHERENT, no flush needed) ---
+        {
             uint8_t uboData[UBO_SIZE] = {};
             for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
                 float v = params.uniformFloats[i];
@@ -1493,41 +1473,54 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
             { float r[2] = { static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight) }; memcpy(uboData + 24, r, 8); }
             { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
 
-            // Create UBO buffer
-            VkBuffer uboBuf = VK_NULL_HANDLE;
-            VkDeviceMemory uboMem = VK_NULL_HANDLE;
-            CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         uboBuf, uboMem);
-
             void* mapped = nullptr;
-            vkMapMemory(m_device, uboMem, 0, UBO_SIZE, 0, &mapped);
+            vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped);
             memcpy(mapped, uboData, UBO_SIZE);
-            vkUnmapMemory(m_device, uboMem);
-
-            bufferInfo.buffer = uboBuf;
-            bufferInfo.offset = 0;
-            bufferInfo.range = UBO_SIZE;
-
-            VkWriteDescriptorSet uboWrite{};
-            uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            uboWrite.dstSet = descSet;
-            uboWrite.dstBinding = 1;
-            uboWrite.dstArrayElement = 0;
-            uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            uboWrite.descriptorCount = 1;
-            uboWrite.pBufferInfo = &bufferInfo;
-            writes.push_back(uboWrite);
-
-            vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-
-            // Store UBO in pipeline for cleanup
-            pipeIt->second->uboBuffer = uboBuf;
-            pipeIt->second->uboMemory = uboMem;
-
-            vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipeIt->second->layout, 0, 1, &descSet, 0, nullptr);
+            vkUnmapMemory(m_device, pipeIt->second->uboMemory);
         }
+
+        // --- Update pre-allocated descriptor set with current texture + UBO ---
+        VkDescriptorImageInfo imageInfo{};
+        VkDescriptorBufferInfo bufferInfo{};
+        std::vector<VkWriteDescriptorSet> writes;
+
+        if (!params.inputTextures.empty()) {
+            auto texIt = m_textures.find(params.inputTextures[0].id);
+            if (texIt != m_textures.end()) {
+                imageInfo.sampler = texIt->second->sampler;
+                imageInfo.imageView = texIt->second->view;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                VkWriteDescriptorSet texWrite{};
+                texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                texWrite.dstSet = pipeIt->second->descSet;
+                texWrite.dstBinding = 0;
+                texWrite.dstArrayElement = 0;
+                texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                texWrite.descriptorCount = 1;
+                texWrite.pImageInfo = &imageInfo;
+                writes.push_back(texWrite);
+            }
+        }
+
+        bufferInfo.buffer = pipeIt->second->uboBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = UBO_SIZE;
+
+        VkWriteDescriptorSet uboWrite{};
+        uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        uboWrite.dstSet = pipeIt->second->descSet;
+        uboWrite.dstBinding = 1;
+        uboWrite.dstArrayElement = 0;
+        uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboWrite.descriptorCount = 1;
+        uboWrite.pBufferInfo = &bufferInfo;
+        writes.push_back(uboWrite);
+
+        vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
+        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipeIt->second->layout, 0, 1, &pipeIt->second->descSet, 0, nullptr);
     }
 
     // Draw fullscreen triangle (3 vertices, no vertex buffer)
