@@ -1100,19 +1100,27 @@ void* VulkanBackend::GetImTextureID(TextureHandle handle) {
 // Pipeline Helpers
 // ============================================================================
 VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
-    // For simplicity, we use push constants for uniforms
-    // and descriptor sets for textures
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 0;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    // binding=0: combined image sampler for input texture
+    VkDescriptorSetLayoutBinding samplerBinding{};
+    samplerBinding.binding = 0;
+    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.descriptorCount = 1;
+    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    samplerBinding.pImmutableSamplers = nullptr;
+
+    // binding=1: uniform buffer for Params block (matches shader UBO layout)
+    VkDescriptorSetLayoutBinding uboBinding{};
+    uboBinding.binding = 1;
+    uboBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboBinding.descriptorCount = 1;
+    uboBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding bindings[] = { samplerBinding, uboBinding };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &samplerLayoutBinding;
+    layoutInfo.bindingCount = 2;
+    layoutInfo.pBindings = bindings;
 
     VkDescriptorSetLayout descriptorSetLayout;
     VK_CHECK(vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &descriptorSetLayout));
@@ -1120,14 +1128,15 @@ VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
 }
 
 VkDescriptorPool VulkanBackend::CreateDescriptorPool(uint32_t maxSets) {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize.descriptorCount = maxSets;
+    VkDescriptorPoolSize poolSizes[] = {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxSets },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets }
+    };
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.poolSizeCount = 2;
+    poolInfo.pPoolSizes = poolSizes;
     poolInfo.maxSets = maxSets;
 
     VkDescriptorPool descriptorPool;
@@ -1136,18 +1145,11 @@ VkDescriptorPool VulkanBackend::CreateDescriptorPool(uint32_t maxSets) {
 }
 
 VkPipelineLayout VulkanBackend::CreatePipelineLayout(VkDescriptorSetLayout descSetLayout) {
-    // Push constant range for uniforms (time, resolution, etc.)
-    VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = 128;  // Max 128 bytes for push constants
-
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = (descSetLayout != VK_NULL_HANDLE) ? 1 : 0;
     pipelineLayoutInfo.pSetLayouts = (descSetLayout != VK_NULL_HANDLE) ? &descSetLayout : nullptr;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+    // No push constants — uniforms go through UBO (binding=1)
 
     VkPipelineLayout pipelineLayout;
     VK_CHECK(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipelineLayout));
@@ -1354,6 +1356,14 @@ void VulkanBackend::DestroyPipeline(PipelineHandle handle) {
         if (pipe->descSetLayout != VK_NULL_HANDLE) {
             vkDestroyDescriptorSetLayout(m_device, pipe->descSetLayout, nullptr);
         }
+        if (pipe->uboBuffer != VK_NULL_HANDLE) {
+            vkDestroyBuffer(m_device, pipe->uboBuffer, nullptr);
+            pipe->uboBuffer = VK_NULL_HANDLE;
+        }
+        if (pipe->uboMemory != VK_NULL_HANDLE) {
+            vkFreeMemory(m_device, pipe->uboMemory, nullptr);
+            pipe->uboMemory = VK_NULL_HANDLE;
+        }
         if (pipe->descPool != VK_NULL_HANDLE) {
             vkDestroyDescriptorPool(m_device, pipe->descPool, nullptr);
         }
@@ -1376,8 +1386,6 @@ void VulkanBackend::BindPipeline(PipelineHandle handle) {
 void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) {
     if (!m_isRecording) return;
 
-    // Create a temporary pipeline for this draw call if needed
-    // For simplicity, we create a pipeline per draw call (not optimal but works)
     PipelineDesc desc;
     desc.vertShader = vert;
     desc.fragShader = frag;
@@ -1406,70 +1414,87 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     scissor.extent = {static_cast<uint32_t>(params.viewportWidth), static_cast<uint32_t>(params.viewportHeight)};
     vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-    // Bind texture descriptor set if input textures are provided
-    if (!params.inputTextures.empty()) {
-        auto texIt = m_textures.find(params.inputTextures[0].id);
-        if (texIt != m_textures.end()) {
-            auto pipeIt = m_pipelines.find(pipeHandle.id);
-            if (pipeIt != m_pipelines.end() && pipeIt->second->descPool != VK_NULL_HANDLE) {
-                VkDescriptorSetAllocateInfo allocInfo{};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = pipeIt->second->descPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &pipeIt->second->descSetLayout;
+    // Allocate descriptor set with texture (binding=0) + UBO (binding=1)
+    auto pipeIt = m_pipelines.find(pipeHandle.id);
+    if (pipeIt != m_pipelines.end() && pipeIt->second->descPool != VK_NULL_HANDLE) {
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = pipeIt->second->descPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &pipeIt->second->descSetLayout;
 
-                VkDescriptorSet descSet;
-                if (vkAllocateDescriptorSets(m_device, &allocInfo, &descSet) == VK_SUCCESS) {
+        VkDescriptorSet descSet;
+        if (vkAllocateDescriptorSets(m_device, &allocInfo, &descSet) == VK_SUCCESS) {
+            std::vector<VkWriteDescriptorSet> writes;
+
+            // binding=0: texture sampler
+            if (!params.inputTextures.empty()) {
+                auto texIt = m_textures.find(params.inputTextures[0].id);
+                if (texIt != m_textures.end()) {
                     VkDescriptorImageInfo imageInfo{};
                     imageInfo.sampler = texIt->second->sampler;
                     imageInfo.imageView = texIt->second->view;
                     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-                    VkWriteDescriptorSet descriptorWrite{};
-                    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    descriptorWrite.dstSet = descSet;
-                    descriptorWrite.dstBinding = 0;
-                    descriptorWrite.dstArrayElement = 0;
-                    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    descriptorWrite.descriptorCount = 1;
-                    descriptorWrite.pImageInfo = &imageInfo;
-
-                    vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
-
-                    vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        pipeIt->second->layout, 0, 1, &descSet, 0, nullptr);
+                    VkWriteDescriptorSet texWrite{};
+                    texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    texWrite.dstSet = descSet;
+                    texWrite.dstBinding = 0;
+                    texWrite.dstArrayElement = 0;
+                    texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    texWrite.descriptorCount = 1;
+                    texWrite.pImageInfo = &imageInfo;
+                    writes.push_back(texWrite);
                 }
             }
+
+            // binding=1: UBO with Params data (std140 layout, 48 bytes)
+            // float uParamFloat0..5 (24) + vec2 uResolution (8) + float uTime (4) + float uFrameCount (4)
+            const size_t UBO_SIZE = 48;
+            uint8_t uboData[UBO_SIZE] = {};
+            for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
+                float v = params.uniformFloats[i];
+                memcpy(uboData + i * 4, &v, sizeof(float));
+            }
+            { float r[2] = { static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight) }; memcpy(uboData + 24, r, 8); }
+            { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
+
+            // Create UBO buffer
+            VkBuffer uboBuf = VK_NULL_HANDLE;
+            VkDeviceMemory uboMem = VK_NULL_HANDLE;
+            CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         uboBuf, uboMem);
+
+            void* mapped = nullptr;
+            vkMapMemory(m_device, uboMem, 0, UBO_SIZE, 0, &mapped);
+            memcpy(mapped, uboData, UBO_SIZE);
+            vkUnmapMemory(m_device, uboMem);
+
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = uboBuf;
+            bufferInfo.offset = 0;
+            bufferInfo.range = UBO_SIZE;
+
+            VkWriteDescriptorSet uboWrite{};
+            uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            uboWrite.dstSet = descSet;
+            uboWrite.dstBinding = 1;
+            uboWrite.dstArrayElement = 0;
+            uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            uboWrite.descriptorCount = 1;
+            uboWrite.pBufferInfo = &bufferInfo;
+            writes.push_back(uboWrite);
+
+            vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
+            // Store UBO in pipeline for cleanup
+            pipeIt->second->uboBuffer = uboBuf;
+            pipeIt->second->uboMemory = uboMem;
+
+            vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                pipeIt->second->layout, 0, 1, &descSet, 0, nullptr);
         }
-    }
-
-    // Push constants for uniforms — must match shader UBO std140 layout:
-    // float uParamFloat0..5 (24 bytes), vec2 uResolution (8 bytes),
-    // float uTime (4 bytes), float uFrameCount (4 bytes) = 40 bytes total
-    struct PushConstants {
-        float params[6];     // uParamFloat0..5
-        float resolution[2]; // uResolution
-        float time;          // uTime
-        float frameCount;    // uFrameCount
-    } pc;
-
-    memset(&pc, 0, sizeof(pc));
-
-    // Copy uniform floats (up to 6)
-    for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
-        pc.params[i] = params.uniformFloats[i];
-    }
-
-    pc.resolution[0] = static_cast<float>(params.viewportWidth);
-    pc.resolution[1] = static_cast<float>(params.viewportHeight);
-    pc.time = params.time;
-    pc.frameCount = params.frameCount;
-
-    auto pipeIt = m_pipelines.find(pipeHandle.id);
-    if (pipeIt != m_pipelines.end()) {
-        vkCmdPushConstants(m_commandBuffer, pipeIt->second->layout,
-                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                          0, sizeof(PushConstants), &pc);
     }
 
     // Draw fullscreen triangle (3 vertices, no vertex buffer)

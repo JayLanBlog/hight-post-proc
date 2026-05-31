@@ -36,6 +36,9 @@ struct VulkanPipeline {
     VkDescriptorPool descPool = VK_NULL_HANDLE;
     ShaderHandle vertShader;
     ShaderHandle fragShader;
+    // UBO for shader Params block (binding=1)
+    VkBuffer uboBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory uboMemory = VK_NULL_HANDLE;
 };
 
 // ============================================================================
