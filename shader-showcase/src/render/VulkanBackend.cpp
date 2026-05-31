@@ -1000,8 +1000,9 @@ TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat 
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
     } else {
-        // For render targets, transition to shader read optimal (will be transitioned to color attachment on use)
-        TransitionImageLayout(texture->image, vkFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        // For render targets, leave layout as UNDEFINED.
+        // BeginRenderToTexture's render pass will handle the transition
+        // via initialLayout=COLOR_ATTACHMENT_OPTIMAL with loadOp=CLEAR.
     }
 
     uint32_t id = m_nextTextureId++;
@@ -1084,34 +1085,12 @@ void* VulkanBackend::GetImTextureID(TextureHandle handle) {
 
     auto* tex = it->second.get();
 
-    // Create ImGui descriptor set if not yet created
-    if (tex->imguiDescriptorSet == VK_NULL_HANDLE && m_imguiDescriptorPool != VK_NULL_HANDLE) {
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_imguiDescriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = &m_imguiDescSetLayout;
-
-        if (vkAllocateDescriptorSets(m_device, &allocInfo, &tex->imguiDescriptorSet) == VK_SUCCESS) {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.sampler = tex->sampler;
-            imageInfo.imageView = tex->view;
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = tex->imguiDescriptorSet;
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &imageInfo;
-
-            vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
-        }
+    // Create ImGui descriptor set using ImGui_ImplVulkan_AddTexture
+    // This uses VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE (set 0) which matches ImGui's pipeline layout
+    if (tex->imguiDescriptorSet == VK_NULL_HANDLE) {
+        tex->imguiDescriptorSet = ImGui_ImplVulkan_AddTexture(tex->view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
-    // ImGui Vulkan backend expects ImTextureID = VkDescriptorSet pointer
     return reinterpret_cast<void*>(tex->imguiDescriptorSet);
 }
 
@@ -1229,6 +1208,18 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
         return {0};
     }
 
+    // Cache key: vert shader + frag shader + render pass
+    VkRenderPass renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
+    uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
+    // Also factor in render pass to avoid incompatibility
+    cacheKey ^= (uint64_t)renderPass;
+
+    // Check cache
+    auto cacheIt = m_pipelineCache.find(cacheKey);
+    if (cacheIt != m_pipelineCache.end()) {
+        return cacheIt->second;
+    }
+
     auto pipeline = std::make_unique<VulkanPipeline>();
     pipeline->vertShader = desc.vertShader;
     pipeline->fragShader = desc.fragShader;
@@ -1236,7 +1227,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     // Create descriptor set layout and pipeline layout
     pipeline->descSetLayout = CreateDescriptorSetLayout();
     pipeline->layout = CreatePipelineLayout(pipeline->descSetLayout);
-    pipeline->descPool = CreateDescriptorPool(10);
+    pipeline->descPool = CreateDescriptorPool(1000);
 
     // Shader stages
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -1358,6 +1349,9 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 
     uint32_t id = m_nextPipelineId++;
     m_pipelines[id] = std::move(pipeline);
+
+    // Add to cache for reuse
+    m_pipelineCache[cacheKey] = PipelineHandle{id};
 
     printf("[Vulkan] Pipeline created (id=%u)\n", id);
     return {id};
@@ -1526,19 +1520,9 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     // Draw fullscreen triangle (3 vertices, no vertex buffer)
     vkCmdDraw(m_commandBuffer, 3, 1, 0, 0);
 
-    // Defer pipeline destruction — Vulkan commands are async, GPU still needs these resources
-    auto pipeIt2 = m_pipelines.find(pipeHandle.id);
-    if (pipeIt2 != m_pipelines.end()) {
-        DeferredDestroy dd;
-        dd.pipeline = pipeIt2->second->pipeline;
-        dd.layout = pipeIt2->second->layout;
-        dd.descSetLayout = pipeIt2->second->descSetLayout;
-        dd.descPool = pipeIt2->second->descPool;
-        dd.uboBuffer = pipeIt2->second->uboBuffer;
-        dd.uboMemory = pipeIt2->second->uboMemory;
-        m_deferredDestroys.push_back(dd);
-        m_pipelines.erase(pipeIt2);
-    }
+    // NOTE: Do NOT destroy pipeline here. Vulkan commands are async and GPU still needs them.
+    // Pipelines are cached in m_pipelines and will be cleaned up when the backend is destroyed.
+    // The UBO buffer is also kept alive with the pipeline.
     m_currentPipeline = {0};
 }
 
@@ -1562,7 +1546,6 @@ void VulkanBackend::BeginRenderToTexture(TextureHandle target) {
 
     auto it = m_textures.find(target.id);
     if (it == m_textures.end()) {
-        fprintf(stderr, "[Vulkan] Invalid texture handle for render to texture\n");
         return;
     }
 
@@ -1592,8 +1575,8 @@ void VulkanBackend::BeginRenderToTexture(TextureHandle target) {
         VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &tex->framebuffer));
     }
 
-    // Transition image layout
-    TransitionImageLayout(tex->image, tex->format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    // Render pass handles layout transition automatically via initialLayout=UNDEFINED/finalLayout=SHADER_READ_ONLY.
+    // No manual barrier needed.
 
     // Begin render pass
     VkRenderPassBeginInfo renderPassInfo{};
@@ -1620,13 +1603,8 @@ void VulkanBackend::EndRenderToTexture() {
     // End render pass
     vkCmdEndRenderPass(m_commandBuffer);
 
-    // Transition image back to shader read
-    for (auto& [id, tex] : m_textures) {
-        if (tex->framebuffer == m_currentFramebuffer) {
-            TransitionImageLayout(tex->image, tex->format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            break;
-        }
-    }
+    // Render pass finalLayout is SHADER_READ_ONLY_OPTIMAL, so image is already
+    // in the correct layout for ImGui display. No manual barrier needed.
 
     // Resume swapchain render pass
     VkRenderPassBeginInfo renderPassInfo{};
@@ -1884,6 +1862,11 @@ void VulkanBackend::TransitionImageLayout(VkImage image, VkFormat format, VkImag
         barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
         barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;

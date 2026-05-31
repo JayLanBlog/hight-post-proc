@@ -187,6 +187,9 @@ private:
     };
     std::vector<DeferredDestroy> m_deferredDestroys;
 
+    // Pipeline cache: reuse pipelines for same shader+renderpass combination
+    std::unordered_map<uint64_t, PipelineHandle> m_pipelineCache;
+
     // ============================================================================
     // Initialization Helpers
     // ============================================================================
