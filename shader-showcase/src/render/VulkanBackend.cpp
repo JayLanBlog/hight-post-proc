@@ -1447,11 +1447,14 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         if (vkAllocateDescriptorSets(m_device, &allocInfo, &descSet) == VK_SUCCESS) {
             std::vector<VkWriteDescriptorSet> writes;
 
+            // These must stay in scope until vkUpdateDescriptorSets!
+            VkDescriptorImageInfo imageInfo{};
+            VkDescriptorBufferInfo bufferInfo{};
+
             // binding=0: texture sampler
             if (!params.inputTextures.empty()) {
                 auto texIt = m_textures.find(params.inputTextures[0].id);
                 if (texIt != m_textures.end()) {
-                    VkDescriptorImageInfo imageInfo{};
                     imageInfo.sampler = texIt->second->sampler;
                     imageInfo.imageView = texIt->second->view;
                     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1495,7 +1498,6 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
             memcpy(mapped, uboData, UBO_SIZE);
             vkUnmapMemory(m_device, uboMem);
 
-            VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uboBuf;
             bufferInfo.offset = 0;
             bufferInfo.range = UBO_SIZE;
