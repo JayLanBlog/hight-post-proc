@@ -44,7 +44,7 @@ function(compile_frag EFFECT_NAME)
 endfunction()
 
 # -------------------------------------------------------------------
-# Vertex shader
+# Vertex shaders (OpenGL and Vulkan variants)
 # -------------------------------------------------------------------
 set(VERT_SRC "${CMAKE_CURRENT_SOURCE_DIR}/common/fullscreen.vert")
 set(VERT_SPV "${SHADER_OUTPUT_DIR}/common/fullscreen.vert.spv")
@@ -54,6 +54,17 @@ add_custom_command(
     COMMAND ${GLSLANG_VALIDATOR} -V "${VERT_SRC}" -o "${VERT_SPV}"
     DEPENDS ${VERT_SRC}
     COMMENT "Compiling fullscreen.vert -> SPIR-V"
+)
+
+# Vulkan-specific vertex shader (uses VertexIndex instead of vertex input)
+set(VERT_VK_SRC "${CMAKE_CURRENT_SOURCE_DIR}/common/fullscreen_vk.vert")
+set(VERT_VK_SPV "${SHADER_OUTPUT_DIR}/common/fullscreen_vk.vert.spv")
+add_custom_command(
+    OUTPUT ${VERT_VK_SPV}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}/common"
+    COMMAND ${GLSLANG_VALIDATOR} -V "${VERT_VK_SRC}" -o "${VERT_VK_SPV}"
+    DEPENDS ${VERT_VK_SRC}
+    COMMENT "Compiling fullscreen_vk.vert -> SPIR-V"
 )
 
 # -------------------------------------------------------------------
@@ -82,7 +93,7 @@ compile_frag(lens_distort)
 # Aggregate target
 # -------------------------------------------------------------------
 add_custom_target(CompileShaders ALL
-    DEPENDS ${VERT_SPV} ${SHADER_SPV_LIST}
+    DEPENDS ${VERT_SPV} ${VERT_VK_SPV} ${SHADER_SPV_LIST}
 )
 
 # -------------------------------------------------------------------
