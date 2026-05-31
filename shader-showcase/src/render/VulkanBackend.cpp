@@ -1000,8 +1000,8 @@ TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat 
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
     } else {
-        // For render targets, transition to color attachment optimal
-        TransitionImageLayout(texture->image, vkFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        // For render targets, transition to shader read optimal (will be transitioned to color attachment on use)
+        TransitionImageLayout(texture->image, vkFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     uint32_t id = m_nextTextureId++;
