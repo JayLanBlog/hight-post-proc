@@ -754,6 +754,10 @@ void VulkanBackend::BeginFrame() {
     renderPassInfo.pClearValues = &clearColor;
 
     vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // Track current render pass for pipeline creation
+    m_currentRenderPass = m_renderPass;
+    m_currentFramebuffer = m_swapchainFramebuffers[m_currentImageIndex];
 }
 
 void VulkanBackend::EndFrame() {
@@ -770,6 +774,10 @@ void VulkanBackend::EndFrame() {
 
     // End render pass
     vkCmdEndRenderPass(m_commandBuffer);
+
+    // Clear current render pass tracking
+    m_currentRenderPass = VK_NULL_HANDLE;
+    m_currentFramebuffer = VK_NULL_HANDLE;
 
     // End command buffer
     VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
@@ -1446,7 +1454,11 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
                     texWrite.descriptorCount = 1;
                     texWrite.pImageInfo = &imageInfo;
                     writes.push_back(texWrite);
+                } else {
+                    fprintf(stderr, "[Vulkan] DrawFullscreenQuad: texture %u not found!\n", params.inputTextures[0].id);
                 }
+            } else {
+                fprintf(stderr, "[Vulkan] DrawFullscreenQuad: no input textures provided!\n");
             }
 
             // binding=1: UBO with Params data (std140 layout, 48 bytes)
