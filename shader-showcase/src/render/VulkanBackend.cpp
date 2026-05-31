@@ -718,6 +718,17 @@ void VulkanBackend::BeginFrame() {
     vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(m_device, 1, &m_inFlightFence);
 
+    // Clean up deferred destructions from previous frame (GPU has finished using them)
+    for (auto& dd : m_deferredDestroys) {
+        if (dd.pipeline != VK_NULL_HANDLE) vkDestroyPipeline(m_device, dd.pipeline, nullptr);
+        if (dd.layout != VK_NULL_HANDLE) vkDestroyPipelineLayout(m_device, dd.layout, nullptr);
+        if (dd.descSetLayout != VK_NULL_HANDLE) vkDestroyDescriptorSetLayout(m_device, dd.descSetLayout, nullptr);
+        if (dd.descPool != VK_NULL_HANDLE) vkDestroyDescriptorPool(m_device, dd.descPool, nullptr);
+        if (dd.uboBuffer != VK_NULL_HANDLE) vkDestroyBuffer(m_device, dd.uboBuffer, nullptr);
+        if (dd.uboMemory != VK_NULL_HANDLE) vkFreeMemory(m_device, dd.uboMemory, nullptr);
+    }
+    m_deferredDestroys.clear();
+
     // Acquire next image
     VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, 
                                             m_imageAvailableSemaphore, VK_NULL_HANDLE, 
@@ -1513,8 +1524,19 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     // Draw fullscreen triangle (3 vertices, no vertex buffer)
     vkCmdDraw(m_commandBuffer, 3, 1, 0, 0);
 
-    // Clean up temporary pipeline
-    DestroyPipeline(pipeHandle);
+    // Defer pipeline destruction — Vulkan commands are async, GPU still needs these resources
+    auto pipeIt2 = m_pipelines.find(pipeHandle.id);
+    if (pipeIt2 != m_pipelines.end()) {
+        DeferredDestroy dd;
+        dd.pipeline = pipeIt2->second->pipeline;
+        dd.layout = pipeIt2->second->layout;
+        dd.descSetLayout = pipeIt2->second->descSetLayout;
+        dd.descPool = pipeIt2->second->descPool;
+        dd.uboBuffer = pipeIt2->second->uboBuffer;
+        dd.uboMemory = pipeIt2->second->uboMemory;
+        m_deferredDestroys.push_back(dd);
+        m_pipelines.erase(pipeIt2);
+    }
     m_currentPipeline = {0};
 }
 

@@ -176,6 +176,17 @@ private:
     bool m_imguiInitialized = false;
     bool m_imguiRenderPending = false;  // Flag to indicate ImGui render is pending
 
+    // Deferred destruction queue (resources to destroy after frame submission)
+    struct DeferredDestroy {
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+        VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE;
+        VkDescriptorPool descPool = VK_NULL_HANDLE;
+        VkBuffer uboBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory uboMemory = VK_NULL_HANDLE;
+    };
+    std::vector<DeferredDestroy> m_deferredDestroys;
+
     // ============================================================================
     // Initialization Helpers
     // ============================================================================
