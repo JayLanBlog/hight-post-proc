@@ -48,6 +48,7 @@ private:
     void Shutdown();
 
     GLFWwindow* m_window = nullptr;
+    GLFWwindow* m_retiredWindow = nullptr; // Hidden, retained to avoid GLFW crash
     std::unique_ptr<IRenderBackend> m_backend;
     BackendType m_backendType = BackendType::Vulkan;
     BackendType m_pendingBackend = BackendType::Vulkan;

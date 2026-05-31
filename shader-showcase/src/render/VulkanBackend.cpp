@@ -567,17 +567,13 @@ void VulkanBackend::CreateSyncObjects() {
 // Shutdown
 // ============================================================================
 void VulkanBackend::Shutdown() {
-    fprintf(stderr, "[VK.Shutdown] entry initialized=%d\n", m_initialized); fflush(stderr);
     if (!m_initialized) return;
 
-    fprintf(stderr, "[VK.Shutdown] WaitIdle START\n"); fflush(stderr);
     WaitIdle();
-    fprintf(stderr, "[VK.Shutdown] WaitIdle OK\n"); fflush(stderr);
 
     printf("[Vulkan] Shutting down...\n");
 
     // Clean up pipelines
-    fprintf(stderr, "[VK.Shutdown] Destroy %zu pipelines\n", m_pipelines.size()); fflush(stderr);
     for (auto& [id, pipeline] : m_pipelines) {
         if (pipeline->pipeline != VK_NULL_HANDLE) {
             vkDestroyPipeline(m_device, pipeline->pipeline, nullptr);
@@ -616,7 +612,6 @@ void VulkanBackend::Shutdown() {
         }
     }
     m_textures.clear();
-    fprintf(stderr, "[VK.Shutdown] textures destroyed\n"); fflush(stderr);
 
     // Clean up shaders
     for (auto& [id, shader] : m_shaders) {

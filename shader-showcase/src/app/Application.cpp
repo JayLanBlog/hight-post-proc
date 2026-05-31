@@ -74,42 +74,43 @@ int Application::Run(int argc, char* argv[])
 
 void Application::InitBackend(BackendType type)
 {
-    fprintf(stderr, "[Init] START type=%s win=%p\n", type==BackendType::OpenGL?"GL":"VK", (void*)m_window);
-    fflush(stderr);
-
     // ---- Destroy old backend resources (but NOT the window) ----------------
     if (m_currentScene) {
-        fprintf(stderr, "[Init] OnExit scene\n"); fflush(stderr);
         m_currentScene->OnExit();
         m_currentScene.reset();
     }
 
     if (m_backend) {
-        fprintf(stderr, "[Init] ImGuiShutdown old backend\n"); fflush(stderr);
         m_backend->ImGuiShutdown();
-        fprintf(stderr, "[Init] Shutdown old backend\n"); fflush(stderr);
         m_backend->Shutdown();
-        fprintf(stderr, "[Init] Shutdown complete, resetting ptr\n"); fflush(stderr);
         m_backend.reset();
     }
 
     // Don't destroy ImGui context — the backend's ImGuiShutdown already freed
     // GPU resources. Just reset the font atlas so the next backend can rebuild.
     if (ImGui::GetCurrentContext() != nullptr) {
-        fprintf(stderr, "[Init] Fonts->Clear()\n"); fflush(stderr);
         ImGui::GetIO().Fonts->Clear();
-        fprintf(stderr, "[Init] Fonts->Clear() OK\n"); fflush(stderr);
     }
 
     m_pendingNextScene.reset();
+    BackendType oldType = m_backendType;
     m_backendType = type;
-    fprintf(stderr, "[Init] backendType set\n"); fflush(stderr);
 
     // ---- Create/reuse window -----------------------------------------------
     // Always use GLFW_OPENGL_API — Vulkan creates its surface via native Win32
     // API (vkCreateWin32SurfaceKHR), which works on any HWND regardless of
-    // GLFW client API. This avoids the NVIDIA driver issue where a GL context
-    // becomes unusable after Vulkan has been active.
+    // GLFW client API.
+    //
+    // When switching FROM Vulkan TO OpenGL, the GL context has been corrupted
+    // by Vulkan's ownership of the window surface on NVIDIA+Windows.
+    // Retire the old window (hide it, never destroy it) and create a fresh one.
+    bool needNewWindow = (type == BackendType::OpenGL && oldType == BackendType::Vulkan);
+     if (needNewWindow && m_window) {
+         glfwHideWindow(m_window);
+         m_retiredWindow = m_window;
+         m_window = nullptr;
+     }
+
     if (!m_window) {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -132,16 +133,12 @@ void Application::InitBackend(BackendType type)
     }
 
     // ---- Make GL context current (both backends share the window) ---------
-    fprintf(stderr, "[Init] MakeContextCurrent...\n"); fflush(stderr);
     glfwMakeContextCurrent(m_window);
-    fprintf(stderr, "[Init] MakeContextCurrent OK\n"); fflush(stderr);
     if (type == BackendType::OpenGL) {
-        fprintf(stderr, "[Init] SwapInterval(1)\n"); fflush(stderr);
         glfwSwapInterval(1);
     }
 
     // ---- Create backend --------------------------------------------------
-    fprintf(stderr, "[Init] Creating backend...\n"); fflush(stderr);
     switch (type) {
     case BackendType::OpenGL:
         m_backend = std::make_unique<OpenGLBackend>();
@@ -224,23 +221,6 @@ void Application::MainLoop()
     {
         try {
         glfwPollEvents();
-
-        // AUTO-TEST: VK→GL switch
-        {
-            static int fc = 0; fc++;
-            static int glFrames = 0;
-            if (fc == 10 && m_backendType == BackendType::Vulkan && !m_pendingBackendSwitch) {
-                fprintf(stderr, "[TEST] Triggering VK→GL switch at frame %d\n", fc); fflush(stderr);
-                SwitchBackend(BackendType::OpenGL);
-            }
-            if (m_backendType == BackendType::OpenGL && !m_pendingBackendSwitch) {
-                glFrames++;
-                if (glFrames >= 15) {
-                    fprintf(stderr, "[TEST] GL stable for %d frames — PASS\n", glFrames); fflush(stderr);
-                    glfwSetWindowShouldClose(m_window, GLFW_TRUE);
-                }
-            }
-        }
 
         // Process pending backend switch (deferred to avoid corruption during ImGui rendering)
         if (m_pendingBackendSwitch) {
@@ -387,6 +367,11 @@ void Application::Shutdown()
     {
         glfwDestroyWindow(m_window);
         m_window = nullptr;
+    }
+    if (m_retiredWindow)
+    {
+        glfwDestroyWindow(m_retiredWindow);
+        m_retiredWindow = nullptr;
     }
     glfwTerminate();
 }
