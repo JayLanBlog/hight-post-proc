@@ -1,5 +1,12 @@
 #include "VulkanBackend.h"
 #include <GLFW/glfw3.h>
+
+// Native Win32 surface creation — works on GLFW_OPENGL_API windows
+// where glfwCreateWindowSurface() would fail on some NVIDIA drivers.
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#include <vulkan/vulkan_win32.h>
+
 #include <cstdio>
 #include <cstring>
 #include <set>
@@ -126,8 +133,16 @@ void VulkanBackend::CreateInstance() {
 }
 
 void VulkanBackend::CreateSurface() {
-    VK_CHECK(glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface));
-    printf("[Vulkan] Surface created\n");
+    // Use native Win32 surface creation instead of glfwCreateWindowSurface.
+    // GLFW_OPENGL_API windows are rejected by glfwCreateWindowSurface on
+    // some NVIDIA drivers, but vkCreateWin32SurfaceKHR works on any HWND.
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+    surfaceCreateInfo.hwnd = glfwGetWin32Window(m_window);
+
+    VK_CHECK(vkCreateWin32SurfaceKHR(m_instance, &surfaceCreateInfo, nullptr, &m_surface));
+    printf("[Vulkan] Surface created (Win32 native)\n");
 }
 
 void VulkanBackend::PickPhysicalDevice() {
@@ -552,13 +567,17 @@ void VulkanBackend::CreateSyncObjects() {
 // Shutdown
 // ============================================================================
 void VulkanBackend::Shutdown() {
+    fprintf(stderr, "[VK.Shutdown] entry initialized=%d\n", m_initialized); fflush(stderr);
     if (!m_initialized) return;
 
+    fprintf(stderr, "[VK.Shutdown] WaitIdle START\n"); fflush(stderr);
     WaitIdle();
+    fprintf(stderr, "[VK.Shutdown] WaitIdle OK\n"); fflush(stderr);
 
     printf("[Vulkan] Shutting down...\n");
 
     // Clean up pipelines
+    fprintf(stderr, "[VK.Shutdown] Destroy %zu pipelines\n", m_pipelines.size()); fflush(stderr);
     for (auto& [id, pipeline] : m_pipelines) {
         if (pipeline->pipeline != VK_NULL_HANDLE) {
             vkDestroyPipeline(m_device, pipeline->pipeline, nullptr);
@@ -597,6 +616,7 @@ void VulkanBackend::Shutdown() {
         }
     }
     m_textures.clear();
+    fprintf(stderr, "[VK.Shutdown] textures destroyed\n"); fflush(stderr);
 
     // Clean up shaders
     for (auto& [id, shader] : m_shaders) {

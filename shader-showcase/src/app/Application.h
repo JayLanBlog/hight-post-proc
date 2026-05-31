@@ -49,8 +49,8 @@ private:
 
     GLFWwindow* m_window = nullptr;
     std::unique_ptr<IRenderBackend> m_backend;
-    BackendType m_backendType = BackendType::OpenGL;
-    BackendType m_pendingBackend = BackendType::OpenGL;
+    BackendType m_backendType = BackendType::Vulkan;
+    BackendType m_pendingBackend = BackendType::Vulkan;
     bool m_pendingBackendSwitch = false;
     FrameCallback m_frameCallback;
     std::unique_ptr<Scene> m_currentScene;

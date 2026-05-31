@@ -153,6 +153,11 @@ void OpenGLBackend::Shutdown() {
         m_tempUBO = 0;
     }
 
+    // Unbind FBO and flush — prevents conflicts when switching to Vulkan
+    // on the same GLFW window.
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+    glFinish();
+
     printf("[OpenGL] Shutdown\n");
 }
 

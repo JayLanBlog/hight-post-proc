@@ -74,128 +74,96 @@ int Application::Run(int argc, char* argv[])
 
 void Application::InitBackend(BackendType type)
 {
-    // ---- Destroy old resources ---------------------------------------------
-    // Reset current scene before destroying backend
-    if (m_currentScene)
-    {
+    fprintf(stderr, "[Init] START type=%s win=%p\n", type==BackendType::OpenGL?"GL":"VK", (void*)m_window);
+    fflush(stderr);
+
+    // ---- Destroy old backend resources (but NOT the window) ----------------
+    if (m_currentScene) {
+        fprintf(stderr, "[Init] OnExit scene\n"); fflush(stderr);
         m_currentScene->OnExit();
         m_currentScene.reset();
     }
 
-    if (m_backend)
-    {
+    if (m_backend) {
+        fprintf(stderr, "[Init] ImGuiShutdown old backend\n"); fflush(stderr);
         m_backend->ImGuiShutdown();
+        fprintf(stderr, "[Init] Shutdown old backend\n"); fflush(stderr);
         m_backend->Shutdown();
+        fprintf(stderr, "[Init] Shutdown complete, resetting ptr\n"); fflush(stderr);
         m_backend.reset();
     }
 
-    // Destroy ImGui context so the new backend starts fresh.
-    // ImGuiShutdown destroys backend-specific textures/fonts but the
-    // context itself persists; re-using it across backends would cause
-    // crashes when the new backend tries to rebuild the font atlas.
+    // Don't destroy ImGui context — the backend's ImGuiShutdown already freed
+    // GPU resources. Just reset the font atlas so the next backend can rebuild.
     if (ImGui::GetCurrentContext() != nullptr) {
-        ImGui::DestroyContext();
+        fprintf(stderr, "[Init] Fonts->Clear()\n"); fflush(stderr);
+        ImGui::GetIO().Fonts->Clear();
+        fprintf(stderr, "[Init] Fonts->Clear() OK\n"); fflush(stderr);
     }
 
-    // Clear any pending scene transition — the old backend's resources
-    // are gone and the pending scene holds stale references.
     m_pendingNextScene.reset();
-
-    if (m_window)
-    {
-        glfwDestroyWindow(m_window);
-        m_window = nullptr;
-    }
-
-    // Full GLFW reinit when switching between Vulkan (GLFW_NO_API)
-    // and OpenGL (GLFW_OPENGL_API) to reset internal state.
-    glfwTerminate();
-    glfwInit();
-
     m_backendType = type;
+    fprintf(stderr, "[Init] backendType set\n"); fflush(stderr);
 
-    // ---- Set window hints based on backend type ----------------------------
-    glfwDefaultWindowHints();
-
-    switch (type)
-    {
-    case BackendType::OpenGL:
+    // ---- Create/reuse window -----------------------------------------------
+    // Always use GLFW_OPENGL_API — Vulkan creates its surface via native Win32
+    // API (vkCreateWin32SurfaceKHR), which works on any HWND regardless of
+    // GLFW client API. This avoids the NVIDIA driver issue where a GL context
+    // becomes unusable after Vulkan has been active.
+    if (!m_window) {
+        glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        break;
 
-    case BackendType::Vulkan:
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        break;
+        constexpr int W = 1280, H = 720;
+        m_window = glfwCreateWindow(W, H, LanguageManager::Instance().WindowTitle(), nullptr, nullptr);
+        if (!m_window) {
+            std::cerr << "[Application] ERROR: Failed to create window\n";
+            return;
+        }
+
+        glfwSetWindowUserPointer(m_window, this);
+        glfwSetFramebufferSizeCallback(m_window, FramebufferSizeCallback);
+        glfwSetKeyCallback(m_window, KeyCallback);
+        glfwSetDropCallback(m_window, DropCallback);
     }
 
-    // ---- Create window -----------------------------------------------------
-    constexpr int WINDOW_WIDTH  = 1280;
-    constexpr int WINDOW_HEIGHT = 720;
-
-    m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, LanguageManager::Instance().WindowTitle(), nullptr, nullptr);
-
-    if (!m_window)
-    {
-        std::cerr << "[Application] ERROR: Failed to create window for "
-                  << (type == BackendType::OpenGL ? "OpenGL" : "Vulkan") << std::endl;
-        return;
+    // ---- Make GL context current (both backends share the window) ---------
+    fprintf(stderr, "[Init] MakeContextCurrent...\n"); fflush(stderr);
+    glfwMakeContextCurrent(m_window);
+    fprintf(stderr, "[Init] MakeContextCurrent OK\n"); fflush(stderr);
+    if (type == BackendType::OpenGL) {
+        fprintf(stderr, "[Init] SwapInterval(1)\n"); fflush(stderr);
+        glfwSwapInterval(1);
     }
 
-    // ---- Set user pointer & callbacks --------------------------------------
-    glfwSetWindowUserPointer(m_window, this);
-    glfwSetFramebufferSizeCallback(m_window, FramebufferSizeCallback);
-    glfwSetKeyCallback(m_window, KeyCallback);
-    glfwSetDropCallback(m_window, DropCallback);
-
-    // ---- OpenGL: make context current --------------------------------------
-    if (type == BackendType::OpenGL)
-    {
-        glfwMakeContextCurrent(m_window);
-        glfwSwapInterval(1); // VSync
-    }
-
-    // ---- Create backend ----------------------------------------------------
-    switch (type)
-    {
+    // ---- Create backend --------------------------------------------------
+    fprintf(stderr, "[Init] Creating backend...\n"); fflush(stderr);
+    switch (type) {
     case BackendType::OpenGL:
-#ifdef USE_OPENGL_BACKEND
         m_backend = std::make_unique<OpenGLBackend>();
-#endif
         break;
-
     case BackendType::Vulkan:
-#ifdef USE_VULKAN_BACKEND
         m_backend = std::make_unique<VulkanBackend>();
-#endif
         break;
     }
 
-    if (!m_backend)
-    {
-        std::cerr << "[Application] ERROR: Backend not available (compile-time disabled)" << std::endl;
-        glfwDestroyWindow(m_window);
-        m_window = nullptr;
+    if (!m_backend) {
+        std::cerr << "[Application] ERROR: Backend not available\n";
         return;
     }
 
-    // ---- Initialize backend ------------------------------------------------
-    if (!m_backend->Init(m_window))
-    {
-        std::cerr << "[Application] ERROR: Backend initialization failed" << std::endl;
+    if (!m_backend->Init(m_window)) {
+        std::cerr << "[Application] ERROR: Backend initialization failed\n";
         m_backend.reset();
-        glfwDestroyWindow(m_window);
-        m_window = nullptr;
         return;
     }
 
-    // ---- Initialize ImGui --------------------------------------------------
     m_backend->ImGuiInit(m_window);
 
-    // ---- Set window title --------------------------------------------------
     std::string title = std::string(LanguageManager::Instance().WindowTitle()) + " [" + m_backend->GetName() + "]";
     glfwSetWindowTitle(m_window, title.c_str());
 
@@ -257,10 +225,27 @@ void Application::MainLoop()
         try {
         glfwPollEvents();
 
+        // AUTO-TEST: VK→GL switch
+        {
+            static int fc = 0; fc++;
+            static int glFrames = 0;
+            if (fc == 10 && m_backendType == BackendType::Vulkan && !m_pendingBackendSwitch) {
+                fprintf(stderr, "[TEST] Triggering VK→GL switch at frame %d\n", fc); fflush(stderr);
+                SwitchBackend(BackendType::OpenGL);
+            }
+            if (m_backendType == BackendType::OpenGL && !m_pendingBackendSwitch) {
+                glFrames++;
+                if (glFrames >= 15) {
+                    fprintf(stderr, "[TEST] GL stable for %d frames — PASS\n", glFrames); fflush(stderr);
+                    glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+                }
+            }
+        }
+
         // Process pending backend switch (deferred to avoid corruption during ImGui rendering)
         if (m_pendingBackendSwitch) {
             m_pendingBackendSwitch = false;
-            printf("[Application] Processing deferred backend switch...\n");
+            printf("[Application] Processing deferred backend switch...\n"); fflush(stdout);
             InitBackend(m_pendingBackend);
         }
 
@@ -403,6 +388,7 @@ void Application::Shutdown()
         glfwDestroyWindow(m_window);
         m_window = nullptr;
     }
+    glfwTerminate();
 }
 
 // ============================================================================
