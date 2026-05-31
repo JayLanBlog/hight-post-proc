@@ -93,7 +93,16 @@ void EffectDetailScene::OnEnter()
     m_expectedFloatCount = m_uniformFloats.size();
 
     // Load SPIR-V shaders (works on all backends)
-    auto vertSpirv = ShaderLoader::LoadSPIRV(m_card.vertSpirvPath);
+    // OpenGL uses VAO vertex input, Vulkan uses VertexIndex-generated triangle
+    std::string vertPath = m_card.vertSpirvPath;
+    if (m_backend->GetType() == BackendType::Vulkan) {
+        // Replace fullscreen.vert.spv with fullscreen_vk.vert.spv for Vulkan
+        size_t pos = vertPath.find("fullscreen.vert.spv");
+        if (pos != std::string::npos) {
+            vertPath.replace(pos, 19, "fullscreen_vk.vert.spv");
+        }
+    }
+    auto vertSpirv = ShaderLoader::LoadSPIRV(vertPath);
     auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);
 
     if (vertSpirv.empty() || fragSpirv.empty()) {

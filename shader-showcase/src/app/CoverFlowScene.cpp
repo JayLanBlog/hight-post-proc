@@ -47,7 +47,11 @@ CoverFlowScene::~CoverFlowScene()
 void CoverFlowScene::RegisterCards()
 {
     std::string shaderDir = ShaderLoader::FindShaderDir();
-    std::string vertPath  = shaderDir + "/common/fullscreen.vert.spv";
+    // OpenGL uses VAO vertex input, Vulkan uses VertexIndex-generated triangle
+    std::string vertPath = shaderDir + "/common/fullscreen.vert.spv";
+    if (m_backend && m_backend->GetType() == BackendType::Vulkan) {
+        vertPath = shaderDir + "/common/fullscreen_vk.vert.spv";
+    }
 
     m_cards.clear();
     m_cards.reserve(18);
@@ -840,7 +844,12 @@ void CoverFlowScene::InitializeThumbnails()
 
     std::string shaderDir = ShaderLoader::FindShaderDir();
     
-    auto vertSpv = ShaderLoader::LoadSPIRV(shaderDir + "/common/fullscreen.vert.spv");
+    // OpenGL uses VAO vertex input, Vulkan uses VertexIndex-generated triangle
+    std::string vertPath = shaderDir + "/common/fullscreen.vert.spv";
+    if (m_backend->GetType() == BackendType::Vulkan) {
+        vertPath = shaderDir + "/common/fullscreen_vk.vert.spv";
+    }
+    auto vertSpv = ShaderLoader::LoadSPIRV(vertPath);
     if (vertSpv.empty()) {
         fprintf(stderr, "[CoverFlowScene] Cannot load vertex shader for thumbnails\n");
         return;
