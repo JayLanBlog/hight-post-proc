@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <array>
+#include <fstream>
 
 // ImGui
 #include "imgui.h"
@@ -1000,9 +1001,9 @@ TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat 
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
     } else {
-        // For render targets, leave layout as UNDEFINED.
-        // BeginRenderToTexture's render pass will handle the transition
-        // via initialLayout=COLOR_ATTACHMENT_OPTIMAL with loadOp=CLEAR.
+        // For render targets, transition to SHADER_READ_ONLY_OPTIMAL.
+        // The FBO render pass expects initialLayout=SHADER_READ_ONLY_OPTIMAL.
+        TransitionImageLayout(texture->image, vkFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     uint32_t id = m_nextTextureId++;
@@ -1162,7 +1163,7 @@ VkRenderPass VulkanBackend::CreateRenderPassForFormat(VkFormat format) {
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkAttachmentReference colorAttachmentRef{};
@@ -1174,13 +1175,25 @@ VkRenderPass VulkanBackend::CreateRenderPassForFormat(VkFormat format) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    // Subpass dependency: transition from shader read (external) to color attachment (subpass 0)
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    // Also need dependency for transition back to shader read after subpass
+    VkSubpassDependency postDependency{};
+    postDependency.srcSubpass = 0;
+    postDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+    postDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    postDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    postDependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    postDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    VkSubpassDependency dependencies[2] = { dependency, postDependency };
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -1188,8 +1201,8 @@ VkRenderPass VulkanBackend::CreateRenderPassForFormat(VkFormat format) {
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
+    renderPassInfo.dependencyCount = 2;
+    renderPassInfo.pDependencies = dependencies;
 
     VkRenderPass renderPass;
     VK_CHECK(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &renderPass));
@@ -1600,11 +1613,8 @@ void VulkanBackend::BeginRenderToTexture(TextureHandle target) {
 void VulkanBackend::EndRenderToTexture() {
     if (!m_isRecording || !m_isRenderToTexture) return;
 
-    // End render pass
+    // End FBO render pass - finalLayout transitions to SHADER_READ_ONLY_OPTIMAL
     vkCmdEndRenderPass(m_commandBuffer);
-
-    // Render pass finalLayout is SHADER_READ_ONLY_OPTIMAL, so image is already
-    // in the correct layout for ImGui display. No manual barrier needed.
 
     // Resume swapchain render pass
     VkRenderPassBeginInfo renderPassInfo{};
@@ -1666,6 +1676,32 @@ void VulkanBackend::ImGuiInit(GLFWwindow* window) {
     }
 
     ImGui_ImplGlfw_InitForVulkan(window, true);
+
+    // Load fonts: default Latin font + Chinese font merge
+    ImGuiIO& io = ImGui::GetIO();
+    const char* chineseFontPath = nullptr;
+
+    // Check for Microsoft YaHei (msyh.ttc) - best CJK coverage on Windows
+    {
+        std::ifstream testFile("C:\\Windows\\Fonts\\msyh.ttc", std::ios::binary);
+        if (testFile.good()) chineseFontPath = "C:\\Windows\\Fonts\\msyh.ttc";
+    }
+    // Fallback: SimSun
+    if (!chineseFontPath) {
+        std::ifstream testFile("C:\\Windows\\Fonts\\simsun.ttc", std::ios::binary);
+        if (testFile.good()) chineseFontPath = "C:\\Windows\\Fonts\\simsun.ttc";
+    }
+
+    if (chineseFontPath) {
+        // Load default ImGui font first (covers Latin glyphs)
+        io.Fonts->AddFontDefault();
+
+        // Merge Chinese glyphs on top of default font
+        ImFontConfig cfg;
+        cfg.MergeMode = true;
+        io.Fonts->AddFontFromFileTTF(chineseFontPath, 16.0f, &cfg,
+            io.Fonts->GetGlyphRangesChineseFull());
+    }
 
     // Create descriptor pool
     VkDescriptorPoolSize poolSizes[] = {

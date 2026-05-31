@@ -256,6 +256,23 @@ void Application::MainLoop()
         }
 
         m_backend->BeginFrame();
+
+        // --- Deferred scene transition ---
+        // Must happen AFTER BeginFrame's vkWaitForFences so GPU has finished
+        // with old scene's resources before they're destroyed.
+        if (m_pendingNextScene) {
+            printf("[Application] Processing deferred scene transition\n");
+            if (m_currentScene) {
+                m_currentScene->OnExit();
+                m_currentScene.reset();
+            }
+            m_currentScene = std::move(m_pendingNextScene);
+            if (m_currentScene) {
+                m_currentScene->OnEnter();
+                printf("[Application] New scene entered OK\n");
+            }
+        }
+
         m_backend->ImGuiNewFrame();
 
         // --- Scene-driven update ---
@@ -266,23 +283,15 @@ void Application::MainLoop()
 
             m_currentScene->OnImGui();
 
-            // Check for scene transition
+            // Check for scene transition - DEFER to next frame's BeginFrame
+            // This ensures GPU has finished with old scene's resources before they're destroyed
             if (m_currentScene->WantsExit())
             {
                 auto nextScene = m_currentScene->GetNextScene();
                 if (nextScene)
                 {
-                    printf("[Application] Scene transition: switching to new scene\n");
-                    // Exit old scene first, enter new scene on next frame
-                    // This avoids GL state conflicts between scenes
-                    m_currentScene->OnExit();
-                    m_currentScene.reset();
-                    m_currentScene = std::move(nextScene);
-                    if (m_currentScene)
-                    {
-                        m_currentScene->OnEnter();
-                        printf("[Application] New scene entered OK\n");
-                    }
+                    printf("[Application] Deferring scene transition to next frame\n");
+                    m_pendingNextScene = std::move(nextScene);
                 }
                 else
                 {

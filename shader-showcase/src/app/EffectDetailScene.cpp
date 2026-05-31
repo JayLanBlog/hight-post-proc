@@ -103,6 +103,7 @@ void EffectDetailScene::OnEnter()
         }
     }
     auto vertSpirv = ShaderLoader::LoadSPIRV(vertPath);
+
     auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);
 
     if (vertSpirv.empty() || fragSpirv.empty()) {

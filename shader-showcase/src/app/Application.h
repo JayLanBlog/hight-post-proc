@@ -54,6 +54,7 @@ private:
     bool m_pendingBackendSwitch = false;
     FrameCallback m_frameCallback;
     std::unique_ptr<Scene> m_currentScene;
+    std::unique_ptr<Scene> m_pendingNextScene;  // Deferred scene transition
     bool m_running = false;
 
     // Drag-drop state
