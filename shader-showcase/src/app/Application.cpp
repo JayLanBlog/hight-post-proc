@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <imgui.h>
 
 // ScreenshotRequest static members
 bool ScreenshotRequest::pending = false;
@@ -86,6 +87,14 @@ void Application::InitBackend(BackendType type)
         m_backend->ImGuiShutdown();
         m_backend->Shutdown();
         m_backend.reset();
+    }
+
+    // Destroy ImGui context so the new backend starts fresh.
+    // ImGuiShutdown destroys backend-specific textures/fonts but the
+    // context itself persists; re-using it across backends would cause
+    // crashes when the new backend tries to rebuild the font atlas.
+    if (ImGui::GetCurrentContext() != nullptr) {
+        ImGui::DestroyContext();
     }
     if (m_window)
     {
