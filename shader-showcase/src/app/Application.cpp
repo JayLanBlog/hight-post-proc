@@ -96,11 +96,21 @@ void Application::InitBackend(BackendType type)
     if (ImGui::GetCurrentContext() != nullptr) {
         ImGui::DestroyContext();
     }
+
+    // Clear any pending scene transition — the old backend's resources
+    // are gone and the pending scene holds stale references.
+    m_pendingNextScene.reset();
+
     if (m_window)
     {
         glfwDestroyWindow(m_window);
         m_window = nullptr;
     }
+
+    // Full GLFW reinit when switching between Vulkan (GLFW_NO_API)
+    // and OpenGL (GLFW_OPENGL_API) to reset internal state.
+    glfwTerminate();
+    glfwInit();
 
     m_backendType = type;
 
