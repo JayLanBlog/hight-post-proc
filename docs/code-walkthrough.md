@@ -1,125 +1,169 @@
 ﻿# Shader Showcase 源码详解
 
-> 本文档对 Shader Showcase 项目的前三章核心源码进行逐行级深度解析，涵盖程序入口、应用核心框架和封面流场景三大模块。
-
----
-
 ## 目录
 
 - [1. 程序入口 — main.cpp](#1-程序入口--maincpp)
-  - [1.1 资源定位 FindAssetDir](#11-资源定位-findassetdir)
-  - [1.2 主函数 main](#12-主函数-main)
+  - [1.1 FindAssetDir — 资源目录定位](#11-findassetdir--资源目录定位)
+  - [1.2 main — 主函数](#12-main--主函数)
 - [2. 应用核心 — Application](#2-应用核心--application)
-  - [2.1 头文件 Application.h（类定义）](#21-头文件-applicationh类定义)
+  - [2.1 Application.h — 类定义](#21-applicationh--类定义)
   - [2.2 构造与析构](#22-构造与析构)
-  - [2.3 Run — 应用启动入口](#23-run--应用启动入口)
-  - [2.4 InitBackend — 后端初始化与窗口管理](#24-initbackend--后端初始化与窗口管理)
-  - [2.5 MainLoop — 主循环帧处理](#25-mainloop--主循环帧处理)
+  - [2.3 Run — 应用启动](#23-run--应用启动)
+  - [2.4 InitBackend — 后端初始化](#24-initbackend--后端初始化)
+  - [2.5 MainLoop — 主循环](#25-mainloop--主循环)
   - [2.6 Shutdown — 资源清理](#26-shutdown--资源清理)
-  - [2.7 场景管理 SetScene / SwitchBackend](#27-场景管理-setscene--switchbackend)
-  - [2.8 回调函数 KeyCallback / DropCallback / FramebufferSizeCallback](#28-回调函数-keycallback--dropcallback--framebuffersizecallback)
-- [3. 封面流场景 — CoverFlowScene](#3-封面流场景--coverflowscene)
-  - [3.1 头文件 CoverFlowScene.h](#31-头文件-coverflowsceneh)
-  - [3.2 卡片注册 RegisterCards（CARD宏）](#32-卡片注册-registercardscard宏)
-  - [3.3 场景生命周期 OnEnter / OnExit](#33-场景生命周期-onenter--onexit)
-  - [3.4 帧更新 OnUpdate](#34-帧更新-onupdate)
-  - [3.5 渲染 OnRender + RenderVisibleThumbnails](#35-渲染-onrender--rendervisiblethumbnails)
-  - [3.6 UI 绘制 OnImGui](#36-ui-绘制-onimgui)
-  - [3.7 场景跳转 OpenSelectedEffect / GetNextScene](#37-场景跳转-openselectedeffect--getnextscene)
-  - [3.8 状态保存与恢复 GetState](#38-状态保存与恢复-getstate)
-  - [3.9 辅助功能 LoadImageFromFile / CycleImage / ToggleScreenCapture](#39-辅助功能-loadimagefromfile--cycleimage--togglescreencapture)
+  - [2.7 SetScene / SwitchBackend](#27-setscene--switchbackend)
+  - [2.8 回调函数](#28-回调函数)
+- [3. CoverFlowScene — 封面流场景](#3-coverflowscene--封面流场景)
+  - [3.1 类定义](#31-类定义)
+  - [3.2 RegisterCards — 卡片注册](#32-registercards--卡片注册)
+  - [3.3 OnEnter / OnExit](#33-onenter--onexit)
+  - [3.4 OnUpdate](#34-onupdate)
+  - [3.5 OnRender + RenderVisibleThumbnails](#35-onrender--rendervisiblethumbnails)
+  - [3.6 OnImGui](#36-onimgui)
+  - [3.7 OpenSelectedEffect / GetNextScene](#37-openselectedeffect--getnextscene)
+  - [3.8 GetState](#38-getstate)
+  - [3.9 辅助功能](#39-辅助功能)
 
 ---
 
 ## 1. 程序入口 — main.cpp
 
-`main.cpp` 是整个 Shader Showcase 程序的入口文件，负责资源目录定位、自动测试模式检测、输入纹理加载与缓存、以及 CoverFlowScene 的创建和初始化。
+`main.cpp` 是整个 Shader Showcase 程序的入口文件。它负责初始化运行环境、定位资源目录、创建应用实例、加载纹理资源并启动主循环。文件包含两个核心部分：`FindAssetDir` 辅助函数和 `main` 主函数。
 
-### 1.1 资源定位 FindAssetDir
+### 1.1 FindAssetDir — 资源目录定位
+
+`FindAssetDir` 是一个静态辅助函数，用于在运行时定位 `assets` 资源目录的绝对路径。由于程序可能从不同的工作目录启动（例如 IDE 调试、命令行运行、打包发布等），资源目录相对于可执行文件的位置可能不同，因此需要通过试探性查找来确定正确的路径。
+
+整个函数可以分为以下逻辑段：
+
+#### 第一段：获取可执行文件路径
+
+**分析**：在 Windows 平台下，使用 `GetModuleFileNameA` API 获取当前可执行文件的完整路径。该函数将路径写入 `buf` 缓冲区，并返回路径长度。通过检查返回值确保路径有效且未溢出缓冲区。
 
 ```cpp
-static std::string FindAssetDir() {
 #ifdef _WIN32
-    char buf[MAX_PATH];                                    // Windows平台最大路径长度缓冲区
-    DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH); // 获取当前可执行文件的完整路径
-    if (len > 0 && len < MAX_PATH) {                      // 确保路径获取成功且未溢出
-        std::string exePath(buf, (size_t)len);            // 将C字符串转换为std::string
-        auto sl = exePath.find_last_of("\\/");            // 查找最后一个路径分隔符位置
-        if (sl != std::string::npos)                      // 如果找到了分隔符
-            exePath = exePath.substr(0, sl);              // 截取可执行文件所在的目录路径
+    char buf[MAX_PATH];
+    DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH);
+    if (len > 0 && len < MAX_PATH) {
+```
+
+#### 第二段：提取目录并逐级搜索
+
+**分析**：从完整路径中找到最后一个路径分隔符（`\` 或 `/`），截取得到可执行文件所在的目录。然后按照从远到近的顺序，依次在 `../../../assets`、`../../assets`、`../assets`、`assets` 四个候选相对路径下查找 `test.jpg` 文件。找到第一个存在的路径即返回。这种多级搜索策略覆盖了从项目根目录、build 目录到可执行文件同级目录等多种部署场景。
+
+```cpp
+        std::string exePath(buf, (size_t)len);
+        auto sl = exePath.find_last_of("\\/");
+        if (sl != std::string::npos) exePath = exePath.substr(0, sl);
         for (const char* rel : {"../../../assets", "../../assets", "../assets", "assets"}) {
-            // 依次尝试从远到近的相对路径查找assets目录
-            std::string test = exePath + "/" + rel + "/test.jpg"; // 拼接出测试文件路径
-            FILE* f = fopen(test.c_str(), "rb");          // 尝试以二进制只读模式打开测试文件
-            if (f) { fclose(f); return exePath + "/" + rel; } // 找到则关闭文件并返回完整assets路径
+            std::string test = exePath + "/" + rel + "/test.jpg";
+            FILE* f = fopen(test.c_str(), "rb");
+            if (f) { fclose(f); return exePath + "/" + rel; }
         }
     }
 #endif
-    return "assets";                                      // 所有尝试失败则回退到当前目录下的assets
+```
+
+#### 第三段：默认回退
+
+**分析**：如果所有搜索路径均未找到资源目录（例如非 Windows 平台），则返回简单的相对路径 `"assets"` 作为默认值。这意味着程序期望在当前工作目录下直接存在 `assets` 文件夹。
+
+```cpp
+    return "assets";
+```
+
+#### 完整源码
+
+```cpp
+// 静态辅助函数：在运行时定位 assets 资源目录的绝对路径
+static std::string FindAssetDir() {
+#ifdef _WIN32
+    char buf[MAX_PATH];                                    // 路径缓冲区，MAX_PATH 通常为 260
+    DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH); // 获取可执行文件完整路径
+    if (len > 0 && len < MAX_PATH) {                       // 确保路径有效且未溢出
+        std::string exePath(buf, (size_t)len);             // 将路径转为 std::string
+        auto sl = exePath.find_last_of("\\/");              // 查找最后一个路径分隔符
+        if (sl != std::string::npos) exePath = exePath.substr(0, sl); // 截取目录部分
+        // 按从远到近的顺序搜索候选路径
+        for (const char* rel : {"../../../assets", "../../assets", "../assets", "assets"}) {
+            std::string test = exePath + "/" + rel + "/test.jpg"; // 拼接测试文件路径
+            FILE* f = fopen(test.c_str(), "rb");            // 尝试以二进制模式打开测试文件
+            if (f) { fclose(f); return exePath + "/" + rel; } // 找到则关闭文件并返回路径
+        }
+    }
+#endif
+    return "assets";                                        // 默认回退到当前目录下的 assets
 }
 ```
 
-#### 功能说明
+### 1.2 main — 主函数
 
-`FindAssetDir` 是一个静态辅助函数，用于在运行时自动定位 `assets` 资源目录的绝对路径。它通过获取可执行文件所在位置，然后从近到远逐级向上搜索 `assets` 目录。
+`main` 是程序的入口点，负责完成从环境初始化到应用启动的全部准备工作。整个函数按照调用链可以分为以下逻辑段：
 
-#### 实现原理
+#### 第一段：关闭 I/O 缓冲
 
-1. 在 Windows 平台上调用 `GetModuleFileNameA` 获取当前进程的可执行文件完整路径。
-2. 通过 `find_last_of("\\/")` 找到最后一个路径分隔符，截取得到可执行文件所在的目录。
-3. 使用一个有序的候选路径列表 `{"../../../assets", "../../assets", "../assets", "assets"}`，从最远的相对路径开始，逐个尝试打开 `assets/test.jpg` 文件来验证目录是否存在。
-4. 第一个成功打开的路径即为正确的资源目录。
-
-#### 为什么这样实现
-
-- **可执行文件位置不固定**：项目可能从不同的构建目录（如 `build/Release/`、`build/Debug/`）运行，可执行文件与 `assets` 目录的相对距离不同。
-- **探测式搜索**：与其硬编码一个固定路径，不如让程序自己"探测"资源目录位置，增强了部署灵活性。
-- **跨层级搜索**：支持从可执行文件所在目录向上最多三级查找，覆盖了常见的 CMake 构建目录结构。
-- **平台条件编译**：仅 Windows 平台需要此逻辑（Linux/macOS 通常使用固定安装路径或环境变量）。
-
----
-
-### 1.2 主函数 main
+**分析**：调用 `setvbuf` 将 `stdout` 和 `stderr` 的缓冲模式设为无缓冲（`_IONBF`）。这意味着所有通过 `printf`/`fprintf` 输出的内容会立即写入控制台，不会被缓冲延迟。这在调试和自动测试场景中尤为重要，可以确保日志实时可见，避免程序崩溃时丢失缓冲区中的日志。
 
 ```cpp
-int main(int argc, char* argv[]) {
-    setvbuf(stdout, nullptr, _IONBF, 0);                  // 禁用stdout缓冲，确保日志实时输出
-    setvbuf(stderr, nullptr, _IONBF, 0);                  // 禁用stderr缓冲，确保错误信息实时输出
+    setvbuf(stdout, nullptr, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
+```
 
-    // Check for auto-test mode via environment variable
-    const char* autoTestEnv = getenv("AUTO_TEST");         // 读取AUTO_TEST环境变量
-    bool autoTest = (autoTestEnv && strcmp(autoTestEnv, "1") == 0); // 当值为"1"时启用自动测试
+#### 第二段：自动测试环境变量检测
+
+**分析**：通过读取环境变量 `AUTO_TEST` 和 `AUTO_TEST_DETAILS` 来判断是否启用自动测试模式。`AUTO_TEST=1` 表示启用基本的自动测试（循环浏览所有卡片），`AUTO_TEST_DETAILS=1` 表示启用详情页截图模式。两个变量任一为 `"1"` 即开启自动测试。自动测试模式用于 CI/CD 流水线中验证所有着色器效果是否正常渲染。
+
+```cpp
+    const char* autoTestEnv = getenv("AUTO_TEST");
+    bool autoTest = (autoTestEnv && strcmp(autoTestEnv, "1") == 0);
     if (getenv("AUTO_TEST_DETAILS") && strcmp(getenv("AUTO_TEST_DETAILS"), "1") == 0) {
-        autoTest = true;                                   // AUTO_TEST_DETAILS=1也启用自动测试
+        autoTest = true;
     }
+```
 
-    Application app;                                       // 创建Application主应用实例（栈分配）
+#### 第三段：创建 Application 并设置帧回调
 
-    app.SetFrameCallback([&](float dt) {                  // 设置帧回调（lambda捕获app引用）
-        (void)dt;                                         // dt参数未使用，避免编译器警告
-        // Re-create scene if it was destroyed (e.g., after backend switch)
-        if (app.GetCurrentScene() != nullptr) return;     // 如果场景已存在则直接返回（无需重建）
+**分析**：创建 `Application` 实例，然后通过 `SetFrameCallback` 注册一个 lambda 回调函数。该回调在主循环中每帧被调用，用于在场景被销毁后（例如后端切换后）重新创建 `CoverFlowScene`。回调首先检查当前场景是否已存在，若已存在则直接返回，避免重复创建。
 
-        IRenderBackend* backend = app.GetBackend();       // 获取当前渲染后端指针
-        if (!backend) return;                              // 后端未就绪则返回
+```cpp
+    Application app;
 
-        std::string assetDir = FindAssetDir();             // 定位资源目录
-        std::string jpgPath  = assetDir + "/test.jpg";    // 默认测试图片路径
-        int iw = 0, ih = 0, comp = 0;                     // 图片宽度、高度、通道数变量
-        stbi_set_flip_vertically_on_load(true);           // 翻转图片Y轴（OpenGL纹理坐标原点在左下角）
-        stbi_uc* imgData = stbi_load(jpgPath.c_str(), &iw, &ih, &comp, 4); // 加载图片，强制4通道RGBA
-        stbi_set_flip_vertically_on_load(false);          // 恢复默认不翻转设置
-        if (!imgData) {                                    // 图片加载失败处理
+    app.SetFrameCallback([&](float dt) {
+        (void)dt;
+        if (app.GetCurrentScene() != nullptr) return;
+
+        IRenderBackend* backend = app.GetBackend();
+        if (!backend) return;
+```
+
+#### 第四段：加载默认测试图片
+
+**分析**：在回调内部，首先调用 `FindAssetDir()` 获取资源目录，然后加载 `test.jpg` 作为默认输入纹理。使用 `stbi_load` 加载图片数据，注意在加载前设置 `stbi_set_flip_vertically_on_load(true)` 以适配 OpenGL 的左下角原点坐标系。加载完成后通过后端接口创建 GPU 纹理，并释放 CPU 端的图片数据。
+
+```cpp
+        std::string assetDir = FindAssetDir();
+        std::string jpgPath  = assetDir + "/test.jpg";
+        int iw = 0, ih = 0, comp = 0;
+        stbi_set_flip_vertically_on_load(true);
+        stbi_uc* imgData = stbi_load(jpgPath.c_str(), &iw, &ih, &comp, 4);
+        stbi_set_flip_vertically_on_load(false);
+        if (!imgData) {
             fprintf(stderr, "[main] Cannot load test image: %s\n", jpgPath.c_str());
             return;
         }
         printf("[main] Loaded image: %s (%d x %d)\n", jpgPath.c_str(), iw, ih);
 
         TextureHandle inputTex = backend->CreateTexture(iw, ih, TextureFormat::RGBA8, imgData);
-        // 使用后端API创建GPU纹理，格式RGBA8
-        stbi_image_free(imgData);                          // 释放CPU端图片内存
+        stbi_image_free(imgData);
+```
 
-        const char* testImageList[] = {                   // 每个特效对应的测试图片文件名列表
+#### 第五段：定义测试图片列表并查找图片目录
+
+**分析**：定义了 18 个着色器效果对应的测试图片文件名数组，每个效果都有专门的测试图片以获得最佳展示效果。随后通过类似 `FindAssetDir` 的多级搜索策略查找 `assets/images` 目录。
+
+```cpp
+        const char* testImageList[] = {
             "00_grayscale_landscape.jpg",   // simple_test (Grayscale)
             "01_bloom_citynight.jpg",       // bloom
             "02_blur_brickwall.jpg",        // blur
@@ -140,93 +184,262 @@ int main(int argc, char* argv[]) {
             "17_lens_wideangle.jpg"         // lens_distort
         };
         const int NUM_EFFECTS = (int)(sizeof(testImageList) / sizeof(testImageList[0]));
-        // 通过数组大小除以单个元素大小计算特效总数
 
-        std::vector<TextureHandle> inputTexCache;          // 每个特效专用的输入纹理缓存
-        inputTexCache.reserve(NUM_EFFECTS);                // 预分配空间避免多次重分配
-
-        // Find test images directory (relative to executable)
-        std::string testImageBaseDir;                      // 测试图片基础目录
+        std::string testImageBaseDir;
 #ifdef _WIN32
-        char buf[MAX_PATH];                                // 路径缓冲区（复用局部变量）
-        DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH); // 获取可执行文件路径
+        // ... 多级搜索逻辑
+#endif
+        if (testImageBaseDir.empty()) {
+            testImageBaseDir = "assets/images/";
+        }
+```
+
+#### 第六段：加载并缓存每个效果的输入纹理
+
+**分析**：遍历所有 18 个效果，为每个效果加载对应的测试图片并创建 GPU 纹理，存入 `inputTexCache` 向量中。如果某个效果的测试图片加载失败，则回退使用默认的 `inputTex`。这种每效果独立缓存的设计使得每个卡片在封面流中可以展示与其效果最匹配的输入图片。
+
+```cpp
+        std::vector<TextureHandle> inputTexCache;
+        inputTexCache.reserve(NUM_EFFECTS);
+
+        for (int i = 0; i < NUM_EFFECTS; i++) {
+            std::string testImgPath = testImageBaseDir + testImageList[i];
+            // ... 加载图片并创建纹理
+            TextureHandle effectInputTex = inputTex; // fallback
+            if (testImgData) {
+                effectInputTex = backend->CreateTexture(tiw, tih, TextureFormat::RGBA8, testImgData);
+                stbi_image_free(testImgData);
+            }
+            inputTexCache.push_back(effectInputTex);
+        }
+```
+
+#### 第七段：创建 CoverFlowScene 并配置
+
+**分析**：创建 `CoverFlowScene` 实例，并设置其后端、输入纹理、纹理缓存、测试图片目录、应用指针等属性。然后向场景的图片池中添加 4 张内置图片以及所有 18 张测试图片，用于 Ctrl+Left/Right 切换浏览。
+
+```cpp
+        auto coverFlow = std::make_unique<CoverFlowScene>();
+        coverFlow->SetBackend(backend);
+        coverFlow->SetInputTexture(inputTex);
+        coverFlow->SetInputTexCache(inputTexCache);
+        coverFlow->SetTestImageBaseDir(testImageBaseDir);
+        coverFlow->SetApplication(&app);
+        coverFlow->AddImageToPool(jpgPath);
+        coverFlow->AddImageToPool(assetDir + "/portrait.jpg");
+        coverFlow->AddImageToPool(assetDir + "/nature.jpg");
+        coverFlow->AddImageToPool(assetDir + "/abstract.jpg");
+
+        for (int i = 0; i < NUM_EFFECTS; i++) {
+            std::string imgPath = testImageBaseDir + testImageList[i];
+            FILE* f = fopen(imgPath.c_str(), "rb");
+            if (f) { fclose(f); coverFlow->AddImageToPool(imgPath); }
+        }
+```
+
+#### 第八段：添加测试视频并启用自动测试
+
+**分析**：类似图片的处理方式，查找 `assets/videos` 目录并将 18 个测试视频文件添加到视频池中。如果启用了自动测试模式，调用 `EnableAutoTest(80)` 设置每张卡片停留 80 帧。最后将创建好的场景设置到 Application 中，并调用 `app.Run()` 启动主循环。
+
+```cpp
+        const char* testVideoList[] = { /* 18个视频文件名 */ };
+        // ... 查找视频目录并添加到视频池
+
+        if (autoTest) {
+            coverFlow->EnableAutoTest(80);
+        }
+
+        app.SetScene(std::move(coverFlow));
+        printf("[main] CoverFlowScene started (autoTest=%d)\n", autoTest);
+    });
+
+    return app.Run(argc, argv);
+```
+
+#### 完整源码
+
+```cpp
+// 自动测试模式：循环浏览所有18张卡片
+// 设置 AUTO_TEST=1 启用，或移除以使用正常模式
+
+#include "app/Application.h"
+#include "app/CoverFlowScene.h"
+#include "render/IRenderBackend.h"
+#include "render/OpenGLBackend.h"
+#include "stb_image.h"
+
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
+#include <cstdint>
+#include <string>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#include "stb_image.h"
+
+// 静态辅助函数：定位 assets 资源目录（见 1.1 节详解）
+static std::string FindAssetDir() {
+#ifdef _WIN32
+    char buf[MAX_PATH];                                    // Windows 路径缓冲区
+    DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH); // 获取可执行文件路径
+    if (len > 0 && len < MAX_PATH) {
+        std::string exePath(buf, (size_t)len);             // 转为字符串
+        auto sl = exePath.find_last_of("\\/");              // 查找最后路径分隔符
+        if (sl != std::string::npos) exePath = exePath.substr(0, sl); // 截取目录
+        for (const char* rel : {"../../../assets", "../../assets", "../assets", "assets"}) {
+            std::string test = exePath + "/" + rel + "/test.jpg"; // 拼接测试路径
+            FILE* f = fopen(test.c_str(), "rb");            // 尝试打开
+            if (f) { fclose(f); return exePath + "/" + rel; } // 找到即返回
+        }
+    }
+#endif
+    return "assets";                                        // 默认回退
+}
+
+// 程序主入口
+int main(int argc, char* argv[]) {
+    setvbuf(stdout, nullptr, _IONBF, 0);                   // 关闭 stdout 缓冲，确保日志实时输出
+    setvbuf(stderr, nullptr, _IONBF, 0);                   // 关闭 stderr 缓冲
+
+    // 检查自动测试环境变量
+    const char* autoTestEnv = getenv("AUTO_TEST");           // 读取 AUTO_TEST 变量
+    bool autoTest = (autoTestEnv && strcmp(autoTestEnv, "1") == 0); // 判断是否启用
+    if (getenv("AUTO_TEST_DETAILS") && strcmp(getenv("AUTO_TEST_DETAILS"), "1") == 0) {
+        autoTest = true;                                    // 详情页测试模式也启用
+    }
+
+    Application app;                                         // 创建应用实例
+
+    // 设置帧回调：在场景被销毁后重建 CoverFlowScene
+    app.SetFrameCallback([&](float dt) {
+        (void)dt;                                           // 未使用 dt 参数
+        if (app.GetCurrentScene() != nullptr) return;       // 场景已存在则返回
+
+        IRenderBackend* backend = app.GetBackend();         // 获取渲染后端
+        if (!backend) return;                               // 无后端则返回
+
+        std::string assetDir = FindAssetDir();              // 定位资源目录
+        std::string jpgPath  = assetDir + "/test.jpg";      // 默认测试图片路径
+        int iw = 0, ih = 0, comp = 0;                      // 图片尺寸和通道数
+        stbi_set_flip_vertically_on_load(true);             // 翻转图片以适配 OpenGL 坐标系
+        stbi_uc* imgData = stbi_load(jpgPath.c_str(), &iw, &ih, &comp, 4); // 加载为 RGBA
+        stbi_set_flip_vertically_on_load(false);            // 恢复默认设置
+        if (!imgData) {
+            fprintf(stderr, "[main] Cannot load test image: %s\n", jpgPath.c_str());
+            return;
+        }
+        printf("[main] Loaded image: %s (%d x %d)\n", jpgPath.c_str(), iw, ih);
+
+        TextureHandle inputTex = backend->CreateTexture(iw, ih, TextureFormat::RGBA8, imgData); // 创建 GPU 纹理
+        stbi_image_free(imgData);                            // 释放 CPU 端图片数据
+
+        // 18 个着色器效果对应的测试图片文件名
+        const char* testImageList[] = {
+            "00_grayscale_landscape.jpg",   // 简单测试（灰度）
+            "01_bloom_citynight.jpg",       // 泛光
+            "02_blur_brickwall.jpg",        // 高斯模糊
+            "03_sharpen_architecture.jpg",  // 锐化
+            "04_edge_building.jpg",         // 边缘检测
+            "05_emboss_metal.jpg",          // 浮雕
+            "06_pixelate_portrait.jpg",     // 像素化
+            "07_vignette_flower.jpg",       // 暗角
+            "08_chromatic_leaves.jpg",      // 色差
+            "09_colorgrading_food.jpg",     // 色彩分级
+            "10_noise_sky.jpg",             // 噪声生成
+            "11_kaleidoscope_mandala.jpg",  // 万花筒
+            "12_glitch_tech.jpg",           // 故障艺术
+            "13_toon_cartoon.jpg",          // 卡通着色
+            "14_vhs_retro.jpg",             // VHS 复古
+            "15_crt_screen.jpg",            // CRT 显示器
+            "16_water_lake.jpg",            // 水波纹
+            "17_lens_wideangle.jpg"         // 镜头畸变
+        };
+        const int NUM_EFFECTS = (int)(sizeof(testImageList) / sizeof(testImageList[0])); // 效果总数
+
+        std::vector<TextureHandle> inputTexCache;            // 每个效果的缓存输入纹理
+        inputTexCache.reserve(NUM_EFFECTS);                  // 预分配空间
+
+        // 查找测试图片目录（相对于可执行文件）
+        std::string testImageBaseDir;
+#ifdef _WIN32
+        char buf[MAX_PATH];
+        DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH);
         if (len > 0 && len < MAX_PATH) {
-            std::string exePath(buf, (size_t)len);        // 转为string
-            auto sl = exePath.find_last_of("\\/");        // 查找目录分隔符
-            if (sl != std::string::npos) exePath = exePath.substr(0, sl); // 截取目录
-            // Try to find assets/images relative to exe (new location)
+            std::string exePath(buf, (size_t)len);
+            auto sl = exePath.find_last_of("\\/");
+            if (sl != std::string::npos) exePath = exePath.substr(0, sl);
             for (const char* rel : {"../../../assets/images", "../../assets/images",
                                     "../assets/images", "assets/images",
                                     "../../../screenshots/assets/images", "../../screenshots/assets/images",
                                     "../screenshots/assets/images", "screenshots/assets/images"}) {
-                // 尝试多个候选路径（包括screenshots子目录下的备份路径）
                 std::string test = exePath + "/" + rel + "/00_grayscale_landscape.jpg";
-                FILE* f = fopen(test.c_str(), "rb");      // 尝试打开第一张测试图片
+                FILE* f = fopen(test.c_str(), "rb");
                 if (f) { fclose(f); testImageBaseDir = exePath + "/" + rel + "/"; break; }
-                // 找到则保存路径并跳出循环
             }
         }
 #endif
-        if (testImageBaseDir.empty()) {                    // 所有候选路径都失败
-            testImageBaseDir = "assets/images/";           // 回退到默认相对路径
+        if (testImageBaseDir.empty()) {
+            testImageBaseDir = "assets/images/";             // 默认回退路径
         }
         printf("[main] Test images directory: %s\n", testImageBaseDir.c_str());
 
-        // Load and cache input textures for each effect
-        for (int i = 0; i < NUM_EFFECTS; i++) {           // 遍历所有特效
-            std::string testImgPath = testImageBaseDir + testImageList[i]; // 拼接完整路径
-            int tiw = 0, tih = 0, tcomp = 0;              // 图片尺寸和通道变量
-            stbi_set_flip_vertically_on_load(true);       // 翻转Y轴适配OpenGL
+        // 为每个效果加载并缓存输入纹理
+        for (int i = 0; i < NUM_EFFECTS; i++) {
+            std::string testImgPath = testImageBaseDir + testImageList[i];
+            int tiw = 0, tih = 0, tcomp = 0;
+            stbi_set_flip_vertically_on_load(true);
             stbi_uc* testImgData = stbi_load(testImgPath.c_str(), &tiw, &tih, &tcomp, 4);
-            stbi_set_flip_vertically_on_load(false);       // 恢复默认
-            TextureHandle effectInputTex = inputTex;        // 默认回退到通用测试图片纹理
-            if (testImgData) {                             // 如果专属测试图片加载成功
-                printf("[main] Loaded test image for effect %d: %s (%d x %d)\n",
-                       i, testImgPath.c_str(), tiw, tih);
+            stbi_set_flip_vertically_on_load(false);
+
+            TextureHandle effectInputTex = inputTex;          // 默认回退纹理
+            if (testImgData) {
+                printf("[main] Loaded test image for effect %d: %s (%d x %d)\n", i, testImgPath.c_str(), tiw, tih);
                 effectInputTex = backend->CreateTexture(tiw, tih, TextureFormat::RGBA8, testImgData);
-                // 创建该特效专用的GPU纹理
-                stbi_image_free(testImgData);               // 释放CPU端内存
+                stbi_image_free(testImgData);
             } else {
-                printf("[main] Warning: Cannot load test image %s, using default\n",
-                       testImgPath.c_str());
+                printf("[main] Warning: Cannot load test image %s, using default\n", testImgPath.c_str());
             }
-            inputTexCache.push_back(effectInputTex);       // 加入缓存列表
+            inputTexCache.push_back(effectInputTex);
         }
 
         printf("[main] All %d input textures cached\n", (int)inputTexCache.size());
 
-        auto coverFlow = std::make_unique<CoverFlowScene>(); // 创建封面流场景（unique_ptr管理）
-        coverFlow->SetBackend(backend);                    // 注入渲染后端指针
-        coverFlow->SetInputTexture(inputTex);              // 设置默认输入纹理
-        coverFlow->SetInputTexCache(inputTexCache);        // 设置每个特效的缓存纹理
-        coverFlow->SetTestImageBaseDir(testImageBaseDir);   // 设置测试图片目录
-        coverFlow->SetApplication(&app);                   // 注入Application指针（用于拖放等）
-        coverFlow->AddImageToPool(jpgPath);                 // 添加默认测试图片到图片池
+        // 创建封面流场景
+        auto coverFlow = std::make_unique<CoverFlowScene>();
+        coverFlow->SetBackend(backend);                     // 设置渲染后端
+        coverFlow->SetInputTexture(inputTex);                // 设置默认输入纹理
+        coverFlow->SetInputTexCache(inputTexCache);          // 设置每效果纹理缓存
+        coverFlow->SetTestImageBaseDir(testImageBaseDir);    // 设置测试图片目录
+        coverFlow->SetApplication(&app);                    // 设置应用指针
+        coverFlow->AddImageToPool(jpgPath);                  // 添加默认图片到池
         coverFlow->AddImageToPool(assetDir + "/portrait.jpg"); // 添加人像图片
-        coverFlow->AddImageToPool(assetDir + "/nature.jpg");    // 添加自然风景图片
+        coverFlow->AddImageToPool(assetDir + "/nature.jpg");   // 添加自然风景图片
         coverFlow->AddImageToPool(assetDir + "/abstract.jpg");  // 添加抽象图片
 
-        // Add test images to pool for Ctrl+Left/Right cycling
-        for (int i = 0; i < NUM_EFFECTS; i++) {           // 将所有特效测试图片也加入图片池
+        // 将测试图片添加到图片池（用于 Ctrl+Left/Right 循环切换）
+        for (int i = 0; i < NUM_EFFECTS; i++) {
             std::string imgPath = testImageBaseDir + testImageList[i];
-            FILE* f = fopen(imgPath.c_str(), "rb");        // 检查文件是否存在
+            FILE* f = fopen(imgPath.c_str(), "rb");
             if (f) {
                 fclose(f);
-                coverFlow->AddImageToPool(imgPath);         // 存在则加入池中
+                coverFlow->AddImageToPool(imgPath);
             }
         }
 
-        // Add test videos to pool
-        const char* testVideoList[] = {                    // 测试视频文件名列表
+        // 添加测试视频到视频池
+        const char* testVideoList[] = {
             "00_grayscale.mp4", "01_bloom.mp4", "02_blur.mp4", "03_sharpen.mp4",
             "04_edge.mp4", "05_emboss.mp4", "06_pixelate.mp4", "07_vignette.mp4",
             "08_chromatic.mp4", "09_colorgrade.mp4", "10_noise.mp4", "11_kaleidoscope.mp4",
             "12_glitch.mp4", "13_toon.mp4", "14_vhs.mp4", "15_crt.mp4",
             "16_water.mp4", "17_lens.mp4"
         };
-        std::string testVideoBaseDir;                      // 测试视频基础目录
+        std::string testVideoBaseDir;
 #ifdef _WIN32
-        if (len > 0 && len < MAX_PATH) {                   // 复用之前获取的len值
+        if (len > 0 && len < MAX_PATH) {
             std::string exePath(buf, (size_t)len);
             auto sl = exePath.find_last_of("\\/");
             if (sl != std::string::npos) exePath = exePath.substr(0, sl);
@@ -234,7 +447,6 @@ int main(int argc, char* argv[]) {
                                     "../assets/videos", "assets/videos",
                                     "../../../screenshots/assets/videos", "../../screenshots/assets/videos",
                                     "../screenshots/assets/videos", "screenshots/assets/videos"}) {
-                // 与图片目录搜索逻辑相同，搜索视频目录
                 std::string test = exePath + "/" + rel + "/00_grayscale.mp4";
                 FILE* f = fopen(test.c_str(), "rb");
                 if (f) { fclose(f); testVideoBaseDir = exePath + "/" + rel + "/"; break; }
@@ -242,1602 +454,2090 @@ int main(int argc, char* argv[]) {
         }
 #endif
         if (testVideoBaseDir.empty()) {
-            testVideoBaseDir = "assets/videos/";           // 回退默认路径
+            testVideoBaseDir = "assets/videos/";
         }
         printf("[main] Test videos directory: %s\n", testVideoBaseDir.c_str());
 
-        for (int i = 0; i < NUM_EFFECTS; i++) {           // 遍历所有特效
-            std::string vidPath = testVideoBaseDir + testVideoList[i]; // 拼接视频路径
-            FILE* f = fopen(vidPath.c_str(), "rb");        // 检查视频文件是否存在
+        for (int i = 0; i < NUM_EFFECTS; i++) {
+            std::string vidPath = testVideoBaseDir + testVideoList[i];
+            FILE* f = fopen(vidPath.c_str(), "rb");
             if (f) {
                 fclose(f);
-                coverFlow->AddVideoToPool(vidPath);         // 存在则加入视频池
+                coverFlow->AddVideoToPool(vidPath);
             }
         }
 
-        if (autoTest) {                                   // 如果启用了自动测试模式
-            coverFlow->EnableAutoTest(80);                 // 每张卡片停留80帧后自动切换
+        if (autoTest) {
+            coverFlow->EnableAutoTest(80);                   // 启用自动测试，每卡停留80帧
         }
 
-        app.SetScene(std::move(coverFlow));                // 将场景转移给Application管理
+        app.SetScene(std::move(coverFlow));                  // 设置为当前场景
         printf("[main] CoverFlowScene started (autoTest=%d)\n", autoTest);
     });
 
-    return app.Run(argc, argv);                            // 启动应用主循环
+    return app.Run(argc, argv);                               // 启动应用主循环
 }
 ```
-
-#### 功能说明
-
-`main` 函数是程序的入口点，完成以下核心任务：
-
-1. **I/O 缓冲设置**：禁用 stdout/stderr 缓冲，确保日志实时输出到控制台。
-2. **自动测试检测**：通过环境变量 `AUTO_TEST` 或 `AUTO_TEST_DETAILS` 判断是否进入自动测试模式。
-3. **帧回调注册**：通过 lambda 表达式注册一个帧回调，在 Application 的主循环中首次调用时创建 CoverFlowScene。
-4. **资源加载**：加载默认测试图片和每个特效的专属测试图片，创建 GPU 纹理并缓存。
-5. **场景初始化**：创建 CoverFlowScene，注入后端、纹理、图片池、视频池等资源。
-6. **启动主循环**：调用 `app.Run()` 进入应用主循环。
-
-#### 实现原理
-
-- **延迟场景创建**：场景创建逻辑放在 `SetFrameCallback` 中而非 `main` 函数直接调用，是因为 Application 需要先完成 GLFW 和后端初始化后才能创建 GPU 资源。帧回调在主循环的第一帧被调用，此时后端已就绪。
-- **纹理缓存策略**：为每个特效预加载一张专属的测试图片纹理（如模糊效果用砖墙图片、色彩分级用食物图片），这样在封面流缩略图和详情页中可以展示每个特效的最佳效果。
-- **探测式资源定位**：与 `FindAssetDir` 相同的策略，对图片和视频目录也采用多级候选路径搜索。
-
-#### 为什么这样实现
-
-- **`setvbuf` 禁用缓冲**：在 Windows 上，stdout 默认使用行缓冲或全缓冲，可能导致日志延迟显示。禁用缓冲后，`printf` 输出立即刷新到控制台，便于调试和自动化测试日志捕获。
-- **帧回调模式**：这是一种"懒初始化"策略，将场景创建推迟到渲染后端完全就绪之后。如果直接在 `main` 中创建场景，后端尚未初始化，GPU 资源创建会失败。
-- **环境变量控制自动测试**：通过环境变量而非命令行参数控制测试模式，方便 CI/CD 管线和脚本化测试，无需修改程序调用方式。
 
 ---
 
 ## 2. 应用核心 — Application
 
-Application 类是整个程序的框架核心，负责 GLFW 窗口管理、渲染后端生命周期、场景系统管理和主循环驱动。
+`Application` 类是整个 Shader Showcase 的核心管理器，负责窗口创建、渲染后端管理、场景切换、主循环驱动以及输入事件处理。它采用场景（Scene）系统架构，通过 `OnEnter`/`OnExit`/`OnUpdate`/`OnRender`/`OnImGui` 生命周期接口管理不同场景的切换。
 
-### 2.1 头文件 Application.h（类定义）
+### 2.1 Application.h — 类定义
+
+`Application.h` 定义了 `Application` 类的完整接口和成员变量，同时也定义了用于自动测试截图的全局 `ScreenshotRequest` 结构体。
+
+整个头文件可以分为以下逻辑段：
+
+#### 第一段：ScreenshotRequest 全局截图请求结构体
+
+**分析**：`ScreenshotRequest` 是一个轻量级的全局单例结构体，用于在自动测试流程中请求截图。它使用静态成员变量实现全局状态共享，`pending` 标志表示是否有待处理的截图请求，`path` 存储截图保存路径。`Request` 方法设置请求，`Consume` 方法以原子方式读取并清除请求标志，确保每个请求只被处理一次。
 
 ```cpp
-#pragma once                                             // 防止头文件重复包含
-#include "render/IRenderBackend.h"                       // 渲染后端抽象接口
-#include <memory>                                        // 智能指针支持
-#include <functional>                                    // std::function支持
-#include <string>                                        // std::string支持
-
-struct GLFWwindow;                                       // 前向声明GLFW窗口结构体
-
-class Scene;                                             // 前向声明Scene基类
-
-// Global screenshot request (for auto-test)
-// 全局截图请求结构体（用于自动化测试截图）
 struct ScreenshotRequest {
-    static bool pending;                                // 是否有待处理的截图请求
-    static char path[256];                               // 截图保存路径（静态缓冲区）
+    static bool pending;
+    static char path[256];
     static void Request(const char* p) { pending = true; snprintf(path, sizeof(path), "%s", p); }
-    // 发起截图请求：设置pending标志并记录路径
     static bool Consume() { if (pending) { pending = false; return true; } return false; }
-    // 消费截图请求：检查并清除pending标志，返回是否曾有请求
 };
+```
 
-#include "ui/PerformancePanel.h"                         // 性能面板UI组件
+#### 第二段：公共接口
 
+**分析**：`Application` 的公共接口分为几个功能组：
+- **生命周期**：`Run` 是应用的主入口，`SwitchBackend` 用于运行时切换渲染后端
+- **访问器**：`GetBackendType`、`GetBackend`、`GetWindow` 提供对内部状态的只读访问
+- **场景管理**：`SetScene` 设置当前场景，`GetCurrentScene` 获取当前场景指针
+- **帧回调**：`SetFrameCallback` 注册遗留的帧回调（为向后兼容保留）
+- **拖放支持**：`ConsumeDroppedFile` 获取最近拖放到窗口的文件路径
+
+```cpp
 class Application {
 public:
-    Application();                                       // 构造函数
-    ~Application();                                      // 析构函数
-    int Run(int argc, char* argv[]);                    // 应用启动入口
-    void SwitchBackend(BackendType type);                // 切换渲染后端类型
-    BackendType GetBackendType() const { return m_backendType; } // 获取当前后端类型
-    IRenderBackend* GetBackend() const { return m_backend.get(); } // 获取后端接口指针
-    GLFWwindow* GetWindow() const { return m_window; }  // 获取GLFW窗口句柄
+    Application();
+    ~Application();
+    int Run(int argc, char* argv[]);
+    void SwitchBackend(BackendType type);
+    BackendType GetBackendType() const { return m_backendType; }
+    IRenderBackend* GetBackend() const { return m_backend.get(); }
+    GLFWwindow* GetWindow() const { return m_window; }
 
-    // Scene management（场景管理）
-    void SetScene(std::unique_ptr<Scene> scene);        // 设置当前活动场景
-    Scene* GetCurrentScene() const { return m_currentScene.get(); } // 获取当前场景指针
+    void SetScene(std::unique_ptr<Scene> scene);
+    Scene* GetCurrentScene() const { return m_currentScene.get(); }
 
-    // Frame callback (deprecated in favor of scene system;
-    // kept for backward compatibility)
-    // 帧回调（已弃用，保留向后兼容）
     using FrameCallback = std::function<void(float dt)>;
     void SetFrameCallback(FrameCallback cb) { m_frameCallback = std::move(cb); }
 
-    // Drag-drop file loading（拖放文件加载）
-    /// Returns the path of the most recently dropped file, or empty string.
-    /// The caller should clear the pending flag after consuming.
-    std::string ConsumeDroppedFile();                   // 消费最近拖放的文件路径
+    std::string ConsumeDroppedFile();
+```
+
+#### 第三段：私有成员与回调声明
+
+**分析**：私有成员包括：
+- **窗口管理**：`m_window`（当前窗口）和 `m_retiredWindow`（退役窗口，用于避免 NVIDIA+Windows 上 Vulkan 到 OpenGL 切换时的 GL 上下文损坏问题）
+- **后端管理**：`m_backend`（渲染后端智能指针）、`m_backendType`（当前后端类型）、`m_pendingBackend`/`m_pendingBackendSwitch`（延迟切换的状态）
+- **场景系统**：`m_currentScene`（当前场景）和 `m_pendingNextScene`（延迟切换的下一场景）
+- **UI 面板**：`m_perfPanel`（性能监控面板）
+- **拖放状态**：`m_droppedFilePath`
+
+三个静态回调函数通过 GLFW 的用户指针机制将窗口事件转发到 Application 实例。
+
+```cpp
+private:
+    void InitBackend(BackendType type);
+    void MainLoop();
+    void Shutdown();
+
+    GLFWwindow* m_window = nullptr;
+    GLFWwindow* m_retiredWindow = nullptr;
+    std::unique_ptr<IRenderBackend> m_backend;
+    BackendType m_backendType = BackendType::Vulkan;
+    BackendType m_pendingBackend = BackendType::Vulkan;
+    bool m_pendingBackendSwitch = false;
+    FrameCallback m_frameCallback;
+    std::unique_ptr<Scene> m_currentScene;
+    std::unique_ptr<Scene> m_pendingNextScene;
+    bool m_running = false;
+    std::string m_droppedFilePath;
+    PerformancePanel m_perfPanel;
+
+    static void FramebufferSizeCallback(GLFWwindow* w, int width, int height);
+    static void KeyCallback(GLFWwindow* w, int key, int scancode, int action, int mods);
+    static void DropCallback(GLFWwindow* w, int count, const char** paths);
+};
+```
+
+#### 完整源码
+
+```cpp
+#pragma once                                                 // 防止头文件重复包含
+#include "render/IRenderBackend.h"                          // 渲染后端抽象接口
+#include <memory>                                            // 智能指针
+#include <functional>                                        // std::function
+#include <string>
+
+struct GLFWwindow;                                           // GLFW 窗口句柄前向声明
+
+class Scene;                                                 // 场景基类前向声明
+
+// 全局截图请求结构体（用于自动测试）
+struct ScreenshotRequest {
+    static bool pending;                                     // 是否有待处理的截图请求
+    static char path[256];                                   // 截图保存路径
+    static void Request(const char* p) { pending = true; snprintf(path, sizeof(path), "%s", p); } // 发起截图请求
+    static bool Consume() { if (pending) { pending = false; return true; } return false; } // 消费并清除请求
+};
+
+#include "ui/PerformancePanel.h"                             // 性能监控面板
+
+class Application {
+public:
+    Application();                                          // 构造函数
+    ~Application();                                          // 析构函数
+    int Run(int argc, char* argv[]);                         // 应用主入口
+    void SwitchBackend(BackendType type);                    // 切换渲染后端（OpenGL/Vulkan）
+    BackendType GetBackendType() const { return m_backendType; } // 获取当前后端类型
+    IRenderBackend* GetBackend() const { return m_backend.get(); } // 获取渲染后端指针
+    GLFWwindow* GetWindow() const { return m_window; }       // 获取 GLFW 窗口句柄
+
+    // 场景管理
+    void SetScene(std::unique_ptr<Scene> scene);            // 设置当前场景
+    Scene* GetCurrentScene() const { return m_currentScene.get(); } // 获取当前场景
+
+    // 帧回调（遗留接口，为向后兼容保留）
+    using FrameCallback = std::function<void(float dt)>;     // 帧回调类型定义
+    void SetFrameCallback(FrameCallback cb) { m_frameCallback = std::move(cb); } // 设置帧回调
+
+    // 拖放文件加载
+    std::string ConsumeDroppedFile();                        // 获取并清除拖放文件路径
 
 private:
-    void InitBackend(BackendType type);                 // 初始化渲染后端
-    void MainLoop();                                    // 主循环
-    void Shutdown();                                   // 关闭清理
+    void InitBackend(BackendType type);                      // 初始化渲染后端
+    void MainLoop();                                         // 主循环
+    void Shutdown();                                          // 关闭清理
 
-    GLFWwindow* m_window = nullptr;                     // 主GLFW窗口句柄
-    GLFWwindow* m_retiredWindow = nullptr;              // 已退役的隐藏窗口（避免GLFW崩溃）
-    std::unique_ptr<IRenderBackend> m_backend;         // 渲染后端（智能指针管理）
-    BackendType m_backendType = BackendType::Vulkan;   // 当前后端类型（默认Vulkan）
-    BackendType m_pendingBackend = BackendType::Vulkan; // 待切换的后端类型
-    bool m_pendingBackendSwitch = false;               // 是否有待处理的后端切换
-    FrameCallback m_frameCallback;                      // 帧回调函数
-    std::unique_ptr<Scene> m_currentScene;              // 当前活动场景
-    std::unique_ptr<Scene> m_pendingNextScene;          // 延迟切换的下一个场景
-    bool m_running = false;                            // 主循环运行标志
+    GLFWwindow* m_window = nullptr;                           // 当前 GLFW 窗口
+    GLFWwindow* m_retiredWindow = nullptr;                   // 退役窗口（避免 GLFW 崩溃）
+    std::unique_ptr<IRenderBackend> m_backend;               // 渲染后端智能指针
+    BackendType m_backendType = BackendType::Vulkan;        // 当前后端类型（默认 Vulkan）
+    BackendType m_pendingBackend = BackendType::Vulkan;      // 待切换的后端类型
+    bool m_pendingBackendSwitch = false;                     // 是否有待处理的后端切换
+    FrameCallback m_frameCallback;                           // 帧回调函数
+    std::unique_ptr<Scene> m_currentScene;                   // 当前活动场景
+    std::unique_ptr<Scene> m_pendingNextScene;              // 延迟切换的下一场景
+    bool m_running = false;                                  // 主循环运行标志
 
-    // Drag-drop state（拖放状态）
-    std::string m_droppedFilePath;                      // 最近拖放的文件路径
+    std::string m_droppedFilePath;                           // 拖放文件路径
 
-    // UI panels（UI面板）
-    PerformancePanel m_perfPanel;                      // 性能监控面板
+    PerformancePanel m_perfPanel;                            // 性能监控面板
 
-    static void FramebufferSizeCallback(GLFWwindow* w, int width, int height); // 窗口尺寸回调
+    static void FramebufferSizeCallback(GLFWwindow* w, int width, int height); // 帧缓冲大小回调
     static void KeyCallback(GLFWwindow* w, int key, int scancode, int action, int mods); // 键盘回调
     static void DropCallback(GLFWwindow* w, int count, const char** paths); // 拖放回调
 };
 ```
 
-#### 功能说明
-
-`Application.h` 定义了应用框架的核心类结构，包含：
-
-- **ScreenshotRequest**：全局静态截图请求结构体，用于自动化测试中触发截图操作。
-- **Application 类**：管理窗口生命周期、渲染后端（OpenGL/Vulkan）、场景切换、输入回调和性能面板。
-
-#### 实现原理
-
-- **前向声明**：`GLFWwindow` 和 `Scene` 使用前向声明而非 `#include`，减少头文件依赖，加快编译速度。
-- **智能指针管理**：`m_backend`、`m_currentScene`、`m_pendingNextScene` 均使用 `std::unique_ptr`，确保资源独占所有权和自动释放。
-- **延迟切换机制**：`m_pendingBackendSwitch` 和 `m_pendingNextScene` 实现了"延迟到下一帧"的切换策略，避免在 ImGui/Vulkan 渲染过程中销毁 GPU 资源导致崩溃。
-- **退役窗口机制**：`m_retiredWindow` 保存从 Vulkan 切换到 OpenGL 时需要废弃的旧窗口，但不立即销毁（避免 NVIDIA 驱动在 Vulkan 占用表面后销毁窗口导致的崩溃）。
-
-#### 为什么这样实现
-
-- **`ScreenshotRequest` 使用静态成员**：截图请求可能从场景内部的任何地方发起（如自动测试逻辑），使用全局静态结构体避免了在场景和 Application 之间传递截图信号的复杂性。
-- **`m_retiredWindow` 的存在**：这是 NVIDIA + Windows 平台上的一个已知问题——Vulkan 通过 `vkCreateWin32SurfaceKHR` 占用窗口表面后，如果销毁窗口再创建新窗口给 OpenGL 用，NVIDIA 驱动会崩溃。解决方案是隐藏旧窗口（不销毁），创建一个全新的窗口给 OpenGL 使用。
-- **内联简单 getter**：`GetBackendType()`、`GetBackend()`、`GetWindow()` 等简单访问器直接在头文件中内联定义，避免函数调用开销。
-
----
-
 ### 2.2 构造与析构
 
-```cpp
-// 静态成员初始化（在Application.cpp中）
-bool ScreenshotRequest::pending = false;                 // 截图请求标志初始化为false
-char ScreenshotRequest::path[256] = {};                  // 截图路径缓冲区初始化为空
+构造函数和析构函数的实现非常简洁。构造函数为空（所有成员使用类内默认初始化），析构函数调用 `Shutdown()` 确保资源正确释放。
 
-Application::Application() {}                            // 默认构造函数（空实现）
+#### 第一段：构造函数
+
+**分析**：构造函数体为空。所有成员变量已在头文件中通过类内初始化器赋予了默认值（如 `m_window = nullptr`、`m_backendType = BackendType::Vulkan` 等），因此无需在构造函数中额外初始化。这种设计遵循了"在声明处初始化"的现代 C++ 最佳实践。
+
+```cpp
+Application::Application() {}
+```
+
+#### 第二段：析构函数
+
+**分析**：析构函数调用 `Shutdown()` 方法。`Shutdown` 负责安全地销毁场景、后端和窗口等所有资源。将清理逻辑集中在 `Shutdown` 中而非分散在析构函数里，是因为 `Shutdown` 也可以在 `Run` 的正常退出流程中被显式调用，实现资源清理逻辑的复用。
+
+```cpp
+Application::~Application()
+{
+    Shutdown();
+}
+```
+
+#### 完整源码
+
+```cpp
+// ============================================================================
+// 构造函数 / 析构函数
+// ============================================================================
+
+Application::Application() {}                               // 空构造，成员已在头文件中默认初始化
 
 Application::~Application()
 {
-    Shutdown();                                          // 析构时执行资源清理
+    Shutdown();                                              // 析构时确保资源全部释放
 }
 ```
 
-#### 功能说明
+### 2.3 Run — 应用启动
 
-- 构造函数为空实现，所有实际初始化推迟到 `Run()` 中进行。
-- 析构函数调用 `Shutdown()` 确保即使 `Run()` 因异常提前退出，资源也能被正确释放（RAII 模式）。
+`Run` 是 Application 的主入口函数，负责初始化 GLFW、创建渲染后端、启动主循环并在退出时清理资源。整个执行流程为：`glfwInit` -> `InitBackend` -> `MainLoop` -> `Shutdown` -> `glfwTerminate`。
 
-#### 实现原理
+#### 第一段：初始化 GLFW
 
-遵循 RAII（Resource Acquisition Is Initialization）原则：构造时不获取资源，析构时确保释放。实际资源获取在 `Run()` → `InitBackend()` 中完成。
-
-#### 为什么这样实现
-
-- **空构造函数**：避免在栈上创建 `Application` 对象时就触发 GLFW 初始化（GLFW 初始化可能失败，而构造函数不方便返回错误码）。
-- **析构调用 Shutdown**：防御性编程，确保任何退出路径（正常退出、异常退出）都能正确清理资源。
-
----
-
-### 2.3 Run — 应用启动入口
+**分析**：调用 `glfwInit()` 初始化 GLFW 库。如果初始化失败，输出错误信息并返回 `EXIT_FAILURE`。GLFW 是跨平台的窗口和输入管理库，必须在创建窗口之前初始化。
 
 ```cpp
-int Application::Run(int argc, char* argv[])
-{
-    (void)argc;                                          // 未使用命令行参数，避免编译器警告
-    (void)argv;
-
-    if (!glfwInit())                                     // 初始化GLFW库
+    if (!glfwInit())
     {
         std::cerr << "[Application] FATAL: Failed to initialize GLFW" << std::endl;
-        return EXIT_FAILURE;                             // GLFW初始化失败则立即退出
+        return EXIT_FAILURE;
     }
+```
 
-    InitBackend(m_backendType);                         // 使用默认后端类型（Vulkan）初始化
+#### 第二段：初始化渲染后端
 
-    if (!m_window || !m_backend)                         // 检查窗口和后端是否创建成功
+**分析**：调用 `InitBackend` 使用默认的后端类型（`m_backendType`，初始为 Vulkan）初始化渲染后端。`InitBackend` 内部会创建窗口、初始化 OpenGL/Vulkan 后端并设置 ImGui。如果后端或窗口创建失败，终止 GLFW 并返回错误码。
+
+```cpp
+    InitBackend(m_backendType);
+
+    if (!m_window || !m_backend)
     {
         std::cerr << "[Application] FATAL: Failed to initialize backend" << std::endl;
-        glfwTerminate();                                 // 清理GLFW
-        return EXIT_FAILURE;                             // 初始化失败则退出
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+```
+
+#### 第三段：启动主循环并清理
+
+**分析**：设置 `m_running = true` 后进入 `MainLoop`。主循环退出后依次调用 `Shutdown`（释放所有资源）和 `glfwTerminate`（终止 GLFW 库），最后返回成功退出码。
+
+```cpp
+    m_running = true;
+    MainLoop();
+    Shutdown();
+    glfwTerminate();
+
+    return EXIT_SUCCESS;
+```
+
+#### 完整源码
+
+```cpp
+// ============================================================================
+// Run — 应用入口
+// ============================================================================
+
+int Application::Run(int argc, char* argv[])
+{
+    (void)argc;                                             // 未使用命令行参数
+    (void)argv;
+
+    if (!glfwInit())                                         // 初始化 GLFW 库
+    {
+        std::cerr << "[Application] FATAL: Failed to initialize GLFW" << std::endl;
+        return EXIT_FAILURE;                                 // 初始化失败则退出
     }
 
-    m_running = true;                                    // 设置运行标志
-    MainLoop();                                          // 进入主循环（阻塞直到退出）
-    Shutdown();                                         // 主循环退出后执行清理
-    glfwTerminate();                                     // 终止GLFW库
+    InitBackend(m_backendType);                             // 初始化渲染后端（默认 Vulkan）
 
-    return EXIT_SUCCESS;                                 // 正常退出
+    if (!m_window || !m_backend)                            // 检查窗口和后端是否创建成功
+    {
+        std::cerr << "[Application] FATAL: Failed to initialize backend" << std::endl;
+        glfwTerminate();                                    // 终止 GLFW
+        return EXIT_FAILURE;
+    }
+
+    m_running = true;                                       // 设置运行标志
+    MainLoop();                                              // 进入主循环
+    Shutdown();                                             // 清理所有资源
+    glfwTerminate();                                        // 终止 GLFW 库
+
+    return EXIT_SUCCESS;                                     // 正常退出
 }
 ```
 
-#### 功能说明
+### 2.4 InitBackend — 后端初始化
 
-`Run` 是应用的顶层启动函数，按顺序执行：GLFW 初始化 → 后端初始化 → 主循环 → 清理 → 退出。
+`InitBackend` 是 Application 中最复杂的函数之一，负责销毁旧后端资源、创建或复用窗口、初始化新的渲染后端并设置 ImGui。它需要处理 Vulkan 到 OpenGL 切换时的窗口退役问题。
 
-#### 实现原理
+#### 第一段：销毁旧后端资源
 
-1. `glfwInit()` 初始化 GLFW 库，包括平台特定的窗口系统接口。
-2. `InitBackend()` 创建窗口和渲染后端（OpenGL 或 Vulkan）。
-3. `MainLoop()` 进入帧驱动的游戏循环，直到窗口关闭或 `m_running` 被设为 false。
-4. `Shutdown()` 释放所有资源。
-5. `glfwTerminate()` 清理 GLFW 全局状态。
-
-#### 为什么这样实现
-
-- **线性流程**：初始化 → 运行 → 清理的线性结构清晰直观，便于理解生命周期。
-- **双重检查**：在 `InitBackend` 之后检查 `m_window` 和 `m_backend`，因为后端初始化可能因缺少驱动支持等原因失败。
-- **`glfwTerminate` 调用两次**：`Shutdown()` 中调用一次（清理窗口等），`Run()` 末尾再调用一次（确保 GLFW 全局状态被清理）。`glfwTerminate` 是幂等的，多次调用安全。
-
----
-
-### 2.4 InitBackend — 后端初始化与窗口管理
+**分析**：首先退出并销毁当前场景，然后依次调用后端的 `ImGuiShutdown` 和 `Shutdown` 释放 GPU 资源，最后重置后端智能指针。如果 ImGui 上下文仍然存在，清除字体图集以便新后端可以重建。同时重置延迟场景切换的待处理状态。
 
 ```cpp
-void Application::InitBackend(BackendType type)
-{
-    // ---- Destroy old backend resources (but NOT the window) ----------------
-    // 销毁旧后端资源（但不销毁窗口）
-    if (m_currentScene) {                               // 如果当前有活动场景
-        m_currentScene->OnExit();                       // 通知场景退出
-        m_currentScene.reset();                         // 释放场景对象
+    if (m_currentScene) {
+        m_currentScene->OnExit();
+        m_currentScene.reset();
     }
 
-    if (m_backend) {                                    // 如果已有后端实例
-        m_backend->ImGuiShutdown();                    // 关闭ImGui的GPU资源
-        m_backend->Shutdown();                          // 关闭后端
-        m_backend.reset();                               // 释放后端对象
+    if (m_backend) {
+        m_backend->ImGuiShutdown();
+        m_backend->Shutdown();
+        m_backend.reset();
     }
 
-    // Don't destroy ImGui context — the backend's ImGuiShutdown already freed
-    // GPU resources. Just reset the font atlas so the next backend can rebuild.
-    // 不销毁ImGui上下文——后端的ImGuiShutdown已释放GPU资源。
-    // 只需重置字体图集，让下一个后端重建。
-    if (ImGui::GetCurrentContext() != nullptr) {       // 如果ImGui上下文存在
-        ImGui::GetIO().Fonts->Clear();                  // 清空字体图集
+    if (ImGui::GetCurrentContext() != nullptr) {
+        ImGui::GetIO().Fonts->Clear();
     }
 
-    m_pendingNextScene.reset();                         // 清除待切换的场景
-    BackendType oldType = m_backendType;                // 记录旧后端类型
-    m_backendType = type;                                // 更新为新后端类型
+    m_pendingNextScene.reset();
+    BackendType oldType = m_backendType;
+    m_backendType = type;
+```
 
-    // ---- Create/reuse window -----------------------------------------------
-    // 创建或复用窗口
-    // Always use GLFW_OPENGL_API — Vulkan creates its surface via native Win32
-    // API (vkCreateWin32SurfaceKHR), which works on any HWND regardless of
-    // GLFW client API.
-    // 始终使用GLFW_OPENGL_API——Vulkan通过原生Win32 API创建表面，
-    // 这在任何HWND上都有效，与GLFW客户端API无关。
-    //
-    // When switching FROM Vulkan TO OpenGL, the GL context has been corrupted
-    // by Vulkan's ownership of the window surface on NVIDIA+Windows.
-    // Retire the old window (hide it, never destroy it) and create a fresh one.
-    // 当从Vulkan切换到OpenGL时，GL上下文已被Vulkan对窗口表面的占用所破坏。
-    // 退役旧窗口（隐藏但不销毁），创建一个全新的窗口。
+#### 第二段：窗口管理（处理 Vulkan 到 OpenGL 切换）
+
+**分析**：这是 InitBackend 中最关键的部分。由于 Vulkan 和 OpenGL 共享同一个 GLFW 窗口，在 NVIDIA + Windows 平台上，从 Vulkan 切换到 OpenGL 时，GL 上下文可能已被 Vulkan 损坏。解决方案是"退役"旧窗口（隐藏但不销毁，因为销毁会导致 GLFW 崩溃），然后创建一个全新的窗口。判断条件为 `type == OpenGL && oldType == Vulkan`。
+
+```cpp
     bool needNewWindow = (type == BackendType::OpenGL && oldType == BackendType::Vulkan);
-    // 判断是否需要新窗口：仅当从Vulkan切换到OpenGL时
     if (needNewWindow && m_window) {
-        glfwHideWindow(m_window);                        // 隐藏旧窗口
-        m_retiredWindow = m_window;                      // 保存为退役窗口
-        m_window = nullptr;                              // 清空主窗口指针
+        glfwHideWindow(m_window);
+        m_retiredWindow = m_window;
+        m_window = nullptr;
     }
+```
 
-    if (!m_window) {                                     // 如果没有可用窗口
-        glfwDefaultWindowHints();                        // 恢复默认窗口提示
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API); // 设置客户端API为OpenGL
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);   // OpenGL主版本号4
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);   // OpenGL次版本号6
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 核心模式
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // 前向兼容
+#### 第三段：创建新窗口（如需要）
 
-        constexpr int W = 1280, H = 720;                 // 默认窗口尺寸1280x720
+**分析**：如果当前没有窗口（首次初始化或退役了旧窗口），则创建新窗口。始终使用 `GLFW_OPENGL_API` 作为客户端 API 提示，因为 Vulkan 通过 Win32 原生 API 创建表面，不依赖 GLFW 的客户端 API 设置。窗口大小固定为 1280x720。创建后注册用户指针和三个回调函数。
+
+```cpp
+    if (!m_window) {
+        glfwDefaultWindowHints();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+
+        constexpr int W = 1280, H = 720;
         m_window = glfwCreateWindow(W, H, LanguageManager::Instance().WindowTitle(), nullptr, nullptr);
-        // 创建窗口，标题从语言管理器获取（支持多语言）
-        if (!m_window) {                                 // 窗口创建失败
+        if (!m_window) {
             std::cerr << "[Application] ERROR: Failed to create window\n";
             return;
         }
 
-        glfwSetWindowUserPointer(m_window, this);       // 将Application指针绑定到窗口用户数据
-        glfwSetFramebufferSizeCallback(m_window, FramebufferSizeCallback); // 注册窗口尺寸回调
-        glfwSetKeyCallback(m_window, KeyCallback);       // 注册键盘回调
-        glfwSetDropCallback(m_window, DropCallback);     // 注册拖放回调
+        glfwSetWindowUserPointer(m_window, this);
+        glfwSetFramebufferSizeCallback(m_window, FramebufferSizeCallback);
+        glfwSetKeyCallback(m_window, KeyCallback);
+        glfwSetDropCallback(m_window, DropCallback);
+    }
+```
+
+#### 第四段：创建并初始化后端
+
+**分析**：将 GL 上下文设为当前（两个后端共享窗口），如果是 OpenGL 后端则启用垂直同步。然后根据后端类型创建对应的 `OpenGLBackend` 或 `VulkanBackend` 实例，调用 `Init` 进行初始化，再调用 `ImGuiInit` 初始化 ImGui 集成。最后更新窗口标题以显示当前后端名称。
+
+```cpp
+    glfwMakeContextCurrent(m_window);
+    if (type == BackendType::OpenGL) {
+        glfwSwapInterval(1);
     }
 
-    // ---- Make GL context current (both backends share the window) ---------
-    // 使GL上下文成为当前上下文（两个后端共享窗口）
-    glfwMakeContextCurrent(m_window);                    // 绑定GL上下文到当前线程
-    if (type == BackendType::OpenGL) {                   // 如果是OpenGL后端
-        glfwSwapInterval(1);                             // 开启垂直同步（每帧交换一次）
-    }
-
-    // ---- Create backend --------------------------------------------------
-    // 创建渲染后端实例
     switch (type) {
     case BackendType::OpenGL:
-        m_backend = std::make_unique<OpenGLBackend>();   // 创建OpenGL后端
+        m_backend = std::make_unique<OpenGLBackend>();
         break;
     case BackendType::Vulkan:
-        m_backend = std::make_unique<VulkanBackend>();  // 创建Vulkan后端
+        m_backend = std::make_unique<VulkanBackend>();
         break;
     }
 
-    if (!m_backend) {                                    // 后端创建失败（编译时未启用）
+    if (!m_backend->Init(m_window)) {
+        m_backend.reset();
+        return;
+    }
+
+    m_backend->ImGuiInit(m_window);
+
+    std::string title = std::string(LanguageManager::Instance().WindowTitle()) + " [" + m_backend->GetName() + "]";
+    glfwSetWindowTitle(m_window, title.c_str());
+```
+
+#### 完整源码
+
+```cpp
+// ============================================================================
+// InitBackend — 销毁旧后端，创建新后端
+// ============================================================================
+
+void Application::InitBackend(BackendType type)
+{
+    // ---- 销毁旧后端资源（但不销毁窗口）----
+    if (m_currentScene) {
+        m_currentScene->OnExit();                            // 退出当前场景
+        m_currentScene.reset();                              // 销毁场景对象
+    }
+
+    if (m_backend) {
+        m_backend->ImGuiShutdown();                          // 释放 ImGui GPU 资源
+        m_backend->Shutdown();                               // 释放后端资源
+        m_backend.reset();                                   // 重置智能指针
+    }
+
+    // 不销毁 ImGui 上下文，只清除字体图集以便新后端重建
+    if (ImGui::GetCurrentContext() != nullptr) {
+        ImGui::GetIO().Fonts->Clear();
+    }
+
+    m_pendingNextScene.reset();                              // 清除待处理的场景切换
+    BackendType oldType = m_backendType;                     // 记录旧后端类型
+    m_backendType = type;                                    // 更新为新的后端类型
+
+    // ---- 创建或复用窗口 ----
+    // 始终使用 GLFW_OPENGL_API — Vulkan 通过 Win32 原生 API 创建表面
+    // 从 Vulkan 切换到 OpenGL 时，GL 上下文可能已被损坏，需要创建新窗口
+    bool needNewWindow = (type == BackendType::OpenGL && oldType == BackendType::Vulkan);
+    if (needNewWindow && m_window) {
+        glfwHideWindow(m_window);                             // 隐藏旧窗口
+        m_retiredWindow = m_window;                           // 保存为退役窗口（不销毁）
+        m_window = nullptr;                                   // 清空当前窗口指针
+    }
+
+    if (!m_window) {                                         // 如果没有窗口则创建新窗口
+        glfwDefaultWindowHints();                            // 恢复默认窗口提示
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);    // 使用 OpenGL API
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);       // OpenGL 4.6
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // 核心模式
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // 前向兼容
+
+        constexpr int W = 1280, H = 720;                    // 窗口尺寸
+        m_window = glfwCreateWindow(W, H, LanguageManager::Instance().WindowTitle(), nullptr, nullptr);
+        if (!m_window) {
+            std::cerr << "[Application] ERROR: Failed to create window\n";
+            return;
+        }
+
+        glfwSetWindowUserPointer(m_window, this);           // 设置用户指针（回调中使用）
+        glfwSetFramebufferSizeCallback(m_window, FramebufferSizeCallback); // 注册帧缓冲大小回调
+        glfwSetKeyCallback(m_window, KeyCallback);           // 注册键盘回调
+        glfwSetDropCallback(m_window, DropCallback);         // 注册拖放回调
+    }
+
+    // ---- 将 GL 上下文设为当前（两个后端共享窗口）----
+    glfwMakeContextCurrent(m_window);
+    if (type == BackendType::OpenGL) {
+        glfwSwapInterval(1);                                 // OpenGL 启用垂直同步
+    }
+
+    // ---- 创建后端实例 ----
+    switch (type) {
+    case BackendType::OpenGL:
+        m_backend = std::make_unique<OpenGLBackend>();       // 创建 OpenGL 后端
+        break;
+    case BackendType::Vulkan:
+        m_backend = std::make_unique<VulkanBackend>();       // 创建 Vulkan 后端
+        break;
+    }
+
+    if (!m_backend) {
         std::cerr << "[Application] ERROR: Backend not available\n";
         return;
     }
 
-    if (!m_backend->Init(m_window)) {                   // 初始化后端（创建设备、管线等）
+    if (!m_backend->Init(m_window)) {                        // 初始化后端
         std::cerr << "[Application] ERROR: Backend initialization failed\n";
-        m_backend.reset();                               // 初始化失败则释放后端
+        m_backend.reset();
         return;
     }
 
-    m_backend->ImGuiInit(m_window);                     // 初始化ImGui的GPU后端
+    m_backend->ImGuiInit(m_window);                          // 初始化 ImGui 集成
 
+    // 更新窗口标题，附加后端名称
     std::string title = std::string(LanguageManager::Instance().WindowTitle()) + " [" + m_backend->GetName() + "]";
-    // 拼接窗口标题：应用名 + [后端名称]
-    glfwSetWindowTitle(m_window, title.c_str());        // 更新窗口标题
+    glfwSetWindowTitle(m_window, title.c_str());
 
     std::cout << "[Application] Backend initialized: " << m_backend->GetName() << std::endl;
 }
 ```
 
-#### 功能说明
+### 2.5 MainLoop — 主循环
 
-`InitBackend` 负责完整的后端初始化流程，包括：清理旧后端资源、处理窗口创建/复用、创建渲染后端实例、初始化 ImGui。
+`MainLoop` 是帧驱动的游戏循环，每帧依次处理事件、计算时间增量、驱动场景更新和渲染、处理场景切换、渲染性能面板和 ImGui，最后处理截图请求。
 
-#### 实现原理
+#### 第一段：循环条件与事件轮询
 
-1. **旧资源清理**：先通知当前场景退出，再关闭 ImGui GPU 资源，最后关闭后端。顺序很重要——场景可能使用后端资源，必须先退出场景。
-2. **ImGui 字体图集重置**：`ImGuiShutdown` 释放了 GPU 端的字体纹理，但 ImGui 上下文本身保留。`Clear()` 清空 CPU 端字体数据，让新后端在 `ImGuiInit` 时重建。
-3. **窗口复用策略**：
-   - 首次创建：直接创建新窗口。
-   - OpenGL → Vulkan：复用同一窗口（Vulkan 通过 Win32 API 创建表面，不依赖 GL 上下文）。
-   - Vulkan → OpenGL：必须创建新窗口（NVIDIA 驱动问题）。
-4. **GLFW_OPENGL_API 始终设置**：即使使用 Vulkan 后端也设置 OpenGL API，因为 Vulkan 通过 `vkCreateWin32SurfaceKHR` 直接从 HWND 创建表面，不需要 GLFW 的 Vulkan API 模式。
-
-#### 为什么这样实现
-
-- **退役窗口而非销毁**：在 NVIDIA + Windows 上，Vulkan 通过 `vkCreateWin32SurfaceKHR` 绑定了窗口表面。如果销毁该窗口，NVIDIA 驱动内部状态可能损坏，导致后续操作崩溃。隐藏窗口但不销毁是最安全的做法。
-- **垂直同步仅对 OpenGL 开启**：Vulkan 有自己的帧同步机制（`vkQueuePresentKHR` + swapchain），不需要 GLFW 的 `glfwSwapInterval`。
-- **`glfwSetWindowUserPointer`**：GLFW 的回调函数是 C 风格的静态函数，没有 `this` 指针。通过 `glfwSetWindowUserPointer` 将 `Application*` 存储在窗口中，回调中通过 `glfwGetWindowUserPointer` 取回。
-
----
-
-### 2.5 MainLoop — 主循环帧处理
+**分析**：主循环在 `m_running` 为 true、窗口存在且未请求关闭时持续运行。每帧首先调用 `glfwPollEvents()` 处理所有待处理的窗口事件。整个循环体包裹在 try-catch 中，确保异常不会导致程序无提示崩溃。
 
 ```cpp
-void Application::MainLoop()
-{
-    auto lastTime = std::chrono::high_resolution_clock::now(); // 记录上一帧时间点
-
     while (m_running && m_window && !glfwWindowShouldClose(m_window))
-    // 循环条件：运行中 且 窗口存在 且 窗口未请求关闭
     {
         try {
-        glfwPollEvents();                                // 处理所有待处理的事件（输入、窗口等）
+            glfwPollEvents();
+```
 
-        // Process pending backend switch (deferred to avoid corruption during ImGui rendering)
-        // 处理待执行的后端切换（延迟到帧开始，避免ImGui/Vulkan状态损坏）
+#### 第二段：延迟后端切换处理
+
+**分析**：检查 `m_pendingBackendSwitch` 标志，如果存在待处理的后端切换请求，在帧开始时执行切换。将切换延迟到帧开始而非在回调中立即执行，是为了避免在 ImGui/Vulkan 渲染过程中切换后端导致的状态损坏。
+
+```cpp
         if (m_pendingBackendSwitch) {
-            m_pendingBackendSwitch = false;               // 清除待切换标志
+            m_pendingBackendSwitch = false;
             printf("[Application] Processing deferred backend switch...\n"); fflush(stdout);
-            InitBackend(m_pendingBackend);               // 执行后端切换
+            InitBackend(m_pendingBackend);
         }
+```
 
-        // Compute delta time（计算帧间隔时间）
-        auto now      = std::chrono::high_resolution_clock::now(); // 当前时间点
-        float dt      = std::chrono::duration<float>(now - lastTime).count(); // 帧间隔（秒）
-        lastTime      = now;                              // 更新上一帧时间
+#### 第三段：计算帧时间增量
 
-        if (!m_backend)                                   // 如果后端不可用
-        {
-            continue;                                     // 跳过本帧
-        }
+**分析**：使用 `std::chrono::high_resolution_clock` 获取高精度时间戳，计算当前帧与上一帧之间的时间差 `dt`（单位为秒）。这个 `dt` 值将传递给场景的 `OnUpdate` 方法，用于驱动基于时间的动画和物理模拟。
 
-        m_backend->BeginFrame();                         // 开始帧：Vulkan等待围栏，OpenGL清除缓冲
+```cpp
+        auto now      = std::chrono::high_resolution_clock::now();
+        float dt      = std::chrono::duration<float>(now - lastTime).count();
+        lastTime      = now;
+```
 
-        // --- Deferred scene transition ---
-        // 延迟场景切换
-        // Must happen AFTER BeginFrame's vkWaitForFences so GPU has finished
-        // with old scene's resources before they're destroyed.
-        // 必须在BeginFrame的vkWaitForFences之后执行，确保GPU已完成旧场景资源的使用
-        if (m_pendingNextScene) {                        // 如果有待切换的场景
-            printf("[Application] Processing deferred scene transition\n");
-            if (m_currentScene) {                        // 如果有当前场景
-                m_currentScene->OnExit();                 // 通知旧场景退出
-                m_currentScene.reset();                   // 释放旧场景
-            }
-            m_currentScene = std::move(m_pendingNextScene); // 接管新场景
+#### 第四段：帧开始与延迟场景切换
+
+**分析**：调用 `m_backend->BeginFrame()` 开始新的渲染帧（对于 Vulkan 后端，这会等待 GPU 完成上一帧的工作）。然后检查是否有延迟的场景切换请求。场景切换必须在 `BeginFrame` 之后执行，因为 `vkWaitForFences` 确保 GPU 已完成对旧场景资源的访问，此时销毁旧场景的 GPU 资源才是安全的。
+
+```cpp
+        m_backend->BeginFrame();
+
+        if (m_pendingNextScene) {
             if (m_currentScene) {
-                m_currentScene->OnEnter();                // 通知新场景进入
-                printf("[Application] New scene entered OK\n");
+                m_currentScene->OnExit();
+                m_currentScene.reset();
+            }
+            m_currentScene = std::move(m_pendingNextScene);
+            if (m_currentScene) {
+                m_currentScene->OnEnter();
             }
         }
+```
 
-        m_backend->ImGuiNewFrame();                       // 开始ImGui新帧
+#### 第五段：场景驱动更新与渲染
 
-        // --- Scene-driven update ---
-        // 场景驱动的更新
-        if (m_currentScene)                               // 如果有活动场景
+**分析**：如果存在当前场景，依次调用 `OnUpdate(dt)`（逻辑更新）、`OnRender(m_backend.get())`（渲染）和 `OnImGui()`（ImGui UI 绘制）。然后检查场景是否请求退出（`WantsExit`），如果是则获取下一场景并延迟到下一帧处理，或者如果没有下一场景则关闭应用。
+
+```cpp
+        m_backend->ImGuiNewFrame();
+
+        if (m_currentScene)
         {
-            m_currentScene->OnUpdate(dt);                 // 更新场景逻辑（输入处理、动画等）
-            m_currentScene->OnRender(m_backend.get());    // 执行场景渲染
+            m_currentScene->OnUpdate(dt);
+            m_currentScene->OnRender(m_backend.get());
+            m_currentScene->OnImGui();
 
-            m_currentScene->OnImGui();                    // 绘制场景UI
-
-            // Check for scene transition - DEFER to next frame's BeginFrame
-            // 检查场景是否请求切换——延迟到下一帧的BeginFrame处理
-            if (m_currentScene->WantsExit())               // 场景请求退出
+            if (m_currentScene->WantsExit())
             {
-                auto nextScene = m_currentScene->GetNextScene(); // 获取下一个场景
-                if (nextScene)                            // 如果有下一个场景
+                auto nextScene = m_currentScene->GetNextScene();
+                if (nextScene)
                 {
-                    printf("[Application] Deferring scene transition to next frame\n");
-                    m_pendingNextScene = std::move(nextScene); // 保存为待切换场景
+                    m_pendingNextScene = std::move(nextScene);
                 }
                 else
                 {
-                    // No next scene — exit application
-                    // 没有下一个场景——退出应用
-                    printf("[Application] Scene requested exit with no replacement; shutting down\n");
-                    m_running = false;                    // 设置退出标志
+                    m_running = false;
                 }
             }
         }
-        else if (m_frameCallback)                        // 如果没有场景但有帧回调（向后兼容）
+        else if (m_frameCallback)
         {
-            m_frameCallback(dt);                          // 执行帧回调
+            m_frameCallback(dt);
         }
+```
 
-        // Always render performance panel (visible even without a scene)
-        // 始终渲染性能面板（即使没有场景也可见）
+#### 第六段：性能面板、ImGui 渲染与截图
+
+**分析**：始终渲染性能面板（即使没有场景也可见），然后调用 `ImGuiRender` 提交 ImGui 绘制数据。之后检查全局截图请求，如果存在则通过 OpenGL 后端保存截图。还有一个自动 UI 截图功能，在 `AUTO_TEST_UI` 环境变量设置时，在第 3 帧自动保存 UI 截图。
+
+```cpp
         m_perfPanel.Render(this, m_backend.get());
 
-        m_backend->ImGuiRender();                        // 渲染ImGui绘制数据
+        m_backend->ImGuiRender();
 
-        // Check for screenshot request (from auto-test)
-        // 检查截图请求（来自自动测试）
-        if (ScreenshotRequest::Consume()) {              // 如果有待处理的截图请求
-            printf("[Application] Processing screenshot request: %s\n", ScreenshotRequest::path);
-            if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) { // 仅支持OpenGL后端截图
-                gl->SaveScreenshot(ScreenshotRequest::path); // 保存截图
-                printf("[Application] Screenshot saved: %s\n", ScreenshotRequest::path);
-            } else {
-                printf("[Application] Failed to get OpenGL backend for screenshot\n");
+        if (ScreenshotRequest::Consume()) {
+            if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) {
+                gl->SaveScreenshot(ScreenshotRequest::path);
             }
         }
 
-        // Auto-screenshot for UI demo
-        // UI演示自动截图
         {
-            static int screenshotFrame = -1;             // 静态变量记录截图帧计数
-            if (screenshotFrame == -1 && getenv("AUTO_TEST_UI")) { // 检测AUTO_TEST_UI环境变量
-                screenshotFrame = 0;                     // 初始化帧计数器
+            static int screenshotFrame = -1;
+            if (screenshotFrame == -1 && getenv("AUTO_TEST_UI")) {
+                screenshotFrame = 0;
             }
-            if (screenshotFrame >= 0 && screenshotFrame < 5) { // 在前5帧内
-                screenshotFrame++;                        // 递增帧计数
-                if (screenshotFrame == 3) {              // 在第3帧时截图
+            if (screenshotFrame >= 0 && screenshotFrame < 5) {
+                screenshotFrame++;
+                if (screenshotFrame == 3) {
                     if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) {
                         gl->SaveScreenshot("e:/AI/graph/hight-post-proc/ui_screenshot.ppm");
-                        printf("[Application] UI screenshot saved at frame %d\n", screenshotFrame);
                     }
                 }
             }
         }
 
-        m_backend->EndFrame();                            // 结束帧：交换缓冲区/提交命令缓冲
-        } catch (const std::exception& e) {               // 捕获标准异常
+        m_backend->EndFrame();
+```
+
+#### 第七段：异常处理与循环退出
+
+**分析**：catch 块捕获主循环中的所有异常，输出错误信息并设置 `m_running = false` 终止循环。循环退出后输出状态日志并确保 `m_running` 被设为 false。
+
+```cpp
+        } catch (const std::exception& e) {
             fprintf(stderr, "[Application] EXCEPTION in main loop: %s\n", e.what());
-            m_running = false;                            // 异常时退出循环
-        } catch (...) {                                  // 捕获所有其他异常
+            m_running = false;
+        } catch (...) {
             fprintf(stderr, "[Application] UNKNOWN EXCEPTION in main loop\n");
-            m_running = false;                            // 异常时退出循环
+            m_running = false;
         }
     }
 
     printf("[Application] Main loop exited: m_running=%d, m_window=%p, shouldClose=%d\n",
            (int)m_running, (void*)m_window,
-           m_window ? glfwWindowShouldClose(m_window) : -1); // 打印退出状态
+           m_window ? glfwWindowShouldClose(m_window) : -1);
 
-    m_running = false;                                    // 确保运行标志为false
-}
+    m_running = false;
 ```
 
-#### 功能说明
+#### 完整源码
 
-`MainLoop` 是帧驱动的游戏循环，每帧执行：事件处理 → 后端切换 → 帧开始 → 场景切换 → 场景更新/渲染/UI → 性能面板 → 截图 → 帧结束。
+```cpp
+// ============================================================================
+// MainLoop — 帧驱动的主循环
+// ============================================================================
 
-#### 实现原理
+void Application::MainLoop()
+{
+    auto lastTime = std::chrono::high_resolution_clock::now(); // 记录初始时间戳
 
-1. **高精度计时**：使用 `std::chrono::high_resolution_clock` 计算帧间隔 `dt`，传递给场景用于动画和物理更新。
-2. **延迟切换策略**：
-   - 后端切换（`m_pendingBackendSwitch`）在帧循环开始时处理，此时 ImGui/Vulkan 状态稳定。
-   - 场景切换（`m_pendingNextScene`）在 `BeginFrame` 之后处理，确保 Vulkan 的 `vkWaitForFences` 已完成，GPU 不再使用旧场景的资源。
-3. **异常安全**：整个帧处理包裹在 `try-catch` 中，任何异常都会被捕获并安全退出循环，避免程序崩溃。
-4. **双重渲染路径**：优先使用场景系统（`m_currentScene`），如果没有场景则回退到帧回调（`m_frameCallback`），保持向后兼容。
+    while (m_running && m_window && !glfwWindowShouldClose(m_window)) // 主循环条件
+    {
+        try {
+            glfwPollEvents();                                // 轮询并处理所有窗口事件
 
-#### 为什么这样实现
+            // 处理延迟的后端切换（避免在 ImGui 渲染过程中切换导致状态损坏）
+            if (m_pendingBackendSwitch) {
+                m_pendingBackendSwitch = false;             // 清除标志
+                printf("[Application] Processing deferred backend switch...\n"); fflush(stdout);
+                InitBackend(m_pendingBackend);               // 执行后端切换
+            }
 
-- **延迟场景切换**：这是 Vulkan 编程的关键模式。Vulkan 是异步 API，GPU 可能在 CPU 已提交渲染命令后仍在执行。如果在 GPU 执行过程中销毁场景的 GPU 资源（如纹理、缓冲区），会导致 GPU 挂起或驱动崩溃。`BeginFrame` 中的 `vkWaitForFences` 确保 GPU 已完成上一帧的所有工作，此时销毁旧场景资源是安全的。
-- **异常捕获**：渲染循环中可能发生各种运行时错误（着色器编译失败、纹理创建失败等），捕获异常可以优雅地退出而非崩溃。
-- **`fflush(stdout)`**：在关键日志后立即刷新输出缓冲区，确保即使程序崩溃，日志也已写入。
+            // 计算帧时间增量
+            auto now      = std::chrono::high_resolution_clock::now();
+            float dt      = std::chrono::duration<float>(now - lastTime).count(); // 秒为单位
+            lastTime      = now;                              // 更新上一帧时间
 
----
+            if (!m_backend)
+            {
+                continue;                                    // 无后端则跳过本帧
+            }
+
+            m_backend->BeginFrame();                          // 开始新渲染帧（Vulkan 等待 GPU）
+
+            // --- 延迟场景切换 ---
+            // 必须在 BeginFrame 之后执行，确保 GPU 已完成对旧场景资源的访问
+            if (m_pendingNextScene) {
+                printf("[Application] Processing deferred scene transition\n");
+                if (m_currentScene) {
+                    m_currentScene->OnExit();                 // 退出旧场景
+                    m_currentScene.reset();                   // 销毁旧场景
+                }
+                m_currentScene = std::move(m_pendingNextScene); // 接管新场景
+                if (m_currentScene) {
+                    m_currentScene->OnEnter();               // 进入新场景
+                    printf("[Application] New scene entered OK\n");
+                }
+            }
+
+            m_backend->ImGuiNewFrame();                       // 开始 ImGui 新帧
+
+            // --- 场景驱动的更新 ---
+            if (m_currentScene)
+            {
+                m_currentScene->OnUpdate(dt);                 // 场景逻辑更新
+                m_currentScene->OnRender(m_backend.get());    // 场景渲染
+                m_currentScene->OnImGui();                    // 场景 ImGui UI
+
+                // 检查场景是否请求退出
+                if (m_currentScene->WantsExit())
+                {
+                    auto nextScene = m_currentScene->GetNextScene(); // 获取下一场景
+                    if (nextScene)
+                    {
+                        printf("[Application] Deferring scene transition to next frame\n");
+                        m_pendingNextScene = std::move(nextScene); // 延迟到下一帧
+                    }
+                    else
+                    {
+                        // 无下一场景 — 退出应用
+                        printf("[Application] Scene requested exit with no replacement; shutting down\n");
+                        m_running = false;
+                    }
+                }
+            }
+            else if (m_frameCallback)
+            {
+                m_frameCallback(dt);                         // 遗留帧回调后备方案
+            }
+
+            // 始终渲染性能面板（即使没有场景也可见）
+            m_perfPanel.Render(this, m_backend.get());
+
+            m_backend->ImGuiRender();                        // 提交 ImGui 绘制数据
+
+            // 检查截图请求（来自自动测试）
+            if (ScreenshotRequest::Consume()) {
+                printf("[Application] Processing screenshot request: %s\n", ScreenshotRequest::path);
+                if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) {
+                    gl->SaveScreenshot(ScreenshotRequest::path); // 保存截图
+                    printf("[Application] Screenshot saved: %s\n", ScreenshotRequest::path);
+                } else {
+                    printf("[Application] Failed to get OpenGL backend for screenshot\n");
+                }
+            }
+
+            // 自动 UI 截图（用于文档展示）
+            {
+                static int screenshotFrame = -1;
+                if (screenshotFrame == -1 && getenv("AUTO_TEST_UI")) {
+                    screenshotFrame = 0;                    // 检测到环境变量则开始计数
+                }
+                if (screenshotFrame >= 0 && screenshotFrame < 5) {
+                    screenshotFrame++;
+                    if (screenshotFrame == 3) {              // 在第 3 帧截图
+                        if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) {
+                            gl->SaveScreenshot("e:/AI/graph/hight-post-proc/ui_screenshot.ppm");
+                            printf("[Application] UI screenshot saved at frame %d\n", screenshotFrame);
+                        }
+                    }
+                }
+            }
+
+            m_backend->EndFrame();                           // 结束渲染帧（交换缓冲区/提交命令）
+        } catch (const std::exception& e) {
+            fprintf(stderr, "[Application] EXCEPTION in main loop: %s\n", e.what());
+            m_running = false;                               // 异常时退出循环
+        } catch (...) {
+            fprintf(stderr, "[Application] UNKNOWN EXCEPTION in main loop\n");
+            m_running = false;
+        }
+    }
+
+    printf("[Application] Main loop exited: m_running=%d, m_window=%p, shouldClose=%d\n",
+           (int)m_running, (void*)m_window,
+           m_window ? glfwWindowShouldClose(m_window) : -1); // 输出退出状态
+
+    m_running = false;                                       // 确保运行标志已清除
+}
+```
 
 ### 2.6 Shutdown — 资源清理
 
-```cpp
-void Application::Shutdown()
-{
-    m_running = false;                                    // 停止主循环
+`Shutdown` 负责按正确顺序释放所有资源：先退出并销毁场景，再关闭后端，最后销毁窗口。注意退役窗口也会被销毁。
 
-    // Exit and destroy current scene（退出并销毁当前场景）
+#### 第一段：停止运行并销毁场景
+
+**分析**：首先将 `m_running` 设为 false 以通知主循环退出。然后检查并退出当前场景（调用 `OnExit` 让场景执行清理逻辑），最后重置场景智能指针。
+
+```cpp
+    m_running = false;
+
     if (m_currentScene)
     {
-        m_currentScene->OnExit();                          // 通知场景退出
-        m_currentScene.reset();                            // 释放场景
+        m_currentScene->OnExit();
+        m_currentScene.reset();
+    }
+```
+
+#### 第二段：关闭后端与销毁窗口
+
+**分析**：依次调用后端的 `ImGuiShutdown` 和 `Shutdown` 释放 GPU 资源，然后重置后端智能指针。接着销毁当前窗口和退役窗口（如果存在），最后调用 `glfwTerminate` 终止 GLFW 库。
+
+```cpp
+    if (m_backend)
+    {
+        m_backend->ImGuiShutdown();
+        m_backend->Shutdown();
+        m_backend.reset();
     }
 
-    if (m_backend)                                        // 如果后端存在
+    if (m_window)
     {
-        m_backend->ImGuiShutdown();                       // 关闭ImGui GPU资源
-        m_backend->Shutdown();                            // 关闭后端
-        m_backend.reset();                                 // 释放后端
-    }
-
-    if (m_window)                                         // 如果主窗口存在
-    {
-        glfwDestroyWindow(m_window);                      // 销毁主窗口
+        glfwDestroyWindow(m_window);
         m_window = nullptr;
     }
-    if (m_retiredWindow)                                  // 如果有退役窗口
+    if (m_retiredWindow)
     {
-        glfwDestroyWindow(m_retiredWindow);               // 销毁退役窗口
+        glfwDestroyWindow(m_retiredWindow);
         m_retiredWindow = nullptr;
     }
-    glfwTerminate();                                      // 终止GLFW库
+    glfwTerminate();
+```
+
+#### 完整源码
+
+```cpp
+// ============================================================================
+// Shutdown — 释放所有资源
+// ============================================================================
+
+void Application::Shutdown()
+{
+    m_running = false;                                       // 停止主循环
+
+    // 退出并销毁当前场景
+    if (m_currentScene)
+    {
+        m_currentScene->OnExit();                            // 让场景执行清理
+        m_currentScene.reset();                              // 销毁场景对象
+    }
+
+    // 关闭并销毁渲染后端
+    if (m_backend)
+    {
+        m_backend->ImGuiShutdown();                          // 释放 ImGui GPU 资源
+        m_backend->Shutdown();                               // 释放后端资源
+        m_backend.reset();                                   // 销毁后端对象
+    }
+
+    // 销毁当前窗口
+    if (m_window)
+    {
+        glfwDestroyWindow(m_window);                         // 销毁 GLFW 窗口
+        m_window = nullptr;
+    }
+    // 销毁退役窗口（Vulkan 到 OpenGL 切换时保留的旧窗口）
+    if (m_retiredWindow)
+    {
+        glfwDestroyWindow(m_retiredWindow);                   // 销毁退役窗口
+        m_retiredWindow = nullptr;
+    }
+    glfwTerminate();                                         // 终止 GLFW 库
 }
 ```
 
-#### 功能说明
+### 2.7 SetScene / SwitchBackend
 
-`Shutdown` 按正确顺序释放所有资源：场景 → 后端 → 窗口 → GLFW。
+这两个函数分别负责场景切换和渲染后端切换。
 
-#### 实现原理
+#### SetScene — 场景切换
 
-资源释放顺序与初始化顺序相反（LIFO——后进先出）：
-1. 先停止运行标志（防止新的帧处理）
-2. 退出并释放场景（场景使用后端资源）
-3. 关闭后端（后端使用窗口）
-4. 销毁窗口（窗口由 GLFW 管理）
-5. 终止 GLFW
-
-#### 为什么这样实现
-
-- **反向释放顺序**：资源之间存在依赖关系，必须按依赖的反向顺序释放。场景依赖后端，后端依赖窗口，窗口依赖 GLFW。
-- **`m_retiredWindow` 在最后销毁**：退役窗口在程序退出时才销毁，避免了 NVIDIA 驱动在运行期间销毁 Vulkan 表面绑定窗口的潜在问题。
-- **幂等性**：`Shutdown` 可以被安全地多次调用（构造函数 → `Run` → 析构函数都可能触发），每个资源释放前都有空指针检查。
-
----
-
-### 2.7 场景管理 SetScene / SwitchBackend
+**分析**：`SetScene` 实现即时的场景切换。首先检查是否存在旧场景，如果有则调用 `OnExit` 退出并销毁。然后将新场景移入 `m_currentScene`，如果新场景有效则调用 `OnEnter` 进入。每次操作都输出日志并刷新 stdout，便于调试场景切换问题。
 
 ```cpp
 void Application::SetScene(std::unique_ptr<Scene> scene)
 {
-    if (m_currentScene)                                   // 如果已有当前场景
+    if (m_currentScene)
     {
         printf("[Application] SetScene: exiting old scene\n");
         fflush(stdout);
-        m_currentScene->OnExit();                          // 通知旧场景退出
-        m_currentScene.reset();                            // 释放旧场景
+        m_currentScene->OnExit();
+        m_currentScene.reset();
     }
-    m_currentScene = std::move(scene);                     // 接管新场景
-    if (m_currentScene)                                    // 如果新场景有效
+    m_currentScene = std::move(scene);
+    if (m_currentScene)
     {
         printf("[Application] SetScene: entering new scene\n");
         fflush(stdout);
-        m_currentScene->OnEnter();                         // 通知新场景进入
+        m_currentScene->OnEnter();
         printf("[Application] SetScene: new scene entered OK\n");
         fflush(stdout);
     }
 }
+```
 
+#### SwitchBackend — 延迟后端切换
+
+**分析**：`SwitchBackend` 不立即执行后端切换，而是将切换请求延迟到下一帧开始时处理。这是因为在 ImGui 渲染过程中切换后端会导致 Vulkan/ImGui 状态损坏。函数首先检查是否已经在目标后端上，如果是则直接返回。否则设置 `m_pendingBackend` 和 `m_pendingBackendSwitch` 标志，由 `MainLoop` 在下一帧处理。
+
+```cpp
 void Application::SwitchBackend(BackendType type)
 {
-    if (type == m_backendType && m_backend)               // 如果请求的后端与当前相同
+    if (type == m_backendType && m_backend)
     {
-        return; // Already on the requested backend        // 无需切换
+        return;
     }
-    // Defer the actual switch to the start of the next frame
-    // to avoid ImGui/Vulkan state corruption during rendering
-    // 将实际切换延迟到下一帧开始，避免ImGui/Vulkan状态损坏
-    m_pendingBackend = type;                              // 记录目标后端类型
-    m_pendingBackendSwitch = true;                         // 设置待切换标志
+    m_pendingBackend = type;
+    m_pendingBackendSwitch = true;
     printf("[Application] Backend switch to %s scheduled for next frame\n",
            type == BackendType::OpenGL ? "OpenGL" : "Vulkan");
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-- **SetScene**：立即切换当前场景，先退出旧场景再进入新场景。
-- **SwitchBackend**：延迟切换渲染后端，设置标志后由 `MainLoop` 在下一帧开始时执行实际切换。
+```cpp
+// ============================================================================
+// SetScene — 设置当前场景
+// ============================================================================
 
-#### 实现原理
+void Application::SetScene(std::unique_ptr<Scene> scene)
+{
+    if (m_currentScene)                                     // 如果存在旧场景
+    {
+        printf("[Application] SetScene: exiting old scene\n");
+        fflush(stdout);                                      // 确保日志立即输出
+        m_currentScene->OnExit();                            // 退出旧场景
+        m_currentScene.reset();                              // 销毁旧场景
+    }
+    m_currentScene = std::move(scene);                       // 接管新场景
+    if (m_currentScene)                                       // 如果新场景有效
+    {
+        printf("[Application] SetScene: entering new scene\n");
+        fflush(stdout);
+        m_currentScene->OnEnter();                           // 进入新场景
+        printf("[Application] SetScene: new scene entered OK\n");
+        fflush(stdout);
+    }
+}
 
-- `SetScene` 是同步操作：直接退出旧场景、进入新场景。适用于外部代码（如 `main` 函数的帧回调）主动设置场景。
-- `SwitchBackend` 是异步操作：仅设置标志，实际切换在 `MainLoop` 的安全时机执行。适用于键盘快捷键（Ctrl+1/Ctrl+2）触发的后端切换。
+// ============================================================================
+// SwitchBackend — 切换到不同的渲染后端
+// ============================================================================
 
-#### 为什么这样实现
+void Application::SwitchBackend(BackendType type)
+{
+    if (type == m_backendType && m_backend)                   // 如果已在目标后端上
+    {
+        return;                                              // 无需切换
+    }
+    // 延迟到下一帧开始时执行，避免 ImGui/Vulkan 状态损坏
+    m_pendingBackend = type;                                // 记录目标后端类型
+    m_pendingBackendSwitch = true;                           // 设置延迟切换标志
+    printf("[Application] Backend switch to %s scheduled for next frame\n",
+           type == BackendType::OpenGL ? "OpenGL" : "Vulkan");
+}
+```
 
-- **SetScene 同步执行**：在帧回调中调用 `SetScene` 时，当前不在 ImGui/Vulkan 渲染过程中，可以安全地同步切换。
-- **SwitchBackend 延迟执行**：后端切换通常由键盘回调触发，此时可能正在 ImGui 渲染过程中。立即切换会破坏 ImGui 的内部状态（如命令缓冲区、纹理绑定等），导致崩溃。
+### 2.8 回调函数
 
----
+Application 定义了三个 GLFW 静态回调函数，通过 `glfwSetWindowUserPointer` 机制将事件转发到 Application 实例。
 
-### 2.8 回调函数 KeyCallback / DropCallback / FramebufferSizeCallback
+#### FramebufferSizeCallback — 帧缓冲大小回调
+
+**分析**：当窗口大小改变时，GLFW 调用此回调。函数通过 `glfwGetWindowUserPointer` 获取 Application 实例指针，然后调用后端的 `Resize` 方法通知渲染后端更新视口和帧缓冲大小。
 
 ```cpp
 void Application::FramebufferSizeCallback(GLFWwindow* w, int width, int height)
 {
-    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w)); // 从窗口用户数据取回Application指针
-    if (app && app->m_backend)                            // 如果Application和后端都有效
+    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w));
+    if (app && app->m_backend)
     {
-        app->m_backend->Resize(width, height);             // 通知后端调整渲染区域
+        app->m_backend->Resize(width, height);
     }
 }
+```
 
+#### KeyCallback — 键盘回调
+
+**分析**：只处理按键按下事件（`GLFW_PRESS`）。全局快捷键包括：
+- `Ctrl+Q`：退出应用（设置窗口关闭标志）
+- `Ctrl+1`：切换到 OpenGL 后端
+- `Ctrl+2`：切换到 Vulkan 后端
+- ESC 键不再由全局回调处理，而是交给场景系统
+
+```cpp
 void Application::KeyCallback(GLFWwindow* w, int key, int /*scancode*/, int action, int mods)
 {
-    if (action != GLFW_PRESS)                             // 只处理按键按下事件
-    {
+    if (action != GLFW_PRESS) return;
+
+    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w));
+    if (!app) return;
+
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_Q) {
+        glfwSetWindowShouldClose(w, GLFW_TRUE);
         return;
     }
 
-    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w)); // 取回Application指针
-    if (!app)
-    {
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_1) {
+        app->SwitchBackend(BackendType::OpenGL);
         return;
     }
 
-    // ESC is now handled by the scene system (CoverFlowScene exits app,
-    // EffectDetailScene returns to CoverFlow). The KeyCallback ignores ESC.
-    // ESC现在由场景系统处理（CoverFlowScene退出应用，EffectDetailScene返回封面流）
-    // Global override: Ctrl+Q always exits
-    // 全局覆盖：Ctrl+Q始终退出应用
-    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_Q)
-    {
-        glfwSetWindowShouldClose(w, GLFW_TRUE);           // 请求关闭窗口
-        return;
-    }
-
-    // Ctrl+1 — switch to OpenGL
-    // Ctrl+1 — 切换到OpenGL后端
-    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_1)
-    {
-        app->SwitchBackend(BackendType::OpenGL);           // 延迟切换到OpenGL
-        return;
-    }
-
-    // Ctrl+2 — switch to Vulkan
-    // Ctrl+2 — 切换到Vulkan后端
-    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_2)
-    {
-        app->SwitchBackend(BackendType::Vulkan);          // 延迟切换到Vulkan
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_2) {
+        app->SwitchBackend(BackendType::Vulkan);
         return;
     }
 }
+```
 
+#### DropCallback 与 ConsumeDroppedFile
+
+**分析**：`DropCallback` 在用户将文件拖放到窗口时被调用，只接受第一个文件路径。`ConsumeDroppedFile` 使用 `std::swap` 原子地获取并清除拖放文件路径，确保每个拖放文件只被处理一次。
+
+```cpp
 void Application::DropCallback(GLFWwindow* w, int count, const char** paths)
 {
-    if (count < 1) return;                                // 没有拖放文件则返回
-    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w)); // 取回Application指针
+    if (count < 1) return;
+    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w));
     if (!app) return;
 
-    // Accept only the first dropped file
-    // 只接受第一个拖放的文件
-    app->m_droppedFilePath = paths[0];                     // 保存文件路径
+    app->m_droppedFilePath = paths[0];
     printf("[Application] File dropped: %s\n", paths[0]);
 }
 
 std::string Application::ConsumeDroppedFile()
 {
-    std::string path;                                      // 创建空字符串
-    std::swap(path, m_droppedFilePath);                    // 交换：取出路径，清空成员变量
-    return path;                                           // 返回拖放文件路径（可能为空）
+    std::string path;
+    std::swap(path, m_droppedFilePath);
+    return path;
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-三个 GLFW 静态回调函数：
+```cpp
+// ============================================================================
+// 静态回调函数
+// ============================================================================
 
-- **FramebufferSizeCallback**：窗口尺寸变化时通知后端调整渲染区域（如重建交换链、更新视口）。
-- **KeyCallback**：处理全局键盘快捷键（Ctrl+Q 退出、Ctrl+1/2 切换后端）。
-- **DropCallback**：处理文件拖放事件，保存第一个拖放文件的路径。
-- **ConsumeDroppedFile**：消费（取出并清空）最近拖放的文件路径。
+// 帧缓冲大小变化回调
+void Application::FramebufferSizeCallback(GLFWwindow* w, int width, int height)
+{
+    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w)); // 获取 Application 实例
+    if (app && app->m_backend)
+    {
+        app->m_backend->Resize(width, height);               // 通知后端调整大小
+    }
+}
 
-#### 实现原理
+// 键盘按键回调
+void Application::KeyCallback(GLFWwindow* w, int key, int /*scancode*/, int action, int mods)
+{
+    if (action != GLFW_PRESS)                                // 只处理按下事件
+    {
+        return;
+    }
 
-- **`glfwGetWindowUserPointer`**：GLFW 的 C 风格回调没有用户数据参数。通过在窗口创建时调用 `glfwSetWindowUserPointer(m_window, this)` 将 `Application*` 存储在窗口中，回调中通过此函数取回。
-- **`std::swap` 消费模式**：`ConsumeDroppedFile` 使用 `std::swap` 原子性地取出路径并清空成员变量，避免竞态条件。
+    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w)); // 获取 Application 实例
+    if (!app)
+    {
+        return;
+    }
 
-#### 为什么这样实现
+    // ESC 由场景系统处理（CoverFlowScene 退出，EffectDetailScene 返回）
+    // 全局覆盖：Ctrl+Q 始终退出
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_Q)
+    {
+        glfwSetWindowShouldClose(w, GLFW_TRUE);              // 设置窗口关闭标志
+        return;
+    }
 
-- **ESC 交给场景处理**：不同场景对 ESC 的响应不同——封面流场景中 ESC 退出应用，详情场景中 ESC 返回封面流。全局回调不处理 ESC，让场景自行决定行为。
-- **Ctrl+Q 全局退出**：无论在哪个场景，Ctrl+Q 都能退出应用，作为"紧急出口"。
-- **只接受第一个拖放文件**：用户可能一次拖放多个文件，但程序只处理第一个，简化逻辑。
+    // Ctrl+1 — 切换到 OpenGL 后端
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_1)
+    {
+        app->SwitchBackend(BackendType::OpenGL);
+        return;
+    }
+
+    // Ctrl+2 — 切换到 Vulkan 后端
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_2)
+    {
+        app->SwitchBackend(BackendType::Vulkan);
+        return;
+    }
+}
+
+// 文件拖放回调
+void Application::DropCallback(GLFWwindow* w, int count, const char** paths)
+{
+    if (count < 1) return;                                    // 无文件则返回
+    auto* app = static_cast<Application*>(glfwGetWindowUserPointer(w));
+    if (!app) return;
+
+    app->m_droppedFilePath = paths[0];                       // 只接受第一个拖放文件
+    printf("[Application] File dropped: %s\n", paths[0]);
+}
+
+// 消费拖放文件路径（获取并清除）
+std::string Application::ConsumeDroppedFile()
+{
+    std::string path;
+    std::swap(path, m_droppedFilePath);                      // 原子交换，确保只处理一次
+    return path;
+}
+```
 
 ---
 
-## 3. 封面流场景 — CoverFlowScene
+## 3. CoverFlowScene — 封面流场景
 
-CoverFlowScene 是应用的主场景，实现了一个类似 Apple Cover Flow 的 3D 卡片浏览界面，展示所有可用的后处理特效。每张卡片实时渲染对应特效的缩略图预览。
+`CoverFlowScene` 是 Shader Showcase 的主界面场景，以类似 Apple Cover Flow 的 3D 卡片流形式展示所有 18 个着色器效果。用户可以通过键盘、鼠标滚轮、拖拽等方式浏览卡片，点击卡片进入效果详情页。该场景还支持实时缩略图渲染、屏幕捕获、视频播放、图片切换和自动测试等功能。
 
-### 3.1 头文件 CoverFlowScene.h
+### 3.1 类定义
+
+`CoverFlowScene` 继承自 `Scene` 基类，实现了完整的场景生命周期接口。头文件中还定义了 `CardThumbnailState` 结构体，用于管理每个卡片的实时缩略图渲染状态。
+
+#### 第一段：CardThumbnailState 结构体
+
+**分析**：该结构体为每个效果卡片维护独立的缩略图渲染状态。`fragShader` 是该效果对应的片段着色器句柄，`thumbTex` 是 256x144 大小的缩略图 FBO 纹理。每张卡片都有独立的着色器和纹理，使得封面流中每张卡片都能实时展示对应效果的处理结果。
 
 ```cpp
-#pragma once                                             // 防止头文件重复包含
-
-#include "app/Scene.h"                                    // Scene基类
-#include "app/CoverFlowState.h"                           // 封面流状态结构体（用于场景间状态传递）
-#include "shader/EffectMetadata.h"                       // 特效元数据（EffectCard等）
-#include "render/IRenderBackend.h"                       // 渲染后端接口
-
-#include <vector>                                        // 动态数组
-#include <memory>                                        // 智能指针
-#include <string>                                        // 字符串
-#include <chrono>                                        // 高精度时钟
-
-class Application;                                        // 前向声明
-class ScreenCapture;                                     // 前向声明：屏幕捕获
-class VideoPlayer;                                       // 前向声明：视频播放器
-
-/// Per-card thumbnail real-time render state
-/// 每张卡片的缩略图实时渲染状态
 struct CardThumbnailState {
-    ShaderHandle fragShader;                             // 该卡片特效的片段着色器句柄
-    TextureHandle thumbTex;                              // 256x144缩略图FBO纹理
-};
-
-class CoverFlowScene : public Scene {                     // 继承自Scene基类
-public:
-    CoverFlowScene();                                     // 构造函数
-    ~CoverFlowScene() override;                          // 析构函数（覆盖）
-
-    void OnEnter() override;                             // 场景进入时调用
-    void OnExit() override;                              // 场景退出时调用
-    void OnUpdate(float dt) override;                   // 每帧更新
-    void OnRender(IRenderBackend* backend) override;     // 每帧渲染
-    void OnImGui() override;                             // 每帧ImGui绘制
-    bool WantsExit() const override { return m_wantsExit; } // 是否请求退出
-
-    std::unique_ptr<Scene> GetNextScene() override;      // 获取下一个场景
-    void SetInputTexture(TextureHandle tex) { m_inputTex = tex; } // 设置输入纹理
-    void SetInputTexCache(const std::vector<TextureHandle>& cache) { m_inputTexCache = cache; }
-    // 设置每个特效的缓存输入纹理
-    void SetBackend(IRenderBackend* backend) { m_backend = backend; } // 设置渲染后端
-    void SetApplication(Application* app) { m_app = app; } // 设置Application指针
-
-    /// Set pre-rendered thumbnail ImTextureIDs (one per card, same order as RegisterCards).
-    /// 设置预渲染的缩略图ImTextureID（每张卡片一个，顺序与RegisterCards一致）
-    void SetThumbnails(const std::vector<void*>& imTexIds) { m_thumbIds = imTexIds; }
-
-    /// Restore selected card index and scroll offset (used when returning from detail scene).
-    /// 恢复选中的卡片索引和滚动偏移（从详情场景返回时使用）
-    void SetSelectedIndex(int index) { m_selectedIndex = index; m_targetOffset = 0.0f; m_scrollOffset = 0.0f; }
-
-    /// Set test image base directory (for thumbnail input textures)
-    /// 设置测试图片基础目录（用于缩略图输入纹理）
-    void SetTestImageBaseDir(const std::string& dir) { m_testImageBaseDir = dir; }
-
-    /// Transfer video player back from detail scene.
-    /// 从详情场景传回视频播放器
-    void SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime);
-
-    /// Enable auto-test mode: cycle through all cards, holdFrames per card.
-    /// 启用自动测试模式：循环所有卡片，每张停留holdFrames帧
-    void EnableAutoTest(int holdFrames);
-
-    /// Resume auto-test after returning from detail scene.
-    /// 从详情场景返回后恢复自动测试
-    void ResumeAutoTest(int holdFrames, int lastOpenedCard);
-
-    /// Reload input texture from a new file path (drag-drop support).
-    /// 从新文件路径重新加载输入纹理（拖放支持）
-    void ReloadInputTexture(const std::string& filePath);
-
-    /// Add an image path to the built-in image pool (for Ctrl+Left/Right cycling).
-    /// 添加图片路径到内置图片池（用于Ctrl+左/右切换）
-    void AddImageToPool(const std::string& path);
-
-    /// Add a video path to the built-in video pool.
-    /// 添加视频路径到内置视频池
-    void AddVideoToPool(const std::string& path);
-
-    /// Get current state for saving (used by EffectDetailScene to restore).
-    /// 获取当前状态用于保存（EffectDetailScene用于恢复）
-    CoverFlowState GetState() const;
-
-private:
-    std::vector<EffectCard> m_cards;                      // 所有特效卡片列表
-    int m_selectedIndex   = 0;                            // 当前选中的卡片索引
-    float m_scrollOffset  = 0.0f;                        // 当前滚动偏移（动画中间值）
-    float m_targetOffset  = 0.0f;                         // 目标滚动偏移（动画目标值）
-    TextureHandle m_inputTex = {0};                       // 当前输入纹理
-    std::vector<TextureHandle> m_inputTexCache;           // 每个特效的缓存输入纹理
-    IRenderBackend* m_backend = nullptr;                  // 渲染后端指针
-    Application* m_app = nullptr;                         // Application指针
-    bool m_wantsExit = false;                             // 是否请求退出场景
-    std::unique_ptr<Scene> m_nextScene;                   // 下一个场景（用于跳转）
-
-    // Auto-test mode（自动测试模式）
-    bool m_autoTest = false;                              // 是否启用自动测试
-    int  m_autoTestHoldFrames = 0;                        // 每张卡片停留帧数
-    int  m_autoTestFrameCounter = 0;                       // 当前卡片已停留帧计数
-    int  m_autoTestCardIndex = 0;                          // 当前测试的卡片索引
-    int  m_autoTestLastOpenedCard = -1;                   // 上次打开的卡片索引（用于返回后继续）
-
-    // Thumbnails（缩略图）
-    std::vector<void*> m_thumbIds;                        // 每张卡片的ImTextureID
-
-    // ---- Dynamic thumbnail rendering ----
-    // ---- 动态缩略图渲染 ----
-    ShaderHandle m_sharedVertShader = INVALID_SHADER;     // 共享的顶点着色器
-    std::vector<CardThumbnailState> m_thumbnailStates;    // 每张卡片的缩略图渲染状态
-    int m_thumbWidth  = 256;                               // 缩略图宽度
-    int m_thumbHeight = 144;                               // 缩略图高度
-    bool m_thumbInitialized = false;                      // 缩略图是否已初始化
-    std::string m_testImageBaseDir;                       // 测试图片基础目录
-    float m_thumbElapsedTime = 0.0f;                      // 缩略图累计时间（用于动画着色器）
-    uint32_t m_thumbFrameCount = 0;                       // 缩略图帧计数
-
-    void InitializeThumbnails();                          // 初始化缩略图渲染资源
-    void RenderVisibleThumbnails();                        // 渲染可见卡片的缩略图
-
-    // Mouse drag state（鼠标拖拽状态）
-    bool  m_dragging    = false;                          // 是否正在拖拽
-    float m_dragStartX  = 0.0f;                           // 拖拽起始X坐标
-    float m_dragBaseOff = 0.0f;                           // 拖拽起始时的滚动偏移
-
-    // FPS counter（FPS计数器）
-    std::chrono::high_resolution_clock::time_point m_fpsLastTime; // 上次FPS更新时间
-    int    m_fpsFrameCount = 0;                            // FPS帧计数
-    float  m_fpsDisplay    = 0.0f;                         // 当前显示的FPS值
-
-    // Screen capture（屏幕捕获）
-    std::unique_ptr<ScreenCapture> m_screenCapture;       // 屏幕捕获实例
-    TextureHandle m_captureTex = {0};                     // 捕获纹理
-    bool m_captureActive  = false;                         // 是否正在捕获
-    bool m_captureReady   = false;                         // 捕获是否就绪
-    int  m_captureWidth   = 0;                             // 捕获宽度
-    int  m_captureHeight  = 0;                             // 捕获高度
-
-    // Image cycling（图片切换）
-    std::vector<std::string> m_imagePool;                 // 内置图片路径池
-    int m_currentImageIndex = 0;                           // 当前显示的图片索引
-
-    // Video cycling（视频切换）
-    std::vector<std::string> m_videoPool;                 // 内置视频路径池
-    int m_currentVideoIndex = 0;                           // 当前视频索引
-
-    // Video player（视频播放器）
-    std::unique_ptr<VideoPlayer> m_videoPlayer;           // 视频播放器实例
-    TextureHandle m_videoTex = {0};                       // 视频纹理
-    bool m_videoActive = false;                            // 视频是否正在播放
-    double m_videoLastFrameTime = 0.0;                     // 上一帧视频时间
-
-    void RegisterCards();                                  // 注册所有特效卡片
-    void SelectCard(int index);                            // 选中指定卡片
-    void OpenSelectedEffect();                             // 打开选中特效的详情页
-    void UpdateFPSCounter();                               // 更新FPS计数器
-    void ToggleScreenCapture();                            // 切换屏幕捕获
-    void CycleImage(int direction);                        // 切换图片（-1=上一张，+1=下一张）
-    void LoadImageFromFile(const std::string& path);       // 从文件加载图片
-    void OpenVideoFile(const std::string& path);           // 打开视频文件
-    void StopVideo();                                      // 停止视频播放
+    ShaderHandle fragShader;   // 每张卡片的效果着色器
+    TextureHandle thumbTex;    // 256x144 缩略图 FBO 纹理
 };
 ```
 
-#### 功能说明
+#### 第二段：公共接口
 
-`CoverFlowScene.h` 定义了封面流场景的完整类结构，是整个应用中最复杂的场景。它管理 18 张特效卡片、实时缩略图渲染、图片/视频输入切换、屏幕捕获、自动测试等功能。
+**分析**：公共接口包括：
+- **生命周期**：`OnEnter`/`OnExit`/`OnUpdate`/`OnRender`/`OnImGui`/`WantsExit`/`GetNextScene`（Scene 基类虚函数）
+- **配置方法**：`SetInputTexture`、`SetInputTexCache`、`SetBackend`、`SetApplication`、`SetThumbnails`、`SetSelectedIndex`、`SetTestImageBaseDir` 等
+- **视频管理**：`SetVideoPlayer` 用于从详情页接收视频播放器
+- **自动测试**：`EnableAutoTest` 和 `ResumeAutoTest` 控制自动测试流程
+- **输入管理**：`ReloadInputTexture`（拖放重载）、`AddImageToPool`、`AddVideoToPool`
+- **状态保存**：`GetState` 返回当前状态用于详情页返回时恢复
 
-#### 实现原理
+#### 第三段：私有成员变量
 
-- **继承 Scene 基类**：通过覆盖 `OnEnter/OnExit/OnUpdate/OnRender/OnImGui/WantsExit/GetNextScene` 虚函数，融入 Application 的场景管理系统。
-- **CardThumbnailState**：每张卡片维护独立的片段着色器和 FBO 纹理，用于实时渲染该特效的缩略图预览。
-- **多层输入源**：支持静态图片（图片池）、视频播放器、屏幕捕获三种输入源，通过 `m_inputTex` 统一传递给渲染管线。
+**分析**：私有成员按功能分组：
+- **卡片与选择**：`m_cards`（效果卡片列表）、`m_selectedIndex`（当前选中索引）、`m_scrollOffset`/`m_targetOffset`（滚动偏移）
+- **纹理与后端**：`m_inputTex`（输入纹理）、`m_inputTexCache`（每效果纹理缓存）、`m_backend`（渲染后端指针）
+- **自动测试**：`m_autoTest`、`m_autoTestHoldFrames`、`m_autoTestFrameCounter`、`m_autoTestCardIndex` 等
+- **缩略图渲染**：`m_sharedVertShader`（共享顶点着色器）、`m_thumbnailStates`（每卡缩略图状态）、`m_thumbInitialized` 等
+- **鼠标拖拽**：`m_dragging`、`m_dragStartX`、`m_dragBaseOff`
+- **FPS 计数**：`m_fpsLastTime`、`m_fpsFrameCount`、`m_fpsDisplay`
+- **屏幕捕获**：`m_screenCapture`、`m_captureTex`、`m_captureActive` 等
+- **图片/视频池**：`m_imagePool`/`m_videoPool` 及对应索引
+- **视频播放器**：`m_videoPlayer`、`m_videoTex`、`m_videoActive`
 
-#### 为什么这样实现
-
-- **共享顶点着色器**：所有缩略图使用相同的全屏四边形顶点着色器（`m_sharedVertShader`），只有片段着色器不同。这减少了着色器切换开销。
-- **`m_thumbElapsedTime` 和 `m_thumbFrameCount`**：某些特效着色器需要时间和帧数作为 uniform（如噪声动画、VHS 闪烁），这些全局计时器确保所有缩略图使用相同的时间基准。
-
----
-
-### 3.2 卡片注册 RegisterCards（CARD宏）
+#### 完整源码
 
 ```cpp
-#define CARD(id, name, cat, desc, frag) \
-    add(id, name, cat, desc, frag)                       // 宏展开为add函数调用
+#pragma once                                                 // 防止头文件重复包含
 
-void CoverFlowScene::RegisterCards()
-{
-    std::string shaderDir = ShaderLoader::FindShaderDir(); // 查找着色器目录
-    // OpenGL uses VAO vertex input, Vulkan uses VertexIndex-generated triangle
-    // OpenGL使用VAO顶点输入，Vulkan使用VertexIndex生成的三角形
-    std::string vertPath = shaderDir + "/common/fullscreen.vert.spv"; // 默认OpenGL顶点着色器
-    if (m_backend && m_backend->GetType() == BackendType::Vulkan) { // 如果是Vulkan后端
-        vertPath = shaderDir + "/common/fullscreen_vk.vert.spv"; // 使用Vulkan专用顶点着色器
+#include "app/Scene.h"                                       // 场景基类
+#include "app/CoverFlowState.h"                              // 封面流状态结构体
+#include "shader/EffectMetadata.h"                            // 效果元数据
+#include "render/IRenderBackend.h"                           // 渲染后端接口
+
+#include <vector>
+#include <memory>
+#include <string>
+#include <chrono>
+
+class Application;                                           // 前向声明
+class ScreenCapture;                                         // 前向声明
+class VideoPlayer;                                           // 前向声明
+
+/// 每张卡片的缩略图实时渲染状态
+struct CardThumbnailState {
+    ShaderHandle fragShader;                                  // 效果片段着色器句柄
+    TextureHandle thumbTex;                                   // 256x144 缩略图 FBO 纹理
+};
+
+class CoverFlowScene : public Scene {
+public:
+    CoverFlowScene();                                         // 构造函数（调用 RegisterCards）
+    ~CoverFlowScene() override;                               // 析构函数（释放着色器和纹理）
+
+    void OnEnter() override;                                  // 场景进入
+    void OnExit() override;                                   // 场景退出
+    void OnUpdate(float dt) override;                        // 每帧更新
+    void OnRender(IRenderBackend* backend) override;         // 渲染
+    void OnImGui() override;                                  // ImGui UI 绘制
+    bool WantsExit() const override { return m_wantsExit; } // 是否请求退出
+
+    std::unique_ptr<Scene> GetNextScene() override;          // 获取下一场景
+    void SetInputTexture(TextureHandle tex) { m_inputTex = tex; } // 设置输入纹理
+    void SetInputTexCache(const std::vector<TextureHandle>& cache) { m_inputTexCache = cache; }
+    void SetBackend(IRenderBackend* backend) { m_backend = backend; } // 设置渲染后端
+    void SetApplication(Application* app) { m_app = app; }    // 设置应用指针
+
+    /// 设置预渲染缩略图 ImGui 纹理 ID
+    void SetThumbnails(const std::vector<void*>& imTexIds) { m_thumbIds = imTexIds; }
+
+    /// 恢复选中卡片索引和滚动偏移（从详情页返回时使用）
+    void SetSelectedIndex(int index) { m_selectedIndex = index; m_targetOffset = 0.0f; m_scrollOffset = 0.0f; }
+
+    /// 设置测试图片目录
+    void SetTestImageBaseDir(const std::string& dir) { m_testImageBaseDir = dir; }
+
+    /// 从详情页接收视频播放器
+    void SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime);
+
+    /// 启用自动测试模式
+    void EnableAutoTest(int holdFrames);
+
+    /// 从详情页返回后恢复自动测试
+    void ResumeAutoTest(int holdFrames, int lastOpenedCard);
+
+    /// 重新加载输入纹理（拖放支持）
+    void ReloadInputTexture(const std::string& filePath);
+
+    /// 添加图片到内置图片池
+    void AddImageToPool(const std::string& path);
+
+    /// 添加视频到内置视频池
+    void AddVideoToPool(const std::string& path);
+
+    /// 获取当前状态（用于详情页返回时恢复）
+    CoverFlowState GetState() const;
+
+private:
+    std::vector<EffectCard> m_cards;                         // 效果卡片列表
+    int m_selectedIndex   = 0;                               // 当前选中索引
+    float m_scrollOffset  = 0.0f;                            // 滚动偏移（动画中间值）
+    float m_targetOffset  = 0.0f;                            // 目标偏移（动画目标值）
+    TextureHandle m_inputTex = {0};                           // 当前输入纹理
+    std::vector<TextureHandle> m_inputTexCache;              // 每效果纹理缓存
+    IRenderBackend* m_backend = nullptr;                     // 渲染后端指针
+    Application* m_app = nullptr;                             // 应用指针
+    bool m_wantsExit = false;                                // 是否请求退出
+    std::unique_ptr<Scene> m_nextScene;                     // 下一场景（详情页）
+
+    // 自动测试模式
+    bool m_autoTest = false;
+    int  m_autoTestHoldFrames = 0;
+    int  m_autoTestFrameCounter = 0;
+    int  m_autoTestCardIndex = 0;
+    int  m_autoTestLastOpenedCard = -1;
+
+    // 缩略图 ImGui 纹理 ID
+    std::vector<void*> m_thumbIds;
+
+    // 动态缩略图渲染
+    ShaderHandle m_sharedVertShader = INVALID_SHADER;        // 共享顶点着色器
+    std::vector<CardThumbnailState> m_thumbnailStates;       // 每卡缩略图状态
+    int m_thumbWidth  = 256;                                 // 缩略图宽度
+    int m_thumbHeight = 144;                                 // 缩略图高度
+    bool m_thumbInitialized = false;                          // 是否已初始化
+    std::string m_testImageBaseDir;                          // 测试图片目录
+    float m_thumbElapsedTime = 0.0f;                          // 缩略图累计时间
+    uint32_t m_thumbFrameCount = 0;                          // 缩略图帧计数
+
+    // 鼠标拖拽
+    bool  m_dragging    = false;
+    float m_dragStartX  = 0.0f;
+    float m_dragBaseOff = 0.0f;
+
+    // FPS 计数器
+    std::chrono::high_resolution_clock::time_point m_fpsLastTime;
+    int    m_fpsFrameCount = 0;
+    float  m_fpsDisplay    = 0.0f;
+
+    // 屏幕捕获
+    std::unique_ptr<ScreenCapture> m_screenCapture;
+    TextureHandle m_captureTex = {0};
+    bool m_captureActive  = false;
+    bool m_captureReady   = false;
+    int  m_captureWidth   = 0;
+    int  m_captureHeight  = 0;
+
+    // 图片循环
+    std::vector<std::string> m_imagePool;                    // 图片路径列表
+    int m_currentImageIndex = 0;                             // 当前图片索引
+
+    // 视频循环
+    std::vector<std::string> m_videoPool;                    // 视频路径列表
+    int m_currentVideoIndex = 0;                             // 当前视频索引
+
+    // 视频播放器
+    std::unique_ptr<VideoPlayer> m_videoPlayer;
+    TextureHandle m_videoTex = {0};
+    bool m_videoActive = false;
+    double m_videoLastFrameTime = 0.0;
+
+    void RegisterCards();                                     // 注册效果卡片
+    void SelectCard(int index);                                // 选择卡片
+    void OpenSelectedEffect();                                // 打开效果详情
+    void UpdateFPSCounter();                                  // 更新 FPS
+    void ToggleScreenCapture();                               // 切换屏幕捕获
+    void CycleImage(int direction);                           // 切换图片
+    void LoadImageFromFile(const std::string& path);         // 加载图片
+    void OpenVideoFile(const std::string& path);              // 打开视频
+    void StopVideo();                                         // 停止视频
+    void InitializeThumbnails();                             // 初始化缩略图
+    void RenderVisibleThumbnails();                           // 渲染可见缩略图
+};
+```
+
+### 3.2 RegisterCards — 卡片注册
+
+`RegisterCards` 在构造函数中被调用，负责注册所有 18 个着色器效果卡片。每个卡片包含 ID、名称、分类、描述以及着色器 SPIR-V 文件路径。
+
+#### 第一段：确定着色器目录和顶点着色器路径
+
+**分析**：通过 `ShaderLoader::FindShaderDir()` 定位着色器目录。OpenGL 后端使用 VAO 顶点输入的顶点着色器（`fullscreen.vert.spv`），Vulkan 后端使用 `VertexIndex` 生成的三角形的顶点着色器（`fullscreen_vk.vert.spv`）。
+
+```cpp
+    std::string shaderDir = ShaderLoader::FindShaderDir();
+    std::string vertPath = shaderDir + "/common/fullscreen.vert.spv";
+    if (m_backend && m_backend->GetType() == BackendType::Vulkan) {
+        vertPath = shaderDir + "/common/fullscreen_vk.vert.spv";
     }
+```
 
-    m_cards.clear();                                      // 清空卡片列表
-    m_cards.reserve(18);                                  // 预分配18张卡片的空间
+#### 第二段：定义 lambda 和注册卡片
+
+**分析**：使用 `CARD` 宏简化卡片注册语法。宏展开后调用内部的 `add` lambda，该 lambda 创建 `EffectCard` 结构体并填充所有字段，然后加入 `m_cards` 向量。18 个效果涵盖简单测试、光照、滤镜、风格化、色彩、扭曲、程序化生成和复古等 8 个分类。
+
+```cpp
+    m_cards.clear();
+    m_cards.reserve(18);
 
     auto add = [&](const char* id, const char* name, const char* category,
-                   const char* desc, const char* fragRelPath) { // lambda：添加一张卡片
-        EffectCard c;                                     // 创建卡片结构体
+                   const char* desc, const char* fragRelPath) {
+        EffectCard c;
         c.id = id; c.name = name; c.category = category; c.description = desc;
-        c.vertSpirvPath = vertPath;                      // 设置顶点着色器SPIR-V路径
-        c.fragSpirvPath = shaderDir + "/" + fragRelPath; // 设置片段着色器SPIR-V路径
-        c.passes = 1;                                     // 默认单通道渲染
-        m_cards.push_back(std::move(c));                  // 加入卡片列表
+        c.vertSpirvPath = vertPath;
+        c.fragSpirvPath = shaderDir + "/" + fragRelPath;
+        c.passes = 1;
+        m_cards.push_back(std::move(c));
     };
 
     CARD("simple_test",  "Grayscale Test",    "Simple",
          "Basic grayscale shader, validates render pipeline",
          "effects/simple_test/simple_test.frag.spv");
-    // 灰度测试：基础灰度着色器，验证渲染管线
+    // ... 其余 17 个卡片
+```
+
+#### 完整源码
+
+```cpp
+#define CARD(id, name, cat, desc, frag) \
+    add(id, name, cat, desc, frag)                            // 简化卡片注册的宏
+
+void CoverFlowScene::RegisterCards()
+{
+    std::string shaderDir = ShaderLoader::FindShaderDir();   // 定位着色器目录
+    std::string vertPath = shaderDir + "/common/fullscreen.vert.spv";
+    if (m_backend && m_backend->GetType() == BackendType::Vulkan) {
+        vertPath = shaderDir + "/common/fullscreen_vk.vert.spv"; // Vulkan 专用顶点着色器
+    }
+
+    m_cards.clear();                                         // 清空卡片列表
+    m_cards.reserve(18);                                     // 预分配 18 个卡片空间
+
+    auto add = [&](const char* id, const char* name, const char* category,
+                   const char* desc, const char* fragRelPath) {
+        EffectCard c;
+        c.id = id; c.name = name; c.category = category; c.description = desc;
+        c.vertSpirvPath = vertPath;
+        c.fragSpirvPath = shaderDir + "/" + fragRelPath;
+        c.passes = 1;
+        m_cards.push_back(std::move(c));
+    };
+
+    CARD("simple_test",  "Grayscale Test",    "Simple",
+         "Basic grayscale shader, validates render pipeline",
+         "effects/simple_test/simple_test.frag.spv");
 
     CARD("bloom",        "Bloom",             "Lighting",
          "Extract bright areas with blur overlay for dreamy glow",
          "effects/bloom/bloom.frag.spv");
-    // 泛光：提取高亮区域并叠加模糊，产生梦幻光晕效果
 
     CARD("blur",         "Gaussian Blur",     "Filter",
          "Multi-pass separable Gaussian blur, large radius soft focus",
          "effects/blur/blur.frag.spv");
-    // 高斯模糊：多通道可分离高斯模糊，大半径柔焦
 
     CARD("sharpen",      "Sharpen",           "Filter",
          "Unsharp mask image sharpening, enhances edge detail",
          "effects/sharpen/sharpen.frag.spv");
-    // 锐化：USM锐化，增强边缘细节
 
     CARD("edge_detect",  "Edge Detection",    "Filter",
          "Sobel edge detection with optional normal visualization",
          "effects/edge_detect/edge_detect.frag.spv");
-    // 边缘检测：Sobel算子边缘检测，可选法线可视化
 
     CARD("emboss",       "Emboss",            "Stylize",
          "Emboss filter for relief texture effect",
          "effects/emboss/emboss.frag.spv");
-    // 浮雕：浮雕滤镜，产生浮雕纹理效果
 
     CARD("pixelate",     "Pixelate",          "Stylize",
          "Adjustable mosaic pixelation block size",
          "effects/pixelate/pixelate.frag.spv");
-    // 像素化：可调马赛克像素块大小
 
     CARD("vignette",     "Vignette",          "Color",
          "Darken edges to focus on center subject",
          "effects/vignette/vignette.frag.spv");
-    // 暗角：边缘变暗以聚焦中心主体
 
     CARD("chromatic",    "Chromatic Aberration", "Distort",
          "RGB channel offset simulating chromatic distortion",
          "effects/chromatic/chromatic.frag.spv");
-    // 色差：RGB通道偏移模拟色散畸变
 
     CARD("color_grade",  "Color Grading",     "Color",
          "LUT-based cinematic color grading",
          "effects/color_grade/color_grade.frag.spv");
-    // 色彩分级：基于LUT的电影级色彩调整
 
     CARD("noise",        "Noise Generator",   "Procedural",
          "Perlin noise with adjustable frequency and amplitude",
          "effects/noise/noise.frag.spv");
-    // 噪声生成器：可调频率和振幅的Perlin噪声
 
     CARD("kaleidoscope", "Kaleidoscope",      "Distort",
          "Radial symmetry with adjustable sectors and rotation",
          "effects/kaleidoscope/kaleidoscope.frag.spv");
-    // 万花筒：可调扇区数和旋转的径向对称
 
     CARD("glitch",       "Glitch Art",        "Stylize",
          "Digital glitch with random block shift and color tearing",
          "effects/glitch/glitch.frag.spv");
-    // 故障艺术：随机块位移和色彩撕裂的数字故障效果
 
     CARD("toon",         "Toon Shading",      "Stylize",
          "Cartoon-style color quantization, cel shading",
          "effects/toon/toon.frag.spv");
-    // 卡通着色：卡通风格的颜色量化，赛璐着色
 
     CARD("vhs",          "VHS Retro",         "Retro",
          "VHS tape scanlines, noise and color drift",
          "effects/vhs/vhs.frag.spv");
-    // VHS复古：录像带扫描线、噪声和色彩漂移
 
     CARD("crt",          "CRT Monitor",       "Retro",
          "CRT scanlines + phosphor RGB pattern + screen curvature",
          "effects/crt/crt.frag.spv");
-    // CRT显示器：扫描线+磷光RGB图案+屏幕弯曲
 
     CARD("water_ripple", "Water Ripple",      "Distort",
          "Normal-map based water ripple displacement",
          "effects/water_ripple/water_ripple.frag.spv");
-    // 水波纹：基于法线贴图的水波纹位移
 
     CARD("lens_distort", "Lens Distortion",   "Distort",
          "Barrel/pincushion lens distortion correction and simulation",
          "effects/lens_distort/lens_distort.frag.spv");
-    // 镜头畸变：桶形/枕形镜头畸变校正和模拟
 
     printf("[CoverFlowScene] Registered %zu effect cards\n", m_cards.size());
 }
 
-#undef CARD                                              // 取消CARD宏定义
+#undef CARD
 ```
 
-#### 功能说明
+### 3.3 OnEnter / OnExit
 
-`RegisterCards` 注册了 18 张特效卡片，每张卡片包含特效 ID、名称、分类、描述和片段着色器路径。使用 `CARD` 宏简化卡片注册语法。
+#### OnEnter — 场景进入
 
-#### 实现原理
-
-1. **CARD 宏**：将 5 个参数的 `add` 调用封装为更简洁的 `CARD(id, name, cat, desc, frag)` 语法，提高可读性。
-2. **Lambda `add`**：捕获 `shaderDir` 和 `vertPath` 的闭包，负责创建 `EffectCard` 结构体并加入列表。
-3. **着色器路径适配**：根据当前后端类型选择不同的顶点着色器（OpenGL 使用 VAO 输入，Vulkan 使用 `gl_VertexIndex` 生成三角形）。
-4. **18 个特效分类**：Simple、Lighting、Filter、Stylize、Color、Distort、Procedural、Retro 八大类。
-
-#### 为什么这样实现
-
-- **宏 + Lambda 组合**：宏提供了声明式的卡片注册语法，Lambda 提供了灵活的闭包捕获。这种组合既保持了代码简洁性，又避免了全局变量或静态注册表的复杂性。
-- **`reserve(18)`**：预分配空间避免 `push_back` 时的多次内存重分配。
-- **`#undef CARD`**：宏定义在使用后立即取消，防止污染其他翻译单元。
-
----
-
-### 3.3 场景生命周期 OnEnter / OnExit
+**分析**：`OnEnter` 在场景被设置为当前场景时调用。它初始化 FPS 计数器的时间戳和计数器，然后调用 `InitializeThumbnails()` 初始化所有卡片的缩略图渲染资源。
 
 ```cpp
 void CoverFlowScene::OnEnter()
 {
-    m_fpsLastTime    = std::chrono::high_resolution_clock::now(); // 初始化FPS计时起点
-    m_fpsFrameCount  = 0;                                // 重置FPS帧计数
-    m_fpsDisplay     = 0.0f;                             // 重置FPS显示值
+    m_fpsLastTime    = std::chrono::high_resolution_clock::now();
+    m_fpsFrameCount  = 0;
+    m_fpsDisplay     = 0.0f;
 
     printf("[CoverFlowScene] Entered with %zu cards, selected=%d\n",
            m_cards.size(), m_selectedIndex);
 
-    // Initialize thumbnails for all backends (OpenGL and Vulkan)
-    // 为所有后端（OpenGL和Vulkan）初始化缩略图
-    InitializeThumbnails();                              // 初始化缩略图渲染资源
+    InitializeThumbnails();
+}
+```
+
+#### OnExit — 场景退出
+
+**分析**：`OnExit` 在场景被替换或应用关闭时调用。当前实现仅输出日志，没有额外的清理逻辑。资源的释放由析构函数处理。
+
+```cpp
+void CoverFlowScene::OnExit()
+{
+    printf("[CoverFlowScene] Exiting\n");
+}
+```
+
+#### 完整源码
+
+```cpp
+void CoverFlowScene::OnEnter()
+{
+    m_fpsLastTime    = std::chrono::high_resolution_clock::now(); // 初始化 FPS 计时起点
+    m_fpsFrameCount  = 0;                                   // 重置帧计数
+    m_fpsDisplay     = 0.0f;                                 // 重置 FPS 显示值
+
+    printf("[CoverFlowScene] Entered with %zu cards, selected=%d\n",
+           m_cards.size(), m_selectedIndex);
+
+    InitializeThumbnails();                                  // 初始化所有卡片的缩略图
 }
 
 void CoverFlowScene::OnExit()
 {
-    printf("[CoverFlowScene] Exiting\n");                // 仅打印退出日志
+    printf("[CoverFlowScene] Exiting\n");                    // 输出退出日志
 }
 ```
 
-#### 功能说明
+### 3.4 OnUpdate
 
-- **OnEnter**：场景进入时重置 FPS 计数器并初始化缩略图渲染系统。
-- **OnExit**：场景退出时仅打印日志（资源释放由析构函数处理）。
+`OnUpdate` 是每帧调用的核心更新函数，负责处理自动测试逻辑、滚动动画、FPS 计数、拖放文件、视频播放、屏幕捕获、键盘/鼠标输入等所有交互逻辑。
 
-#### 实现原理
+#### 第一段：自动测试恢复逻辑
 
-- `OnEnter` 在场景被 `SetScene` 设置或从详情场景返回时调用。
-- `OnExit` 在场景被替换或应用关闭时调用。
+**分析**：当从详情页返回且自动测试模式激活时，`m_autoTestLastOpenedCard` 被设为非负值。此时将测试索引推进到下一张卡片，如果所有卡片已测试完毕则关闭自动测试，否则选择下一张卡片并打开其详情页。
 
-#### 为什么这样实现
+```cpp
+    if (m_autoTest && m_autoTestLastOpenedCard >= 0) {
+        m_autoTestCardIndex = m_autoTestLastOpenedCard + 1;
+        m_autoTestLastOpenedCard = -1;
+        if (m_autoTestCardIndex >= (int)m_cards.size()) {
+            printf("\n[AutoTest] ALL %zu CARDS TESTED SUCCESSFULLY!\n", m_cards.size());
+            m_autoTest = false;
+        } else {
+            SelectCard(m_autoTestCardIndex);
+            OpenSelectedEffect();
+            m_autoTestFrameCounter = m_autoTestHoldFrames;
+        }
+    }
+```
 
-- **OnEnter 初始化缩略图**：缩略图初始化需要后端已就绪（创建着色器、纹理等 GPU 资源），放在 `OnEnter` 而非构造函数中，确保后端已注入。
-- **OnExit 为空**：GPU 资源的释放由析构函数统一处理，避免在 `OnExit` 中释放资源后又被 `OnEnter` 重新创建的冗余操作。
+#### 第二段：平滑滚动动画
 
----
+**分析**：使用线性插值实现平滑滚动效果。`m_scrollOffset` 以 `dt * 8.0` 的速率向 `m_targetOffset` 靠近，`std::fmin(1.0f, dt * 8.0f)` 确保每帧最多移动差值的 100%，避免过冲。
 
-### 3.4 帧更新 OnUpdate
+```cpp
+    float diff = m_targetOffset - m_scrollOffset;
+    m_scrollOffset += diff * std::fmin(1.0f, dt * 8.0f);
+```
+
+#### 第三段：拖放文件处理
+
+**分析**：通过 `m_app->ConsumeDroppedFile()` 获取拖放的文件路径。根据文件扩展名判断是视频文件还是图片文件，分别调用对应处理函数。
+
+```cpp
+    if (m_app) {
+        std::string dropped = m_app->ConsumeDroppedFile();
+        if (!dropped.empty()) {
+            std::string ext = dropped;
+            auto dot = ext.find_last_of('.');
+            if (dot != std::string::npos) {
+                ext = ext.substr(dot);
+                for (auto& c : ext) c = (c >= 'A' && c <= 'Z') ? c + 32 : c;
+                if (ext == ".mp4" || ext == ".mkv" || ext == ".avi" || ext == ".mov" || ext == ".webm") {
+                    OpenVideoFile(dropped);
+                } else {
+                    StopVideo();
+                    ReloadInputTexture(dropped);
+                }
+            }
+        }
+    }
+```
+
+#### 第四段：视频播放器更新
+
+**分析**：如果视频播放器处于活跃状态，按照 30fps 的固定帧率检查是否需要读取下一帧。如果 ffmpeg 管道输出了新帧，则更新视频纹理并设为当前输入纹理。
+
+```cpp
+    if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
+        double now = ImGui::GetTime();
+        double frameInterval = 1.0 / 30.0;
+        if (now - m_videoLastFrameTime >= frameInterval) {
+            if (m_videoPlayer->ReadFrame()) {
+                m_backend->UpdateTexture(m_videoTex, 0, 0,
+                    m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
+                    m_videoPlayer->GetPixels());
+                m_inputTex = m_videoTex;
+                m_videoLastFrameTime = now;
+            } else {
+                StopVideo();
+            }
+        }
+    }
+```
+
+#### 第五段：屏幕捕获更新
+
+**分析**：如果屏幕捕获处于活跃状态且捕获器已就绪，尝试捕获新帧并更新 GPU 纹理。
+
+```cpp
+    if (m_captureActive && m_screenCapture && m_screenCapture->IsReady()) {
+        bool newFrame = m_screenCapture->CaptureFrame();
+        if (newFrame && m_backend) {
+            m_backend->UpdateTexture(m_captureTex, 0, 0,
+                m_captureWidth, m_captureHeight,
+                m_screenCapture->GetPixels());
+        }
+    }
+```
+
+#### 第六段：键盘导航与快捷键
+
+**分析**：处理多种键盘输入：左右箭头选择相邻卡片、Enter 打开详情页、ESC 退出、F1-F8 快速选择前 8 个效果、Ctrl+S 切换屏幕捕获、Ctrl+Left/Right 切换内置图片。
+
+```cpp
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft))
+        SelectCard(m_selectedIndex - 1);
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight))
+        SelectCard(m_selectedIndex + 1);
+    if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter))
+        OpenSelectedEffect();
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+        m_wantsExit = true;
+    }
+
+    for (int k = 0; k < 8; k++) {
+        if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_F1 + k))) {
+            int targetIdx = k;
+            if (targetIdx < (int)m_cards.size()) SelectCard(targetIdx);
+        }
+    }
+
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) ToggleScreenCapture();
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) CycleImage(-1);
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) CycleImage(+1);
+```
+
+#### 第七段：鼠标滚轮与拖拽
+
+**分析**：鼠标滚轮向上滚动选择前一张卡片，向下滚动选择后一张。鼠标左键拖拽时，将像素位移转换为卡片索引偏移，实现流畅的拖拽浏览。
+
+```cpp
+    float wheel = io.MouseWheel;
+    if (wheel != 0.0f)
+        SelectCard(m_selectedIndex - static_cast<int>(wheel));
+
+    const float cardW = 280.0f;
+    const float spacing = 80.0f;
+    const float cardUnit = cardW + spacing;
+
+    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
+        float dx = io.MouseDelta.x;
+        if (!m_dragging) {
+            m_dragging = true;
+            m_dragStartX = io.MousePos.x;
+            m_dragBaseOff = m_scrollOffset;
+        }
+        float offset = m_dragBaseOff - dx / cardUnit;
+        int idx = m_selectedIndex + static_cast<int>(std::round(offset));
+        if (idx < 0) idx = 0;
+        if (idx >= (int)m_cards.size()) idx = (int)m_cards.size() - 1;
+        if (idx != m_selectedIndex) {
+            SelectCard(idx);
+            m_scrollOffset = offset - static_cast<float>(idx - m_selectedIndex);
+        }
+    } else {
+        m_dragging = false;
+    }
+```
+
+#### 完整源码
 
 ```cpp
 void CoverFlowScene::OnUpdate(float dt)
 {
-    // Auto-test: if we just returned from a detail scene and need to test next card
-    // 自动测试：如果刚从详情场景返回，需要测试下一张卡片
+    // 自动测试恢复：从详情页返回后推进到下一张卡片
     if (m_autoTest && m_autoTestLastOpenedCard >= 0) {
-        m_autoTestCardIndex = m_autoTestLastOpenedCard + 1; // 移动到下一张卡片
-        m_autoTestLastOpenedCard = -1;                   // 清除"返回"标志
+        m_autoTestCardIndex = m_autoTestLastOpenedCard + 1;
+        m_autoTestLastOpenedCard = -1;
         if (m_autoTestCardIndex >= (int)m_cards.size()) {
-            // All cards tested!
-            // 所有卡片测试完毕！
             printf("\n[AutoTest] ALL %zu CARDS TESTED SUCCESSFULLY!\n", m_cards.size());
-            m_autoTest = false;                           // 关闭自动测试
+            m_autoTest = false;
         } else {
-            printf("[AutoTest] Card %d/%zu passed, now testing card %d...\n",
-                   m_autoTestCardIndex, m_cards.size(), m_autoTestCardIndex);
-            SelectCard(m_autoTestCardIndex);              // 选中下一张卡片
-            OpenSelectedEffect();                          // 进入详情页
-            m_autoTestFrameCounter = m_autoTestHoldFrames; // 重置停留帧计数
+            SelectCard(m_autoTestCardIndex);
+            OpenSelectedEffect();
+            m_autoTestFrameCounter = m_autoTestHoldFrames;
         }
     }
 
-    // Smooth scroll animation（平滑滚动动画）
-    float diff = m_targetOffset - m_scrollOffset;        // 计算目标与当前的差值
-    m_scrollOffset += diff * std::fmin(1.0f, dt * 8.0f); // 指数衰减插值，dt*8控制速度
+    // 平滑滚动动画（线性插值）
+    float diff = m_targetOffset - m_scrollOffset;
+    m_scrollOffset += diff * std::fmin(1.0f, dt * 8.0f);
 
-    ImGuiIO& io = ImGui::GetIO();                        // 获取ImGui IO结构体引用
+    ImGuiIO& io = ImGui::GetIO();
 
-    // ---- FPS counter ----
-    // ---- FPS计数器 ----
-    UpdateFPSCounter();                                   // 更新FPS显示值
+    UpdateFPSCounter();                                       // 更新 FPS 计数器
 
-    // ---- Drag-drop: check for dropped files ----
-    // ---- 拖放：检查是否有拖放的文件 ----
-    if (m_app) {                                         // 如果Application指针有效
-        std::string dropped = m_app->ConsumeDroppedFile(); // 消费拖放文件路径
-        if (!dropped.empty()) {                           // 如果有拖放文件
-            // Check if it's a video file
-            // 检查是否为视频文件
+    // 拖放文件处理
+    if (m_app) {
+        std::string dropped = m_app->ConsumeDroppedFile();
+        if (!dropped.empty()) {
             std::string ext = dropped;
-            auto dot = ext.find_last_of('.');            // 查找文件扩展名分隔符
+            auto dot = ext.find_last_of('.');
             if (dot != std::string::npos) {
-                ext = ext.substr(dot);                    // 提取扩展名
-                // Convert to lowercase
-                // 转换为小写
+                ext = ext.substr(dot);
                 for (auto& c : ext) c = (c >= 'A' && c <= 'Z') ? c + 32 : c;
                 if (ext == ".mp4" || ext == ".mkv" || ext == ".avi" || ext == ".mov" || ext == ".webm") {
-                    OpenVideoFile(dropped);                // 视频文件：打开视频播放器
+                    OpenVideoFile(dropped);
                 } else {
-                    StopVideo();                           // 非视频文件：停止当前视频
-                    ReloadInputTexture(dropped);          // 加载为输入纹理
+                    StopVideo();
+                    ReloadInputTexture(dropped);
                 }
             }
         }
     }
 
-    // ---- Video player: update frames ----
-    // ---- 视频播放器：更新帧 ----
+    // 视频播放器更新
     if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
-        double now = ImGui::GetTime();                    // 获取当前时间
-        // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
-        // ffmpeg管道以固定30fps输出（见StartFFmpegProcess: -r 30）
-        double frameInterval = 1.0 / 30.0;               // 帧间隔约33.3ms
-        if (now - m_videoLastFrameTime >= frameInterval) { // 到达下一帧时间
-            if (m_videoPlayer->ReadFrame()) {            // 读取一帧视频
+        double now = ImGui::GetTime();
+        double frameInterval = 1.0 / 30.0;
+        if (now - m_videoLastFrameTime >= frameInterval) {
+            if (m_videoPlayer->ReadFrame()) {
                 m_backend->UpdateTexture(m_videoTex, 0, 0,
                     m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
-                    m_videoPlayer->GetPixels());          // 更新视频纹理的GPU数据
-                m_inputTex = m_videoTex;                   // 将视频纹理设为当前输入
-                m_videoLastFrameTime = now;               // 更新帧时间
+                    m_videoPlayer->GetPixels());
+                m_inputTex = m_videoTex;
+                m_videoLastFrameTime = now;
             } else {
-                // Video ended — loop
-                // 视频结束——循环
-                printf("[CoverFlowScene] Video ended, looping\n");
-                StopVideo();                               // 停止视频（简化处理）
+                StopVideo();
             }
         }
     }
 
-    // ---- Screen capture: update input texture if active ----
-    // ---- 屏幕捕获：如果激活则更新输入纹理 ----
+    // 屏幕捕获更新
     if (m_captureActive && m_screenCapture && m_screenCapture->IsReady()) {
-        bool newFrame = m_screenCapture->CaptureFrame();  // 捕获一帧屏幕
-        if (newFrame && m_backend) {                      // 如果有新帧
+        bool newFrame = m_screenCapture->CaptureFrame();
+        if (newFrame && m_backend) {
             m_backend->UpdateTexture(m_captureTex, 0, 0,
                 m_captureWidth, m_captureHeight,
-                m_screenCapture->GetPixels());            // 更新捕获纹理的GPU数据
-        }
-        // Use capture texture as input (even if no new frame, texture has previous capture)
-        // 使用捕获纹理作为输入（即使没有新帧，纹理也包含上一次捕获的内容）
-    }
-
-    // ---- Auto-test timer ----
-    // ---- 自动测试计时器 ----
-    if (m_autoTest && !m_wantsExit) {                     // 如果自动测试激活且未请求退出
-        m_autoTestFrameCounter--;                          // 递减帧计数
-        if (m_autoTestFrameCounter <= 0) {                // 停留时间到
-            // Time's up: open current card's detail scene
-            // 时间到：打开当前卡片的详情场景
-            printf("[AutoTest] Opening card %d: %s\n", m_autoTestCardIndex,
-                   m_cards[m_autoTestCardIndex].name.c_str());
-            m_autoTestLastOpenedCard = m_autoTestCardIndex; // 记录已打开的卡片
-            OpenSelectedEffect();                          // 进入详情页
+                m_screenCapture->GetPixels());
         }
     }
 
-    // ---- Keyboard navigation ----
-    // ---- 键盘导航 ----
+    // 自动测试计时器
+    if (m_autoTest && !m_wantsExit) {
+        m_autoTestFrameCounter--;
+        if (m_autoTestFrameCounter <= 0) {
+            m_autoTestLastOpenedCard = m_autoTestCardIndex;
+            OpenSelectedEffect();
+        }
+    }
+
+    // 键盘导航
     if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft))
-        SelectCard(m_selectedIndex - 1);                   // 左箭头/手柄左：选中上一张
+        SelectCard(m_selectedIndex - 1);
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight))
-        SelectCard(m_selectedIndex + 1);                  // 右箭头/手柄右：选中下一张
+        SelectCard(m_selectedIndex + 1);
     if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter))
-        OpenSelectedEffect();                              // 回车：打开选中特效
-    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {           // ESC：退出场景
+        OpenSelectedEffect();
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         printf("[CoverFlowScene] ESC detected, exiting\n");
         m_wantsExit = true;
     }
 
-    // ---- F1-F8: Quick effect selection ----
-    // ---- F1-F8：快速选择特效 ----
-    for (int k = 0; k < 8; k++) {                         // 遍历F1-F8
-        if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_F1 + k))) { // 检测功能键
-            int targetIdx = k; // F1=0, F2=1, ... F8=7
-            if (targetIdx < (int)m_cards.size()) {        // 确保索引有效
-                SelectCard(targetIdx);                     // 选中对应卡片
-            }
+    // F1-F8 快速选择
+    for (int k = 0; k < 8; k++) {
+        if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_F1 + k))) {
+            int targetIdx = k;
+            if (targetIdx < (int)m_cards.size()) SelectCard(targetIdx);
         }
     }
 
-    // ---- Ctrl+S: Toggle screen capture ----
-    // ---- Ctrl+S：切换屏幕捕获 ----
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
-        ToggleScreenCapture();                             // 切换屏幕捕获状态
-    }
+    // Ctrl+S：切换屏幕捕获
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) ToggleScreenCapture();
 
-    // ---- Ctrl+Left/Right: Cycle built-in images ----
-    // ---- Ctrl+左/右：切换内置图片 ----
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
-        CycleImage(-1);                                   // 上一张图片
-    }
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-        CycleImage(+1);                                   // 下一张图片
-    }
+    // Ctrl+Left/Right：切换内置图片
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) CycleImage(-1);
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) CycleImage(+1);
 
-    // ---- Mouse wheel ----
-    // ---- 鼠标滚轮 ----
-    float wheel = io.MouseWheel;                           // 获取滚轮偏移量
+    // 鼠标滚轮
+    float wheel = io.MouseWheel;
     if (wheel != 0.0f)
-        SelectCard(m_selectedIndex - static_cast<int>(wheel)); // 滚轮上=上一张，下=下一张
+        SelectCard(m_selectedIndex - static_cast<int>(wheel));
 
-    // ---- Mouse drag to scroll cards ----
-    // ---- 鼠标拖拽滚动卡片 ----
-    const float cardW   = 280.0f;                          // 卡片宽度
-    const float spacing = 80.0f;                           // 卡片间距
-    const float cardUnit = cardW + spacing;                // 相邻卡片中心距离
+    // 鼠标拖拽浏览卡片
+    const float cardW   = 280.0f;
+    const float spacing = 80.0f;
+    const float cardUnit = cardW + spacing;
 
-    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) { // 如果正在拖拽左键
-        float dx = io.MouseDelta.x;                       // 鼠标X方向移动量
-        if (!m_dragging) {                                 // 如果刚开始拖拽
+    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
+        float dx = io.MouseDelta.x;
+        if (!m_dragging) {
             m_dragging = true;
-            m_dragStartX = io.MousePos.x;                  // 记录起始X坐标
-            m_dragBaseOff = m_scrollOffset;               // 记录起始滚动偏移
+            m_dragStartX = io.MousePos.x;
+            m_dragBaseOff = m_scrollOffset;
         }
-        // Convert pixel drag to card index offset
-        // 将像素拖拽转换为卡片索引偏移
-        float offset = m_dragBaseOff - dx / cardUnit;     // 累计偏移（以卡片为单位）
-        // Clamp（限制范围）
-        int idx = m_selectedIndex + static_cast<int>(std::round(offset)); // 四舍五入到最近卡片
-        if (idx < 0) idx = 0;                              // 不小于0
-        if (idx >= (int)m_cards.size()) idx = (int)m_cards.size() - 1; // 不超过最大值
-        if (idx != m_selectedIndex) {                     // 如果选中了不同的卡片
-            SelectCard(idx);                                // 切换选中卡片
-            m_scrollOffset = offset - static_cast<float>(idx - m_selectedIndex); // 更新滚动偏移
+        float offset = m_dragBaseOff - dx / cardUnit;
+        int idx = m_selectedIndex + static_cast<int>(std::round(offset));
+        if (idx < 0) idx = 0;
+        if (idx >= (int)m_cards.size()) idx = (int)m_cards.size() - 1;
+        if (idx != m_selectedIndex) {
+            SelectCard(idx);
+            m_scrollOffset = offset - static_cast<float>(idx - m_selectedIndex);
         }
     } else {
-        m_dragging = false;                                // 未拖拽时重置拖拽状态
+        m_dragging = false;
     }
 }
 ```
 
-#### 功能说明
+### 3.5 OnRender + RenderVisibleThumbnails
 
-`OnUpdate` 是每帧调用的核心更新函数，处理：自动测试逻辑、平滑滚动动画、FPS 计算、拖放文件处理、视频播放更新、屏幕捕获更新、键盘/鼠标/手柄输入处理。
+#### OnRender — 渲染入口
 
-#### 实现原理
-
-1. **自动测试状态机**：通过 `m_autoTestLastOpenedCard` 检测是否刚从详情场景返回，如果是则推进到下一张卡片。
-2. **平滑滚动**：`m_scrollOffset` 通过指数衰减插值（`diff * dt * 8`）向 `m_targetOffset` 靠近，产生自然的减速效果。
-3. **视频帧同步**：以 30fps 的固定间隔从 FFmpeg 管道读取帧，更新 GPU 纹理。
-4. **输入优先级**：ESC 最先处理（退出场景），然后是功能键、快捷键、滚轮、拖拽。
-
-#### 为什么这样实现
-
-- **`std::fmin(1.0f, dt * 8.0f)`**：限制插值系数不超过 1.0，防止在低帧率（大 dt）时出现动画跳变。
-- **拖拽使用 `io.MouseDelta`**：使用帧间鼠标增量而非绝对位置，确保拖拽响应与帧率无关。
-- **视频帧间隔固定 30fps**：与 FFmpeg 管道的输出帧率匹配，避免不必要的帧读取或跳帧。
-
----
-
-### 3.5 渲染 OnRender + RenderVisibleThumbnails
+**分析**：`OnRender` 每帧被调用，主要职责是更新缩略图的时间/帧计数器，然后调用 `RenderVisibleThumbnails()` 渲染当前可见范围内的卡片缩略图。缩略图渲染在 GPU 上通过 FBO 完成，每张可见卡片的效果着色器以低分辨率（256x144）实时处理输入纹理。
 
 ```cpp
 void CoverFlowScene::OnRender(IRenderBackend* /*backend*/)
 {
-    // Update thumbnail time/frame counters
-    // 更新缩略图时间和帧计数器
-    static auto lastTime = std::chrono::high_resolution_clock::now(); // 静态变量记录上次时间
-    auto now = std::chrono::high_resolution_clock::now(); // 当前时间
-    float dt = std::chrono::duration<float>(now - lastTime).count(); // 帧间隔
-    lastTime = now;                                      // 更新上次时间
-    m_thumbElapsedTime += dt;                            // 累计缩略图时间
-    m_thumbFrameCount++;                                  // 递增缩略图帧计数
+    static auto lastTime = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::high_resolution_clock::now();
+    float dt = std::chrono::duration<float>(now - lastTime).count();
+    lastTime = now;
+    m_thumbElapsedTime += dt;
+    m_thumbFrameCount++;
 
-    // Render visible card thumbnails every frame
-    // 每帧渲染可见卡片的缩略图
-    RenderVisibleThumbnails();                            // 渲染当前可见范围内的缩略图
+    RenderVisibleThumbnails();
 }
 ```
+
+#### RenderVisibleThumbnails — 渲染可见缩略图
+
+**分析**：只渲染选中卡片前后各 3 张（共 7 张）的缩略图，避免不必要的 GPU 开销。对于每张可见卡片，优先使用其专属的缓存输入纹理，如果没有则使用默认输入纹理。渲染流程为：开始渲染到纹理 -> 设置着色器参数 -> 绘制全屏四边形 -> 结束渲染到纹理 -> 获取 ImGui 纹理 ID。
 
 ```cpp
 void CoverFlowScene::RenderVisibleThumbnails()
 {
-    if (!m_thumbInitialized || !m_backend) return;        // 未初始化或后端无效则返回
+    if (!m_thumbInitialized || !m_backend) return;
 
-    const int vr = 3;                                     // 可见范围：当前卡片左右各3张
+    const int vr = 3;
 
-    for (int i = m_selectedIndex - vr; i <= m_selectedIndex + vr; i++) { // 遍历可见范围
-        if (i < 0 || i >= (int)m_thumbnailStates.size()) continue; // 越界跳过
-        const auto& state = m_thumbnailStates[i];         // 获取该卡片的缩略图状态
-        if (state.fragShader.id == INVALID_SHADER.id) continue; // 着色器无效跳过
-        if (state.thumbTex.id == INVALID_TEXTURE.id) continue;    // 纹理无效跳过
+    for (int i = m_selectedIndex - vr; i <= m_selectedIndex + vr; i++) {
+        if (i < 0 || i >= (int)m_thumbnailStates.size()) continue;
+        const auto& state = m_thumbnailStates[i];
+        if (state.fragShader.id == INVALID_SHADER.id) continue;
+        if (state.thumbTex.id == INVALID_TEXTURE.id) continue;
 
-        TextureHandle input = m_inputTex;                  // 默认使用当前输入纹理
+        TextureHandle input = m_inputTex;
         if (i < (int)m_inputTexCache.size() && m_inputTexCache[i].id != INVALID_TEXTURE.id) {
-            input = m_inputTexCache[i];                   // 如果有缓存纹理则使用缓存
+            input = m_inputTexCache[i];
         }
 
-        m_backend->BeginRenderToTexture(state.thumbTex);  // 开始渲染到纹理（FBO）
-        ShaderParams params;                               // 着色器参数
-        params.inputTextures.push_back(input);            // 设置输入纹理
-        params.uniformFloats  = {4.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f}; // 默认uniform值
-        params.viewportWidth  = m_thumbWidth;               // 视口宽度256
-        params.viewportHeight = m_thumbHeight;             // 视口高度144
-        params.time           = m_thumbElapsedTime;        // 累计时间（动画着色器用）
-        params.frameCount     = m_thumbFrameCount;        // 帧计数（动画着色器用）
+        m_backend->BeginRenderToTexture(state.thumbTex);
+        ShaderParams params;
+        params.inputTextures.push_back(input);
+        params.uniformFloats  = {4.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        params.viewportWidth  = m_thumbWidth;
+        params.viewportHeight = m_thumbHeight;
+        params.time           = m_thumbElapsedTime;
+        params.frameCount     = m_thumbFrameCount;
         m_backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
-        // 使用共享顶点着色器和该卡片专属片段着色器绘制全屏四边形
-        m_backend->EndRenderToTexture();                   // 结束渲染到纹理
+        m_backend->EndRenderToTexture();
 
         m_thumbIds[i] = m_backend->GetImTextureID(state.thumbTex);
-        // 获取纹理的ImGui显示ID，用于后续ImGui::Image绘制
     }
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-- **OnRender**：更新缩略图的全局计时器并调用 `RenderVisibleThumbnails`。
-- **RenderVisibleThumbnails**：为当前可见范围内的每张卡片（选中卡片左右各 3 张）实时渲染特效缩略图到独立的 FBO 纹理。
+```cpp
+void CoverFlowScene::OnRender(IRenderBackend* /*backend*/)
+{
+    // 更新缩略图时间/帧计数器
+    static auto lastTime = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::high_resolution_clock::now();
+    float dt = std::chrono::duration<float>(now - lastTime).count();
+    lastTime = now;
+    m_thumbElapsedTime += dt;                                // 累计时间（用于动画效果）
+    m_thumbFrameCount++;                                     // 递增帧计数
 
-#### 实现原理
+    RenderVisibleThumbnails();                                // 渲染可见卡片的缩略图
+}
 
-1. **FBO 离屏渲染**：每张卡片有独立的 256x144 FBO 纹理，通过 `BeginRenderToTexture/EndRenderToTexture` 将特效渲染到该纹理。
-2. **可见范围优化**：只渲染选中卡片左右各 3 张（共 7 张），而非全部 18 张，减少 GPU 负载。
-3. **ImGui 纹理 ID**：通过 `GetImTextureID` 将后端纹理句柄转换为 ImGui 可用的 `ImTextureID`，存储在 `m_thumbIds` 中供 `OnImGui` 使用。
+void CoverFlowScene::RenderVisibleThumbnails()
+{
+    if (!m_thumbInitialized || !m_backend) return;
 
-#### 为什么这样实现
+    const int vr = 3;                                         // 可见范围：选中卡片前后各3张
 
-- **实时缩略图**：每帧重新渲染缩略图而非使用预渲染的静态图片，使动画类特效（如噪声、VHS、水波纹）在封面流中也能展示动态效果。
-- **256x144 分辨率**：16:9 宽高比，与 1280x720 的窗口比例一致。低分辨率减少 GPU 负载，在封面流中显示已足够清晰。
-- **`m_thumbElapsedTime` 使用静态局部变量**：`OnRender` 中的 `lastTime` 是静态变量，确保跨帧持续计时，不受场景重建影响。
+    for (int i = m_selectedIndex - vr; i <= m_selectedIndex + vr; i++) {
+        if (i < 0 || i >= (int)m_thumbnailStates.size()) continue;
+        const auto& state = m_thumbnailStates[i];
+        if (state.fragShader.id == INVALID_SHADER.id) continue;
+        if (state.thumbTex.id == INVALID_TEXTURE.id) continue;
 
----
+        // 选择输入纹理：优先使用每效果缓存纹理
+        TextureHandle input = m_inputTex;
+        if (i < (int)m_inputTexCache.size() && m_inputTexCache[i].id != INVALID_TEXTURE.id) {
+            input = m_inputTexCache[i];
+        }
 
-### 3.6 UI 绘制 OnImGui
+        m_backend->BeginRenderToTexture(state.thumbTex);       // 开始渲染到 FBO 纹理
+        ShaderParams params;
+        params.inputTextures.push_back(input);
+        params.uniformFloats  = {4.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        params.viewportWidth  = m_thumbWidth;                  // 256
+        params.viewportHeight = m_thumbHeight;                // 144
+        params.time           = m_thumbElapsedTime;
+        params.frameCount     = m_thumbFrameCount;
+        m_backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
+        m_backend->EndRenderToTexture();
+
+        m_thumbIds[i] = m_backend->GetImTextureID(state.thumbTex); // 获取 ImGui 纹理 ID
+    }
+}
+```
+
+### 3.6 OnImGui
+
+`OnImGui` 是 CoverFlowScene 中最大的函数，负责绘制整个封面流 UI 界面。由于篇幅较长，此处展示其核心逻辑段的分段分析和完整源码。
+
+#### 第一段：窗口设置与标题绘制
+
+**分析**：创建一个全屏无边框的 ImGui 窗口作为绘制画布。窗口背景色设为深灰色 `(0.08, 0.09, 0.12)`。在窗口顶部居中绘制标题和副标题（显示当前输入源和 FPS）。
+
+#### 第二段：语言切换按钮与分页指示点
+
+**分析**：右上角放置语言切换按钮。卡片区域上方绘制一排分页指示点，选中的卡片对应高亮圆点。
+
+#### 第三段：卡片绘制（核心渲染逻辑）
+
+**分析**：从最远处的卡片开始向前绘制（确保近处卡片覆盖远处卡片）。只绘制可见范围内的卡片（选中索引前后各 3 张）。每张卡片根据偏移量计算位置、缩放和透明度。每张卡片包含：缩略图、圆角矩形边框、底部半透明遮罩、分类标签、效果名称和索引编号。选中卡片还有可点击的 InvisibleButton。
+
+#### 第四段：导航提示、分类图例与自动测试截图模式
+
+**分析**：底部绘制导航提示和分类图例。自动测试截图模式在 `AUTO_TEST_CARDS` 环境变量设置时自动切换卡片并截图，在 `AUTO_TEST_DETAILS` 设置时自动打开详情页。
+
+#### 完整源码
 
 ```cpp
 void CoverFlowScene::OnImGui()
 {
-    ImGuiIO& io = ImGui::GetIO();                        // 获取ImGui IO
-    float w = io.DisplaySize.x;                          // 窗口宽度
-    float h = io.DisplaySize.y;                          // 窗口高度
-    if (w > 0 && h > 0) {                                // 窗口尺寸有效
-        ImGui::SetNextWindowPos(ImVec2(0, 0));           // 设置窗口位置为左上角
-        ImGui::SetNextWindowSize(ImVec2(w, h));           // 设置窗口大小为全屏
+    ImGuiIO& io = ImGui::GetIO();
+    float w = io.DisplaySize.x;
+    float h = io.DisplaySize.y;
+    if (w > 0 && h > 0) {
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(w, h));
     }
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.09f, 0.12f, 1.0f));
-    // 设置窗口背景色为深灰蓝色
 
     ImGui::Begin("##CoverFlow", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoSavedSettings);
-    // 创建全屏无边框窗口，名称"##CoverFlow"（##前缀表示不在UI中显示）
 
-    ImDrawList* dl = ImGui::GetWindowDrawList();         // 获取窗口绘制列表（自定义绘制）
+    ImDrawList* dl = ImGui::GetWindowDrawList();
 
-    // ---- Title ----
     // ---- 标题 ----
     {
-        auto& LM = LanguageManager::Instance();           // 获取语言管理器单例
-        const char* title = LM.Title();                   // 获取本地化标题
-        char subtitle[256];                               // 副标题缓冲区
+        auto& LM = LanguageManager::Instance();
+        const char* title = LM.Title();
+        char subtitle[256];
         const char* srcLabel = m_captureActive ? LM.ScreenCaptureLabel()
                               : (!m_imagePool.empty() ? m_imagePool[m_currentImageIndex].c_str() : LM.StaticImageLabel());
-        // 根据当前输入源选择副标题标签：屏幕捕获/图片池/静态图片
-        // Extract just the filename
-        // 提取纯文件名（去掉路径）
-        const char* justFile = strrchr(srcLabel, '/');    // 查找最后一个'/'
+        const char* justFile = strrchr(srcLabel, '/');
         if (justFile) justFile++; else { justFile = strrchr(srcLabel, '\\'); if (justFile) justFile++; else justFile = srcLabel; }
-        // 兼容Unix和Windows路径分隔符
-        snprintf(subtitle, sizeof(subtitle), LM.InputInfoFormat(),
-                 justFile, m_fpsDisplay);                 // 格式化副标题：文件名 + FPS
-        ImVec2 ts = ImGui::CalcTextSize(title);           // 计算标题文本尺寸
-        ImVec2 ss = ImGui::CalcTextSize(subtitle);        // 计算副标题文本尺寸
-        dl->AddText(ImGui::GetFont(), 28.0f,              // 绘制标题：28号字体，居中
+        snprintf(subtitle, sizeof(subtitle), LM.InputInfoFormat(), justFile, m_fpsDisplay);
+        ImVec2 ts = ImGui::CalcTextSize(title);
+        ImVec2 ss = ImGui::CalcTextSize(subtitle);
+        dl->AddText(ImGui::GetFont(), 28.0f,
             ImVec2(w / 2.0f - ts.x / 2.0f, 30.0f),
-            IM_COL32(220, 220, 255, 255), title);         // 浅蓝白色
-        dl->AddText(ImGui::GetFont(), 16.0f,              // 绘制副标题：16号字体，居中
+            IM_COL32(220, 220, 255, 255), title);
+        dl->AddText(ImGui::GetFont(), 16.0f,
             ImVec2(w / 2.0f - ss.x / 2.0f, 65.0f),
-            IM_COL32(140, 140, 160, 220), subtitle);       // 灰蓝色
+            IM_COL32(140, 140, 160, 220), subtitle);
     }
 
-    // ---- Language toggle button (top-right corner) ----
     // ---- 语言切换按钮（右上角）----
     {
         auto& LM = LanguageManager::Instance();
-        ImGui::SetCursorScreenPos(ImVec2(w - 120.0f, 20.0f)); // 定位到右上角
-        if (ImGui::Button(LM.LanguageButton(), ImVec2(100, 30))) { // 绘制按钮
-            LM.ToggleLanguage();                          // 切换语言（中文/英文）
+        ImGui::SetCursorScreenPos(ImVec2(w - 120.0f, 20.0f));
+        if (ImGui::Button(LM.LanguageButton(), ImVec2(100, 30))) {
+            LM.ToggleLanguage();
         }
     }
 
-    const float cardW   = 280.0f;                          // 卡片宽度
-    const float cardH   = 380.0f;                          // 卡片高度
-    const float spacing = 80.0f;                           // 卡片间距
-    const float centerX = w / 2.0f;                        // 屏幕中心X
-    const float centerY = h / 2.0f + 20.0f;              // 屏幕中心Y（略偏下）
+    const float cardW   = 280.0f;
+    const float cardH   = 380.0f;
+    const float spacing = 80.0f;
+    const float centerX = w / 2.0f;
+    const float centerY = h / 2.0f + 20.0f;
 
-    // ---- Page dots ----
-    // ---- 页面指示点 ----
+    // ---- 分页指示点 ----
     {
-        const float dotR = 4.0f, dotSp = 14.0f;          // 点半径4px，间距14px
-        const int maxD = 18;                               // 最多显示18个点
-        int ds = std::max(0, m_selectedIndex - 8);        // 起始索引（当前选中前8个）
-        int de = std::min((int)m_cards.size(), ds + maxD); // 结束索引
-        float dx = centerX - (de - ds - 1) * dotSp / 2.0f; // 起始X位置（居中）
-        float dy = centerY - cardH / 2.0f - 25.0f;       // Y位置（卡片上方）
-        for (int i = ds; i < de; i++) {                    // 遍历所有点
-            dl->AddCircleFilled(ImVec2(dx, dy), dotR,    // 绘制圆点
+        const float dotR = 4.0f, dotSp = 14.0f;
+        const int maxD = 18;
+        int ds = std::max(0, m_selectedIndex - 8);
+        int de = std::min((int)m_cards.size(), ds + maxD);
+        float dx = centerX - (de - ds - 1) * dotSp / 2.0f;
+        float dy = centerY - cardH / 2.0f - 25.0f;
+        for (int i = ds; i < de; i++) {
+            dl->AddCircleFilled(ImVec2(dx, dy), dotR,
                 (i == m_selectedIndex) ? IM_COL32(180,180,255,255) : IM_COL32(80,80,100,150));
-                // 选中的点为亮蓝白色，未选中为暗灰色
-            dx += dotSp;                                    // 移动到下一个点的位置
+            dx += dotSp;
         }
     }
 
-    // ---- Cards ----
     // ---- 卡片绘制 ----
-    int vr = 3; // visible range on each side（每侧可见范围3张）
-    for (int i = (int)m_cards.size() - 1; i >= 0; i--) {  // 从后往前遍历（确保选中的卡片在最前面）
-        // Only render cards in visible range
-        // 只渲染可见范围内的卡片
+    int vr = 3;
+    for (int i = (int)m_cards.size() - 1; i >= 0; i--) {
         if (i < m_selectedIndex - vr || i > m_selectedIndex + vr) continue;
 
         float off  = (float)(i - m_selectedIndex) + m_scrollOffset - m_targetOffset;
-        // 计算卡片偏移量（考虑滚动动画）
-        float x    = centerX + off * (cardW + spacing);    // 卡片中心X坐标
-        float scl  = 1.0f / (1.0f + std::fabs(off) * 0.3f); // 缩放因子：越远越小
-        float alpha = 1.0f - std::fabs(off) * 0.35f;      // 透明度：越远越透明
-        if (alpha < 0.0f) alpha = 0.0f;                   // 不小于0
+        float x    = centerX + off * (cardW + spacing);
+        float scl  = 1.0f / (1.0f + std::fabs(off) * 0.3f);
+        float alpha = 1.0f - std::fabs(off) * 0.35f;
+        if (alpha < 0.0f) alpha = 0.0f;
 
-        float w2 = cardW * scl, h2 = cardH * scl;        // 缩放后的卡片尺寸
-        float x0 = x - w2/2, y0 = centerY - h2/2;        // 卡片左上角
-        float x1 = x + w2/2, y1 = centerY + h2/2;        // 卡片右下角
+        float w2 = cardW * scl, h2 = cardH * scl;
+        float x0 = x - w2/2, y0 = centerY - h2/2;
+        float x1 = x + w2/2, y1 = centerY + h2/2;
 
-        int ai = (int)(alpha * 255);                        // 透明度转换为0-255整数
+        int ai = (int)(alpha * 255);
 
-        // ---- Thumbnail image ----
-        // ---- 缩略图图片 ----
         bool hasThumb = i < (int)m_thumbIds.size() && m_thumbIds[i] != nullptr;
-        // 检查是否有缩略图
-        ImU32 bg, bd;                                       // 背景色和边框色
-        if (i == m_selectedIndex) {                         // 选中的卡片
+        ImU32 bg, bd;
+        if (i == m_selectedIndex) {
             bg = IM_COL32(50,55,80,ai); bd = IM_COL32(160,160,240,ai);
-            // 背景深蓝灰色，边框亮蓝紫色
-        } else {                                            // 未选中的卡片
+        } else {
             bg = IM_COL32(35,38,50,ai); bd = IM_COL32(80,80,110,(int)(alpha*200));
-            // 背景更暗，边框更暗
         }
 
-        float r = 10.0f * scl;                             // 圆角半径（随缩放变化）
+        float r = 10.0f * scl;
 
-        if (hasThumb && alpha > 0.1f) {                     // 有缩略图且足够可见
-            // Draw thumbnail image first (tint with white, alpha controls visibility)
-            // 先绘制缩略图（白色着色，alpha控制可见度）
+        if (hasThumb && alpha > 0.1f) {
             dl->AddImageRounded(m_thumbIds[i],
                 ImVec2(x0, y0), ImVec2(x1, y1),
-                ImVec2(0, 1), ImVec2(1, 0),                // UV翻转（OpenGL纹理坐标）
-                IM_COL32(255, 255, 255, ai), r);           // 白色着色+透明度+圆角
+                ImVec2(0, 1), ImVec2(1, 0),
+                IM_COL32(255, 255, 255, ai), r);
         } else {
             dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), bg, r);
-            // 无缩略图则绘制纯色背景
         }
         dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), bd, r, 0, 2.0f);
-        // 绘制边框（2px宽）
 
-        if (alpha > 0.25f) {                               // 透明度足够时绘制文字信息
+        if (alpha > 0.25f) {
             const auto& card = m_cards[i];
-            float cx = x;                                   // 卡片中心X
+            float cx = x;
 
-            // ---- Card click area (InvisibleButton) ----
-            // ---- 卡片点击区域（不可见按钮）----
-            ImGui::SetCursorScreenPos(ImVec2(x0, y0));    // 设置光标位置
+            // 卡片点击区域
+            ImGui::SetCursorScreenPos(ImVec2(x0, y0));
             ImGui::InvisibleButton(("##card_" + std::to_string(i)).c_str(), ImVec2(w2, h2));
-            // 创建不可见按钮（##前缀避免显示在UI中）
-            if (ImGui::IsItemClicked()) {                  // 如果按钮被点击
-                // Click any card to open its detail page directly
-                // 点击任意卡片直接打开其详情页
-                SelectCard(i);                              // 选中该卡片
-                OpenSelectedEffect();                        // 打开详情页
+            if (ImGui::IsItemClicked()) {
+                SelectCard(i);
+                OpenSelectedEffect();
             }
 
-            // ---- Dark overlay at bottom of card for text readability ----
-            // ---- 卡片底部暗色遮罩（提高文字可读性）----
-            float overlayH = 140.0f * scl;                 // 遮罩高度
+            // 底部半透明遮罩
+            float overlayH = 140.0f * scl;
             dl->AddRectFilledMultiColor(
                 ImVec2(x0, y1 - overlayH), ImVec2(x1, y1),
-                IM_COL32(0,0,0,0),                         // 左上透明
-                IM_COL32(0,0,0,0),                         // 右上透明
-                IM_COL32(20,22,30,(int)(alpha*220)),       // 左下半透明深色
-                IM_COL32(20,22,30,(int)(alpha*220)));       // 右下半透明深色
+                IM_COL32(0,0,0,0), IM_COL32(0,0,0,0),
+                IM_COL32(20,22,30,(int)(alpha*220)), IM_COL32(20,22,30,(int)(alpha*220)));
 
-            // ---- Category tag ----
-            // ---- 分类标签 ----
-            float cy = y1 - overlayH + 15.0f * scl;        // 标签Y位置
+            // 分类标签
+            float cy = y1 - overlayH + 15.0f * scl;
             {
                 const char* catStr = LanguageManager::Instance().TranslateCategory(card.category);
-                // 获取本地化分类名
-                ImVec2 cs = ImGui::CalcTextSize(catStr);   // 计算文本尺寸
-                float tw = cs.x + 12.0f, th = cs.y + 6.0f; // 标签背景尺寸（加内边距）
+                ImVec2 cs = ImGui::CalcTextSize(catStr);
+                float tw = cs.x + 12.0f, th = cs.y + 6.0f;
                 dl->AddRectFilled(ImVec2(x0 + 10.0f*scl, cy - 2.0f),
                     ImVec2(x0 + 10.0f*scl + tw, cy + th + 2.0f),
-                    IM_COL32(60,65,100,(int)(alpha*220)), 4.0f); // 蓝灰色圆角背景
+                    IM_COL32(60,65,100,(int)(alpha*220)), 4.0f);
                 dl->AddText(ImGui::GetFont(), 11.0f * scl,
                     ImVec2(x0 + 16.0f*scl, cy),
-                    IM_COL32(160,170,220,(int)(alpha*255)), catStr); // 浅蓝文字
+                    IM_COL32(160,170,220,(int)(alpha*255)), catStr);
             }
 
-            // ---- Name ----
-            // ---- 特效名称 ----
-            cy = y1 - overlayH + 38.0f * scl;              // 名称Y位置
+            // 效果名称
+            cy = y1 - overlayH + 38.0f * scl;
             {
                 const char* nameStr = LanguageManager::Instance().CardName(card.id);
-                // 获取本地化特效名
                 dl->AddText(ImGui::GetFont(), 18.0f * scl,
                     ImVec2(x0 + 14.0f*scl, cy),
-                    IM_COL32(255, 255, 255, (int)(alpha*255)), nameStr); // 白色大字
+                    IM_COL32(255, 255, 255, (int)(alpha*255)), nameStr);
             }
 
-            // ---- Index ----
-            // ---- 索引编号 ----
-            if (i == m_selectedIndex) {                     // 仅选中卡片显示索引
+            // 索引编号（仅选中卡片）
+            if (i == m_selectedIndex) {
                 char buf[32];
                 snprintf(buf, sizeof(buf), "%d / %zu", i+1, m_cards.size());
                 ImVec2 isz = ImGui::CalcTextSize(buf);
                 dl->AddText(ImGui::GetFont(), 12.0f,
                     ImVec2(cx - isz.x/2, y1 - 16.0f), IM_COL32(140,140,180,200), buf);
-                // 居中显示在卡片底部
             }
         }
     }
 
-    // ---- Nav hint ----
     // ---- 导航提示 ----
     {
-        const char* hint = LanguageManager::Instance().BottomHelp(); // 获取本地化帮助文本
+        const char* hint = LanguageManager::Instance().BottomHelp();
         ImVec2 hs = ImGui::CalcTextSize(hint);
         dl->AddText(ImGui::GetFont(), 14.0f,
             ImVec2(centerX - hs.x/2, centerY + cardH/2 + 50.0f),
-            IM_COL32(150,150,170,160), hint);              // 灰色居中文字
+            IM_COL32(150,150,170,160), hint);
     }
 
-    // ---- Category legend ----
     // ---- 分类图例 ----
     {
         auto& LM = LanguageManager::Instance();
@@ -1845,147 +2545,172 @@ void CoverFlowScene::OnImGui()
         snprintf(leg, sizeof(leg), "%s | %s | %s | %s | %s | %s | %s | %s",
             LM.CategorySimple(), LM.CategoryLighting(), LM.CategoryFilter(), LM.CategoryStylize(),
             LM.CategoryColor(), LM.CategoryDistort(), LM.CategoryProcedural(), LM.CategoryRetro());
-        // 拼接所有分类名称
         ImVec2 ls = ImGui::CalcTextSize(leg);
         dl->AddText(ImGui::GetFont(), 12.0f,
-            ImVec2(centerX - ls/2, h - 35.0f), IM_COL32(100,100,120,130), leg);
-        // 屏幕底部居中显示
+            ImVec2(centerX - ls.x/2, h - 35.0f), IM_COL32(100,100,120,130), leg);
     }
 
-    ImGui::End();                                          // 结束ImGui窗口
-    ImGui::PopStyleColor();                               // 恢复样式颜色
+    ImGui::End();
+    ImGui::PopStyleColor();
 
-    // ---- Card screenshot mode ----
-    // ---- 卡片截图模式（自动化测试用）----
+    // ---- 卡片截图模式（AUTO_TEST_CARDS）----
     if (getenv("AUTO_TEST_CARDS") && !getenv("AUTO_TEST_UI") && !getenv("AUTO_TEST_DETAILS")) {
-        g_cardScreenshotFrame++;                           // 递增帧计数
-        // Take screenshot after a few frames of showing the card
-        // 在显示卡片几帧后截图
-        if (g_cardScreenshotNeedsShot && g_cardScreenshotFrame >= 5) { // 第5帧时截图
+        g_cardScreenshotFrame++;
+        if (g_cardScreenshotNeedsShot && g_cardScreenshotFrame >= 5) {
             char path[256];
             snprintf(path, sizeof(path), "e:/AI/graph/hight-post-proc/screenshots/card_%02d.ppm", g_cardScreenshotIndex - 1);
-            ScreenshotRequest::Request(path);             // 请求截图
+            ScreenshotRequest::Request(path);
             g_cardScreenshotNeedsShot = false;
         }
-        // Move to next card（移动到下一张卡片）
-        if (g_cardScreenshotFrame >= 30) {                // 每张卡片停留30帧
+        if (g_cardScreenshotFrame >= 30) {
             g_cardScreenshotFrame = 0;
             if (g_cardScreenshotIndex < (int)m_cards.size()) {
-                SelectCard(g_cardScreenshotIndex);          // 选中下一张
+                SelectCard(g_cardScreenshotIndex);
                 printf("[CardScreenshot] Selected card %d: %s\n", g_cardScreenshotIndex, m_cards[g_cardScreenshotIndex].name.c_str());
                 g_cardScreenshotIndex++;
-                g_cardScreenshotNeedsShot = true;          // 标记需要截图
+                g_cardScreenshotNeedsShot = true;
             } else {
                 printf("[CardScreenshot] All %zu cards captured\n", m_cards.size());
-                m_wantsExit = true;                         // 所有卡片截图完成，退出
+                m_wantsExit = true;
             }
         }
     }
 
-    // ---- Detail page screenshot mode ----
-    // ---- 详情页截图模式（自动化测试用）----
+    // ---- 详情页截图模式（AUTO_TEST_DETAILS）----
     if (getenv("AUTO_TEST_DETAILS") && !getenv("AUTO_TEST_UI")) {
-        static int detailCardIndex = 0;                     // 静态变量：当前详情页卡片索引
-        static int frameWait = 0;                           // 静态变量：等待帧计数
+        static int detailCardIndex = 0;
+        static int frameWait = 0;
+
         frameWait++;
-        if (frameWait >= 30) {                             // 每30帧切换一张
+        if (frameWait >= 30) {
             frameWait = 0;
             if (detailCardIndex < (int)m_cards.size()) {
-                SelectCard(detailCardIndex);                // 选中卡片
+                SelectCard(detailCardIndex);
                 printf("[DetailScreenshot] Opening card %d: %s\n", detailCardIndex, m_cards[detailCardIndex].name.c_str());
                 detailCardIndex++;
-                OpenSelectedEffect();                      // 打开详情页（截图在详情场景中完成）
+                OpenSelectedEffect();
             } else {
                 printf("[DetailScreenshot] All %zu detail pages captured\n", m_cards.size());
-                m_wantsExit = true;                         // 所有详情页截图完成，退出
+                m_wantsExit = true;
             }
         }
     }
 }
 ```
 
-#### 功能说明
+### 3.7 OpenSelectedEffect / GetNextScene
 
-`OnImGui` 使用 ImGui 的自定义绘制列表（`ImDrawList`）绘制整个封面流界面，包括：标题、语言切换按钮、页面指示点、特效卡片（含缩略图、分类标签、名称、索引）、导航提示、分类图例，以及自动化测试的截图模式。
+#### OpenSelectedEffect — 打开选中效果的详情页
 
-#### 实现原理
-
-1. **全屏窗口**：创建一个覆盖整个屏幕的无边框 ImGui 窗口作为绘制画布。
-2. **卡片 3D 效果**：通过缩放因子 `1.0 / (1.0 + |off| * 0.3)` 和透明度衰减 `1.0 - |off| * 0.35` 模拟透视效果——选中卡片最大最亮，两侧卡片逐渐缩小变暗。
-3. **从后往前绘制**：`for (int i = m_cards.size() - 1; i >= 0; i--)` 确保选中的卡片（索引较小）绘制在最后（最前面），产生正确的遮挡关系。
-4. **`AddImageRounded`**：带圆角的纹理绘制，UV 坐标翻转 `(0,1)→(1,0)` 适配 OpenGL 的纹理坐标原点。
-5. **`InvisibleButton`**：使用不可见按钮实现卡片点击检测，比手动计算鼠标碰撞更简洁可靠。
-
-#### 为什么这样实现
-
-- **自定义绘制而非 ImGui 控件**：卡片需要精确的透视缩放、透明度渐变和圆角纹理，ImGui 内置控件无法满足这些需求。使用 `ImDrawList` 的底层绘制 API 可以完全控制每个像素。
-- **`AddRectFilledMultiColor` 渐变遮罩**：底部文字区域使用四角不同颜色的矩形，从顶部全透明过渡到底部半透明，产生自然的渐变效果，提高文字可读性。
-- **静态变量用于自动测试**：`g_cardScreenshotIndex`、`g_cardScreenshotFrame` 等使用文件级静态变量而非成员变量，因为它们是纯测试用途，不应影响类的接口设计。
-
----
-
-### 3.7 场景跳转 OpenSelectedEffect / GetNextScene
-
-```cpp
-void CoverFlowScene::SelectCard(int index) {
-    if (index < 0) index = (int)m_cards.size() - 1;       // 超出左边界则循环到末尾
-    if (index >= (int)m_cards.size()) index = 0;           // 超出右边界则循环到开头
-    if (index != m_selectedIndex) {                        // 如果选中了不同的卡片
-        m_selectedIndex = index;                            // 更新选中索引
-        m_targetOffset = 0.0f;                             // 重置目标偏移（触发滚动动画）
-        printf("[CoverFlowScene] Selected card %d: %s\n", index, m_cards[index].name.c_str());
-    }
-}
-```
+**分析**：创建 `EffectDetailScene` 实例，传入选中卡片的数据和对应的输入纹理。首先尝试从 `effect.json` 加载更丰富的元数据（如 UI 控件定义），如果加载失败则使用默认卡片数据。优先使用该效果的缓存输入纹理。还会将视频播放器（如果活跃）转移给详情页。
 
 ```cpp
 void CoverFlowScene::OpenSelectedEffect()
 {
-    if (m_selectedIndex < 0 || m_selectedIndex >= (int)m_cards.size()) return; // 索引越界检查
-    if (!m_backend) {                                      // 后端未就绪
-        fprintf(stderr, "[CoverFlowScene] Cannot open effect: no backend set\n");
-        return;
-    }
+    if (m_selectedIndex < 0 || m_selectedIndex >= (int)m_cards.size()) return;
+    if (!m_backend) return;
 
-    const auto& card = m_cards[m_selectedIndex];           // 获取选中的卡片
-    EffectCard resolvedCard = card;                         // 复制卡片（可能被JSON覆盖）
+    const auto& card = m_cards[m_selectedIndex];
+    EffectCard resolvedCard = card;
 
-    // Try to load effect.json for richer metadata (with try-catch safety)
-    // 尝试加载effect.json获取更丰富的元数据（带异常安全保护）
     try {
         std::string shaderDir = ShaderLoader::FindShaderDir();
         std::string jsonPath = shaderDir + "/effects/" + card.id + "/effect.json";
-        EffectCard fj = LoadEffectFromJson(jsonPath);      // 从JSON加载元数据
-        if (!fj.name.empty()) {                            // JSON加载成功
-            fj.vertSpirvPath = card.vertSpirvPath;         // 保留原始着色器路径
+        EffectCard fj = LoadEffectFromJson(jsonPath);
+        if (!fj.name.empty()) {
+            fj.vertSpirvPath = card.vertSpirvPath;
             fj.fragSpirvPath = card.fragSpirvPath;
             fj.id = card.id;
-            resolvedCard = std::move(fj);                   // 使用JSON中的丰富元数据
+            resolvedCard = std::move(fj);
         }
     } catch (...) {
         fprintf(stderr, "[CoverFlowScene] effect.json parse error for %s, using defaults\n", card.id.c_str());
     }
 
-    // Pick the per-effect cached input texture if available
-    // 如果有每个特效的缓存输入纹理则使用
-    TextureHandle detailInputTex = m_inputTex;             // 默认回退到当前输入纹理
+    TextureHandle detailInputTex = m_inputTex;
     if (m_selectedIndex < (int)m_inputTexCache.size() &&
         m_inputTexCache[m_selectedIndex].id != INVALID_TEXTURE.id) {
-        detailInputTex = m_inputTexCache[m_selectedIndex];  // 使用该特效的专属纹理
-        printf("[CoverFlowScene] Using cached input texture for card %d\n", m_selectedIndex);
+        detailInputTex = m_inputTexCache[m_selectedIndex];
     }
 
     auto ds = std::make_unique<EffectDetailScene>(resolvedCard, detailInputTex);
-    // 创建特效详情场景
-    ds->SetBackend(m_backend);                              // 注入后端
-    ds->SetApplication(m_app);                              // 注入Application
-    ds->SetCoverFlowState(GetState());                      // 保存当前状态（用于返回时恢复）
+    ds->SetBackend(m_backend);
+    ds->SetApplication(m_app);
+    ds->SetCoverFlowState(GetState());
 
-    // Transfer video player to detail scene (for dynamic playback in compare view)
-    // 将视频播放器转移给详情场景（用于对比视图中的动态播放）
     if (m_videoActive && m_videoPlayer) {
         ds->SetVideoPlayer(std::move(m_videoPlayer), m_videoTex, true, m_videoLastFrameTime);
-        m_videoActive = false;                              // 标记视频不再由本场景管理
+        m_videoActive = false;
+        m_videoTex = {0};
+    }
+
+    m_nextScene = std::move(ds);
+    m_wantsExit = true;
+}
+```
+
+#### GetNextScene — 获取下一场景
+
+**分析**：返回之前通过 `OpenSelectedEffect` 设置的 `m_nextScene`，使用 `std::move` 转移所有权。
+
+```cpp
+std::unique_ptr<Scene> CoverFlowScene::GetNextScene()
+{
+    if (m_nextScene) {
+        printf("[CoverFlowScene] Transitioning to next scene\n");
+        return std::move(m_nextScene);
+    }
+    return nullptr;
+}
+```
+
+#### 完整源码
+
+```cpp
+void CoverFlowScene::OpenSelectedEffect()
+{
+    if (m_selectedIndex < 0 || m_selectedIndex >= (int)m_cards.size()) return;
+    if (!m_backend) {
+        fprintf(stderr, "[CoverFlowScene] Cannot open effect: no backend set\n");
+        return;
+    }
+
+    const auto& card = m_cards[m_selectedIndex];
+    EffectCard resolvedCard = card;
+
+    // 尝试加载 effect.json 获取更丰富的元数据
+    try {
+        std::string shaderDir = ShaderLoader::FindShaderDir();
+        std::string jsonPath = shaderDir + "/effects/" + card.id + "/effect.json";
+        EffectCard fj = LoadEffectFromJson(jsonPath);
+        if (!fj.name.empty()) {
+            fj.vertSpirvPath = card.vertSpirvPath;
+            fj.fragSpirvPath = card.fragSpirvPath;
+            fj.id = card.id;
+            resolvedCard = std::move(fj);
+        }
+    } catch (...) {
+        fprintf(stderr, "[CoverFlowScene] effect.json parse error for %s, using defaults\n", card.id.c_str());
+    }
+
+    // 选择输入纹理：优先使用该效果的缓存纹理
+    TextureHandle detailInputTex = m_inputTex;
+    if (m_selectedIndex < (int)m_inputTexCache.size() &&
+        m_inputTexCache[m_selectedIndex].id != INVALID_TEXTURE.id) {
+        detailInputTex = m_inputTexCache[m_selectedIndex];
+        printf("[CoverFlowScene] Using cached input texture for card %d\n", m_selectedIndex);
+    }
+
+    // 创建效果详情页场景
+    auto ds = std::make_unique<EffectDetailScene>(resolvedCard, detailInputTex);
+    ds->SetBackend(m_backend);
+    ds->SetApplication(m_app);
+    ds->SetCoverFlowState(GetState());
+
+    // 转移视频播放器到详情页
+    if (m_videoActive && m_videoPlayer) {
+        ds->SetVideoPlayer(std::move(m_videoPlayer), m_videoTex, true, m_videoLastFrameTime);
+        m_videoActive = false;
         m_videoTex = {0};
         printf("[CoverFlowScene] Transferred video player to detail scene\n");
     }
@@ -1993,358 +2718,436 @@ void CoverFlowScene::OpenSelectedEffect()
     printf("[CoverFlowScene] Opening effect: %s (%s)\n",
            resolvedCard.name.c_str(), resolvedCard.id.c_str());
 
-    m_nextScene = std::move(ds);                            // 保存为下一个场景
-    m_wantsExit = true;                                     // 请求退出当前场景
+    m_nextScene = std::move(ds);
+    m_wantsExit = true;
 }
-```
 
-```cpp
 std::unique_ptr<Scene> CoverFlowScene::GetNextScene()
 {
-    if (m_nextScene) {                                      // 如果有下一个场景
+    if (m_nextScene) {
         printf("[CoverFlowScene] Transitioning to next scene\n");
-        return std::move(m_nextScene);                     // 转移所有权给调用者
+        return std::move(m_nextScene);
     }
-    return nullptr;                                          // 没有下一个场景
+    return nullptr;
 }
 ```
 
-#### 功能说明
+### 3.8 GetState
 
-- **SelectCard**：选中指定索引的卡片，支持循环索引（超出边界自动环绕）。触发滚动动画。
-- **OpenSelectedEffect**：打开选中特效的详情页，创建 `EffectDetailScene` 并传递所有必要状态。
-- **GetNextScene**：返回下一个场景（由 Application 在场景切换时调用）。
+**分析**：`GetState` 将 CoverFlowScene 的所有重要状态打包到 `CoverFlowState` 结构体中，以便在进入详情页后能够完整恢复。保存的状态包括：缩略图 ID 列表、纹理缓存、图片/视频池、选中索引、应用指针、输入纹理、后端指针、屏幕捕获状态、自动测试状态和测试图片目录。
 
-#### 实现原理
-
-1. **SelectCard 循环索引**：`index < 0` 时跳到最后一张，`index >= size` 时跳到第一张，实现无限循环浏览。
-2. **OpenSelectedEffect 状态传递**：
-   - 从 `effect.json` 加载更丰富的元数据（如 uniform 滑块定义、多通道配置等），失败时回退到 `RegisterCards` 中的默认数据。
-   - 使用 `GetState()` 保存当前封面流状态（选中索引、图片池、缩略图等），详情场景返回时可以完整恢复。
-   - 视频播放器通过 `std::move` 转移所有权给详情场景，避免两个场景同时操作同一视频资源。
-3. **延迟切换**：`m_wantsExit = true` + `m_nextScene` 的组合让 Application 在下一帧安全地执行场景切换。
-
-#### 为什么这样实现
-
-- **JSON 元数据覆盖**：`effect.json` 可以定义比代码中更丰富的元数据（如 uniform 范围、描述文本、多通道配置等），但 JSON 文件是可选的——如果不存在或解析失败，使用代码中的默认值，确保程序健壮性。
-- **`std::move` 转移视频播放器**：视频播放器管理 FFmpeg 子进程和管道，不能被两个场景同时使用。`std::move` 确保所有权唯一转移，避免资源冲突。
-- **`m_wantsExit` 而非直接切换**：场景不能直接替换自己（它正在被 Application 调用），必须通过 `WantsExit + GetNextScene` 协议让 Application 在安全时机执行切换。
-
----
-
-### 3.8 状态保存与恢复 GetState
+#### 完整源码
 
 ```cpp
 CoverFlowState CoverFlowScene::GetState() const
 {
-    CoverFlowState s;                                       // 创建状态结构体
-    s.thumbIds         = m_thumbIds;                       // 保存缩略图ImTextureID列表
-    s.inputTexCache    = m_inputTexCache;                  // 保存每个特效的缓存纹理
-    s.imagePool        = m_imagePool;                      // 保存图片池路径
-    s.videoPool        = m_videoPool;                      // 保存视频池路径
-    s.currentImageIndex = m_currentImageIndex;            // 保存当前图片索引
-    s.selectedIndex    = m_selectedIndex;                 // 保存选中卡片索引
-    s.app              = m_app;                            // 保存Application指针
-    s.inputTex         = m_inputTex;                       // 保存当前输入纹理
-    s.backend          = m_backend;                       // 保存后端指针
-    s.captureActive    = m_captureActive;                  // 保存屏幕捕获状态
-    s.autoTest         = m_autoTest;                       // 保存自动测试状态
-    s.autoTestHoldFrames = m_autoTestHoldFrames;           // 保存自动测试停留帧数
-    s.autoTestCardIndex  = m_autoTestCardIndex;             // 保存自动测试当前卡片索引
-    s.testImageBaseDir = m_testImageBaseDir;               // 保存测试图片目录
-    return s;                                              // 返回完整状态
+    CoverFlowState s;
+    s.thumbIds         = m_thumbIds;                         // 缩略图 ImGui 纹理 ID
+    s.inputTexCache    = m_inputTexCache;                    // 每效果纹理缓存
+    s.imagePool        = m_imagePool;                        // 图片路径池
+    s.videoPool        = m_videoPool;                        // 视频路径池
+    s.currentImageIndex = m_currentImageIndex;               // 当前图片索引
+    s.selectedIndex    = m_selectedIndex;                     // 当前选中卡片索引
+    s.app              = m_app;                              // 应用指针
+    s.inputTex         = m_inputTex;                         // 当前输入纹理
+    s.backend          = m_backend;                           // 渲染后端指针
+    s.captureActive    = m_captureActive;                     // 屏幕捕获状态
+    s.autoTest         = m_autoTest;                         // 自动测试状态
+    s.autoTestHoldFrames = m_autoTestHoldFrames;              // 自动测试每卡停留帧数
+    s.autoTestCardIndex  = m_autoTestCardIndex;               // 自动测试当前卡片索引
+    s.testImageBaseDir = m_testImageBaseDir;                 // 测试图片目录
+    return s;
 }
 ```
 
-#### 功能说明
+### 3.9 辅助功能
 
-`GetState` 将封面流场景的所有关键状态打包为 `CoverFlowState` 结构体，供 `EffectDetailScene` 在返回时恢复封面流的完整状态。
+本节涵盖 CoverFlowScene 中的辅助函数，包括构造/析构函数、SelectCard、UpdateFPSCounter、ToggleScreenCapture、CycleImage、LoadImageFromFile、AddImageToPool、AddVideoToPool、ReloadInputTexture、InitializeThumbnails、SetVideoPlayer、OpenVideoFile、StopVideo、EnableAutoTest、ResumeAutoTest。
 
-#### 实现原理
+#### 构造与析构函数
 
-通过值拷贝将所有需要持久化的成员变量收集到一个结构体中。`EffectDetailScene` 在构造时保存此状态，返回封面流时通过 `SetSelectedIndex`、`SetThumbnails` 等方法恢复。
-
-#### 为什么这样实现
-
-- **快照模式**：在进入详情场景时拍摄"快照"，返回时从快照恢复。这比逐一传递每个状态变量更简洁，也更容易扩展——添加新状态只需修改 `CoverFlowState` 结构体。
-- **不保存 transient 状态**：滚动偏移、拖拽状态、FPS 计数器等瞬态状态不需要保存，因为返回封面流时会重新初始化。
-
----
-
-### 3.9 辅助功能 LoadImageFromFile / CycleImage / ToggleScreenCapture
+**分析**：构造函数调用 `RegisterCards()` 注册所有效果卡片。析构函数遍历所有缩略图状态，销毁每个卡片的片段着色器和 FBO 纹理，以及共享的顶点着色器。
 
 ```cpp
-void CoverFlowScene::CycleImage(int direction)
+CoverFlowScene::CoverFlowScene() { RegisterCards(); }
+CoverFlowScene::~CoverFlowScene()
 {
-    if (m_imagePool.empty()) return;                        // 图片池为空则返回
-    if (m_captureActive) return;                           // 正在屏幕捕获时不切换
-
-    m_currentImageIndex += direction;                      // 按方向移动索引
-    if (m_currentImageIndex < 0)
-        m_currentImageIndex = (int)m_imagePool.size() - 1; // 循环到末尾
-    if (m_currentImageIndex >= (int)m_imagePool.size())
-        m_currentImageIndex = 0;                           // 循环到开头
-
-    LoadImageFromFile(m_imagePool[m_currentImageIndex]);  // 加载新图片
+    if (m_backend) {
+        if (m_sharedVertShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_sharedVertShader);
+            m_sharedVertShader = INVALID_SHADER;
+        }
+        for (auto& state : m_thumbnailStates) {
+            if (state.fragShader.id != INVALID_SHADER.id) {
+                m_backend->DestroyShader(state.fragShader);
+                state.fragShader = INVALID_SHADER;
+            }
+            if (state.thumbTex.id != INVALID_TEXTURE.id) {
+                m_backend->DestroyTexture(state.thumbTex);
+                state.thumbTex = INVALID_TEXTURE;
+            }
+        }
+        m_thumbnailStates.clear();
+    }
 }
 ```
+
+#### SelectCard — 选择卡片
+
+**分析**：将索引限制在合法范围内（支持循环），如果索引发生变化则更新选中索引并重置滚动偏移。
 
 ```cpp
-void CoverFlowScene::LoadImageFromFile(const std::string& path)
-{
-    if (!m_backend) return;                                // 后端未就绪
-
-    int iw, ih, comp;                                      // 图片尺寸和通道
-    stbi_set_flip_vertically_on_load(true);                // 翻转Y轴适配OpenGL
-    stbi_uc* data = stbi_load(path.c_str(), &iw, &ih, &comp, 4); // 加载为RGBA
-    stbi_set_flip_vertically_on_load(false);               // 恢复默认
-    if (!data) {                                           // 加载失败
-        fprintf(stderr, "[CoverFlowScene] Cannot load: %s\n", path.c_str());
-        return;
+void CoverFlowScene::SelectCard(int index) {
+    if (index < 0) index = (int)m_cards.size() - 1;
+    if (index >= (int)m_cards.size()) index = 0;
+    if (index != m_selectedIndex) {
+        m_selectedIndex = index;
+        m_targetOffset = 0.0f;
+        printf("[CoverFlowScene] Selected card %d: %s\n", index, m_cards[index].name.c_str());
     }
-
-    printf("[CoverFlowScene] Loading image: %s (%d x %d)\n", path.c_str(), iw, ih);
-
-    // Destroy old input texture if valid
-    // 如果旧纹理有效则销毁
-    if (m_inputTex.id != INVALID_TEXTURE.id) {
-        m_backend->DestroyTexture(m_inputTex);              // 释放旧GPU纹理
-        m_inputTex = INVALID_TEXTURE;                      // 标记为无效
-    }
-
-    TextureHandle newTex = m_backend->CreateTexture(iw, ih, TextureFormat::RGBA8, data);
-    // 创建新GPU纹理
-    stbi_image_free(data);                                  // 释放CPU端图片数据
-
-    if (newTex.id == INVALID_TEXTURE.id) return;           // 创建失败
-
-    m_inputTex = newTex;                                   // 更新当前输入纹理
 }
 ```
+
+#### UpdateFPSCounter — 更新 FPS 计数器
+
+**分析**：每帧递增帧计数器，每秒计算一次平均 FPS 并更新显示值。
+
+```cpp
+void CoverFlowScene::UpdateFPSCounter()
+{
+    auto now = std::chrono::high_resolution_clock::now();
+    m_fpsFrameCount++;
+    float elapsed = std::chrono::duration<float>(now - m_fpsLastTime).count();
+    if (elapsed >= 1.0f) {
+        m_fpsDisplay = m_fpsFrameCount / elapsed;
+        m_fpsFrameCount = 0;
+        m_fpsLastTime = now;
+    }
+}
+```
+
+#### ToggleScreenCapture — 切换屏幕捕获
+
+**分析**：如果当前未启用屏幕捕获，则创建 `ScreenCapture` 实例，捕获第一帧获取尺寸，创建 GPU 纹理，并将输入纹理切换为捕获纹理。如果当前已启用，则停止捕获并释放资源。
 
 ```cpp
 void CoverFlowScene::ToggleScreenCapture()
 {
-    if (m_captureActive) {                                  // 当前正在捕获→停止
-        // Disable screen capture
+    if (m_captureActive) {
         m_captureActive = false;
-        if (m_screenCapture) {
-            m_screenCapture->Shutdown();                   // 关闭屏幕捕获
-            m_screenCapture.reset();                        // 释放捕获实例
-        }
+        if (m_screenCapture) { m_screenCapture->Shutdown(); m_screenCapture.reset(); }
         if (m_captureTex.id != INVALID_TEXTURE.id && m_backend) {
-            m_backend->DestroyTexture(m_captureTex);        // 释放捕获纹理
+            m_backend->DestroyTexture(m_captureTex);
             m_captureTex = INVALID_TEXTURE;
         }
         m_captureReady = false;
-        printf("[CoverFlowScene] Screen capture stopped\n");
-    } else {                                                // 当前未捕获→启动
-        // Enable screen capture
-        if (!m_backend) return;                             // 后端未就绪
-
-        m_screenCapture = std::make_unique<ScreenCapture>(); // 创建屏幕捕获实例
-        if (!m_screenCapture->Init()) {                     // 初始化（启动捕获进程）
-            fprintf(stderr, "[CoverFlowScene] Screen capture init failed\n");
-            m_screenCapture.reset();
-            return;
-        }
-
-        // Capture first frame to get dimensions
-        // 捕获第一帧以获取尺寸
-        if (!m_screenCapture->CaptureFrame()) {
-            fprintf(stderr, "[CoverFlowScene] Screen capture first frame failed\n");
-            m_screenCapture->Shutdown();
-            m_screenCapture.reset();
-            return;
-        }
-
-        m_captureWidth  = m_screenCapture->GetWidth();     // 获取捕获宽度
-        m_captureHeight = m_screenCapture->GetHeight();    // 获取捕获高度
-
-        // Create OpenGL texture for screen capture
-        // 为屏幕捕获创建GPU纹理
+    } else {
+        if (!m_backend) return;
+        m_screenCapture = std::make_unique<ScreenCapture>();
+        if (!m_screenCapture->Init()) { m_screenCapture.reset(); return; }
+        if (!m_screenCapture->CaptureFrame()) { m_screenCapture->Shutdown(); m_screenCapture.reset(); return; }
+        m_captureWidth  = m_screenCapture->GetWidth();
+        m_captureHeight = m_screenCapture->GetHeight();
         m_captureTex = m_backend->CreateTexture(m_captureWidth, m_captureHeight,
-                                                 TextureFormat::RGBA8,
-                                                 m_screenCapture->GetPixels());
-        if (m_captureTex.id == INVALID_TEXTURE.id) {       // 纹理创建失败
-            fprintf(stderr, "[CoverFlowScene] Failed to create capture texture\n");
-            m_screenCapture->Shutdown();
-            m_screenCapture.reset();
-            return;
-        }
-
-        // Switch input texture to capture
-        // 将输入纹理切换为捕获纹理
+                                                 TextureFormat::RGBA8, m_screenCapture->GetPixels());
+        if (m_captureTex.id == INVALID_TEXTURE.id) { m_screenCapture->Shutdown(); m_screenCapture.reset(); return; }
         m_inputTex = m_captureTex;
         m_captureActive = true;
         m_captureReady  = true;
-        printf("[CoverFlowScene] Screen capture started (%d x %d)\n",
-               m_captureWidth, m_captureHeight);
     }
 }
 ```
 
-#### 功能说明
+#### CycleImage / LoadImageFromFile — 图片切换与加载
 
-- **CycleImage**：在图片池中按方向循环切换图片（-1 上一张，+1 下一张），支持循环索引。
-- **LoadImageFromFile**：从磁盘加载图片文件，销毁旧纹理并创建新 GPU 纹理。
-- **ToggleScreenCapture**：切换屏幕捕获状态——开启时捕获桌面屏幕作为输入源，关闭时恢复静态图片输入。
+**分析**：`CycleImage` 在图片池中循环切换（支持前后方向），`LoadImageFromFile` 使用 stb_image 加载图片并创建 GPU 纹理替换当前输入纹理。
 
-#### 实现原理
+```cpp
+void CoverFlowScene::CycleImage(int direction)
+{
+    if (m_imagePool.empty()) return;
+    if (m_captureActive) return;
+    m_currentImageIndex += direction;
+    if (m_currentImageIndex < 0) m_currentImageIndex = (int)m_imagePool.size() - 1;
+    if (m_currentImageIndex >= (int)m_imagePool.size()) m_currentImageIndex = 0;
+    LoadImageFromFile(m_imagePool[m_currentImageIndex]);
+}
 
-1. **CycleImage**：修改 `m_currentImageIndex` 并调用 `LoadImageFromFile` 加载对应图片。索引超出范围时自动循环。
-2. **LoadImageFromFile**：使用 `stb_image` 加载图片到 CPU 内存，翻转 Y 轴后创建 GPU 纹理。先销毁旧纹理再创建新纹理，避免 GPU 内存泄漏。
-3. **ToggleScreenCapture**：开启时创建 `ScreenCapture` 实例，捕获第一帧获取尺寸，创建 GPU 纹理；关闭时按相反顺序释放资源。
+void CoverFlowScene::LoadImageFromFile(const std::string& path)
+{
+    if (!m_backend) return;
+    int iw, ih, comp;
+    stbi_set_flip_vertically_on_load(true);
+    stbi_uc* data = stbi_load(path.c_str(), &iw, &ih, &comp, 4);
+    stbi_set_flip_vertically_on_load(false);
+    if (!data) { fprintf(stderr, "[CoverFlowScene] Cannot load: %s\n", path.c_str()); return; }
+    if (m_inputTex.id != INVALID_TEXTURE.id) {
+        m_backend->DestroyTexture(m_inputTex);
+        m_inputTex = INVALID_TEXTURE;
+    }
+    TextureHandle newTex = m_backend->CreateTexture(iw, ih, TextureFormat::RGBA8, data);
+    stbi_image_free(data);
+    if (newTex.id == INVALID_TEXTURE.id) return;
+    m_inputTex = newTex;
+}
+```
 
-#### 为什么这样实现
+#### AddImageToPool / AddVideoToPool / ReloadInputTexture
 
-- **CycleImage 检查 `m_captureActive`**：屏幕捕获时不允许切换图片，因为输入源已被屏幕捕获接管。避免用户混淆输入源。
-- **LoadImageFromFile 先销毁后创建**：确保同一时间只有一个输入纹理占用 GPU 内存。如果先创建再销毁，在 GPU 内存紧张时可能导致创建失败。
-- **ToggleScreenCapture 捕获第一帧获取尺寸**：屏幕捕获的分辨率取决于桌面设置，无法提前知道。必须先捕获一帧才能获取正确的宽高来创建纹理。
-- **`stbi_set_flip_vertically_on_load(true/false)`**：OpenGL 的纹理坐标原点在左下角（Y 向上），而图片文件的原点在左上角（Y 向下）。翻转确保图片在纹理中方向正确。使用后立即恢复默认值，避免影响其他图片加载。
+**分析**：`AddImageToPool` 和 `AddVideoToPool` 将路径添加到对应的池中（去重）。`ReloadInputTexture` 加载新图片并更新当前图片索引。
+
+```cpp
+void CoverFlowScene::AddImageToPool(const std::string& path)
+{
+    for (const auto& p : m_imagePool) { if (p == path) return; }
+    m_imagePool.push_back(path);
+}
+
+void CoverFlowScene::AddVideoToPool(const std::string& path)
+{
+    for (const auto& p : m_videoPool) { if (p == path) return; }
+    m_videoPool.push_back(path);
+}
+
+void CoverFlowScene::ReloadInputTexture(const std::string& filePath)
+{
+    LoadImageFromFile(filePath);
+    AddImageToPool(filePath);
+    for (int i = 0; i < (int)m_imagePool.size(); i++) {
+        if (m_imagePool[i] == filePath) { m_currentImageIndex = i; break; }
+    }
+}
+```
+
+#### InitializeThumbnails — 初始化缩略图渲染
+
+**分析**：加载共享顶点着色器，为每个效果加载片段着色器并创建 256x144 的 FBO 纹理。初始化后设置 `m_thumbInitialized = true` 防止重复初始化。
+
+```cpp
+void CoverFlowScene::InitializeThumbnails()
+{
+    if (m_thumbInitialized || !m_backend) return;
+    if (m_cards.empty()) return;
+
+    std::string shaderDir = ShaderLoader::FindShaderDir();
+    std::string vertPath = shaderDir + "/common/fullscreen.vert.spv";
+    if (m_backend->GetType() == BackendType::Vulkan) {
+        vertPath = shaderDir + "/common/fullscreen_vk.vert.spv";
+    }
+    auto vertSpv = ShaderLoader::LoadSPIRV(vertPath);
+    if (vertSpv.empty()) return;
+    m_sharedVertShader = m_backend->CreateVertexShader(vertSpv.data(), vertSpv.size());
+    if (m_sharedVertShader.id == INVALID_SHADER.id) return;
+
+    m_thumbIds.resize(m_cards.size(), nullptr);
+
+    for (int i = 0; i < (int)m_cards.size(); i++) {
+        CardThumbnailState state;
+        state.fragShader = INVALID_SHADER;
+        state.thumbTex = INVALID_TEXTURE;
+
+        auto fragSpv = ShaderLoader::LoadSPIRV(m_cards[i].fragSpirvPath);
+        if (!fragSpv.empty()) {
+            state.fragShader = m_backend->CreateFragmentShader(fragSpv.data(), fragSpv.size());
+        }
+
+        state.thumbTex = m_backend->CreateTexture(m_thumbWidth, m_thumbHeight, TextureFormat::RGBA8, nullptr);
+        m_thumbnailStates.push_back(state);
+    }
+
+    m_thumbInitialized = true;
+}
+```
+
+#### SetVideoPlayer / OpenVideoFile / StopVideo
+
+**分析**：`SetVideoPlayer` 从详情页接收视频播放器所有权。`OpenVideoFile` 创建新的视频播放器并创建 GPU 纹理。`StopVideo` 关闭视频播放器但不销毁纹理（可能仍被详情页引用）。
+
+```cpp
+void CoverFlowScene::SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime) {
+    m_videoPlayer = std::move(player);
+    m_videoTex = videoTex;
+    m_videoActive = active;
+    m_videoLastFrameTime = lastFrameTime;
+    if (active) m_inputTex = m_videoTex;
+}
+
+void CoverFlowScene::OpenVideoFile(const std::string& path)
+{
+    if (!m_backend) return;
+    StopVideo();
+    m_videoPlayer = std::make_unique<VideoPlayer>();
+    if (!m_videoPlayer->Open(path)) { m_videoPlayer.reset(); return; }
+    m_videoTex = m_backend->CreateTexture(
+        m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
+        TextureFormat::RGBA8, m_videoPlayer->GetPixels());
+    if (m_videoTex.id == INVALID_TEXTURE.id) { m_videoPlayer->Close(); m_videoPlayer.reset(); return; }
+    m_inputTex = m_videoTex;
+    m_videoActive = true;
+    m_videoLastFrameTime = ImGui::GetTime();
+}
+
+void CoverFlowScene::StopVideo()
+{
+    if (m_videoPlayer) { m_videoPlayer->Close(); m_videoPlayer.reset(); }
+    m_videoActive = false;
+}
+```
+
+#### EnableAutoTest / ResumeAutoTest
+
+**分析**：`EnableAutoTest` 启用自动测试，设置每卡停留帧数，并立即打开第一张卡片的详情页。`ResumeAutoTest` 在从详情页返回后恢复自动测试，设置 `m_autoTestLastOpenedCard` 以触发 OnUpdate 中的"下一张卡片"逻辑。
+
+```cpp
+void CoverFlowScene::EnableAutoTest(int holdFrames) {
+    m_autoTest = true;
+    m_autoTestHoldFrames = holdFrames;
+    m_autoTestFrameCounter = holdFrames;
+    m_autoTestCardIndex = 0;
+    m_autoTestLastOpenedCard = -1;
+    if (!getenv("AUTO_TEST_UI") && !getenv("AUTO_TEST_CARDS")) {
+        SelectCard(0);
+        OpenSelectedEffect();
+    }
+}
+
+void CoverFlowScene::ResumeAutoTest(int holdFrames, int lastOpenedCard) {
+    m_autoTest = true;
+    m_autoTestHoldFrames = holdFrames;
+    m_autoTestFrameCounter = 0;
+    m_autoTestCardIndex = lastOpenedCard;
+    m_autoTestLastOpenedCard = lastOpenedCard;
+}
+```
+
+
+# Shader Showcase 技术文档（第二部分）
+
+## 4. EffectDetailScene — 特效详情页
+
+`EffectDetailScene` 是用户从封面流（CoverFlow）点击某张特效卡片后进入的详情页面。它的核心职责是：加载该特效对应的 SPIR-V 着色器，将用户输入的图像/视频作为纹理传入着色器，实时渲染全屏后处理效果，并提供 Before/After 对比视图、参数调试面板和素材拖放加载等功能。
 
 ---
 
-> **文档结束** — 以上涵盖了 Shader Showcase 项目第 1-3 章的完整源码解析。
+### 4.1 类定义
 
+#### 头文件概览
 
-# Shader Showcase 项目代码详解 — 第 4~5 章
+**分析**：`EffectDetailScene` 继承自 `Scene` 基类，通过虚函数接口实现场景生命周期管理。头文件声明了该场景所需的全部成员变量和私有方法。成员变量可分为以下几类：
 
----
-
-## 4. 特效详情页 — EffectDetailScene
-
-`EffectDetailScene` 是用户从封面流（CoverFlow）中选择某张特效卡片后进入的全屏特效预览场景。它负责加载着色器、管理 uniform 参数、渲染全屏后处理特效，并提供 Before/After 对比模式和调试面板。
-
-### 4.1 头文件 EffectDetailScene.h
+1. **场景核心数据**：`m_card`（特效卡片元数据）、`m_inputTex`（输入纹理句柄）、`m_backend`（渲染后端指针）
+2. **着色器资源**：`m_vertShader`、`m_fragShader`（SPIR-V 着色器句柄）
+3. **运行时状态**：`m_time`（累计时间）、`m_frameCount`（帧计数）、`m_viewportWidth/Height`（视口尺寸）
+4. **调试面板**：`m_debugPanel`（DebugPanel 实例）、`m_showDebug`（面板可见性开关）
+5. **Uniform 数据**：`m_uniformFloats`、`m_uniformInts`（从 effect.json 参数默认值初始化）
+6. **场景切换**：`m_wantsExit`、`m_returnToCoverFlow`（退出标志与返回目标）
+7. **CoverFlow 状态保存**：`m_savedState`（用于返回时完整恢复 CoverFlowScene）
+8. **自动测试**：`m_autoTestHoldFrames`（自动退出帧计数器）
+9. **对比视图**：`m_compareMode`、`m_compareSplitPos`、`m_compareDragging`、`m_effectTex`（Before/After 分屏对比相关）
+10. **视频播放**：`m_videoPlayer`、`m_videoTex`、`m_videoActive`（动态视频输入源）
 
 ```cpp
 #pragma once
 
-#include "app/Scene.h"              // Scene 基类，定义场景生命周期接口
-#include "app/CoverFlowState.h"     // CoverFlowState 结构体，用于保存/恢复封面流状态
-#include "shader/EffectMetadata.h"   // EffectCard / EffectMetadata 定义（特效卡片数据）
-#include "render/IRenderBackend.h"  // IRenderBackend 渲染后端抽象接口
-#include "ui/DebugPanel.h"          // DebugPanel ImGui 调试面板组件
+#include "app/Scene.h"
+#include "app/CoverFlowState.h"
+#include "shader/EffectMetadata.h"
+#include "render/IRenderBackend.h"
+#include "ui/DebugPanel.h"
 
 #include <vector>
 #include <cstdint>
 #include <string>
 #include <memory>
 
-class Application;   // 前向声明：应用程序主类
-class ScreenCapture;  // 前向声明：屏幕截图功能
-class VideoPlayer;   // 前向声明：视频播放器（FFmpeg 管道）
+class Application;
+class ScreenCapture;
+class VideoPlayer;
 
 class EffectDetailScene : public Scene {
 public:
-    // 构造函数：接收特效卡片数据和输入纹理句柄
     EffectDetailScene(const EffectCard& card, TextureHandle inputTex);
-    // 析构函数：释放 GL 着色器和纹理资源
     ~EffectDetailScene();
 
-    // 设置渲染后端指针（由 Application 在场景切换时注入）
     void SetBackend(IRenderBackend* backend) { m_backend = backend; }
-    // 设置应用程序指针（用于访问拖放文件队列等全局功能）
     void SetApplication(Application* app) { m_app = app; }
 
-    /// Save CoverFlowScene state so we can restore it on return.
-    /// 保存 CoverFlowScene 的状态，以便返回时完整恢复
+    /// 保存 CoverFlowScene 状态以便返回时恢复
     void SetCoverFlowState(const CoverFlowState& state) {
         m_savedState = state;
-        // Auto-test: if coming from auto-test mode, set up auto-return timer
-        // 自动测试模式：如果从自动测试进入，设置自动返回计时器
+        // 自动测试模式：设置自动返回计时器
         if (state.autoTest) {
             m_autoTestHoldFrames = state.autoTestHoldFrames;
         }
     }
 
-    /// Transfer video player ownership from CoverFlowScene (for dynamic video playback).
     /// 从 CoverFlowScene 转移视频播放器所有权（用于动态视频播放）
     void SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime);
 
-    // ---- Scene 生命周期接口 ----
-    void OnEnter() override;                              // 场景进入：加载着色器、初始化参数
-    void OnExit() override;                               // 场景退出：释放资源
-    void OnUpdate(float dt) override;                     // 每帧更新：计时、输入处理、视频帧更新
-    void OnRender(IRenderBackend* backend) override;      // 渲染：全屏特效绘制
-    void OnImGui() override;                               // ImGui UI 绘制
-    bool WantsExit() const override { return m_wantsExit; }  // 是否请求退出
-    std::unique_ptr<Scene> GetNextScene() override;       // 获取下一个场景（返回 CoverFlow）
+    void OnEnter() override;
+    void OnExit() override;
+    void OnUpdate(float dt) override;
+    void OnRender(IRenderBackend* backend) override;
+    void OnImGui() override;
+    bool WantsExit() const override { return m_wantsExit; }
+    std::unique_ptr<Scene> GetNextScene() override;
 
 private:
-    EffectCard      m_card;           // 当前特效卡片数据（名称、着色器路径、参数定义等）
-    TextureHandle   m_inputTex;       // 输入纹理（原始图像或视频帧）
-    IRenderBackend* m_backend = nullptr;  // 渲染后端接口指针
-    Application*    m_app     = nullptr;  // 应用程序指针
+    EffectCard      m_card;          // 特效卡片元数据
+    TextureHandle   m_inputTex;      // 输入纹理句柄
+    IRenderBackend* m_backend = nullptr;
+    Application*    m_app     = nullptr;
 
     ShaderHandle m_vertShader = INVALID_SHADER;  // 顶点着色器句柄
     ShaderHandle m_fragShader = INVALID_SHADER;  // 片段着色器句柄
 
-    float    m_time       = 0.0f;     // 累计时间（秒），传入着色器 uTime
-    uint32_t m_frameCount = 0;        // 帧计数器，传入着色器 uFrameCount
-    int      m_viewportWidth  = 0;    // 当前视口宽度
-    int      m_viewportHeight = 0;    // 当前视口高度
+    float    m_time       = 0.0f;    // 累计时间（秒）
+    uint32_t m_frameCount = 0;       // 帧计数
+    int      m_viewportWidth  = 0;   // 视口宽度
+    int      m_viewportHeight = 0;   // 视口高度
 
-    bool      m_showDebug = true;      // 是否显示调试面板
-    DebugPanel m_debugPanel;           // ImGui 调试面板实例
+    bool      m_showDebug = true;     // 调试面板可见性
+    DebugPanel m_debugPanel;          // 参数调试面板
 
-    std::vector<float>   m_uniformFloats;   // float 类型 uniform 参数值数组
-    std::vector<int32_t> m_uniformInts;     // int 类型 uniform 参数值数组
-    size_t               m_expectedFloatCount = 0;  // 着色器实际期望的 float 参数数量
+    std::vector<float>   m_uniformFloats;   // float 类型 uniform 值
+    std::vector<int32_t> m_uniformInts;     // int 类型 uniform 值
+    size_t               m_expectedFloatCount = 0;  // effect.json 中定义的 float 参数总数
 
-    bool m_wantsExit         = false;  // 是否请求退出当前场景
-    bool m_returnToCoverFlow = false;  // 是否返回到封面流
+    bool m_wantsExit         = false;  // 是否请求退出场景
+    bool m_returnToCoverFlow = false;  // 是否返回 CoverFlow
 
-    // Saved CoverFlow state for restoration
-    // 保存的 CoverFlow 状态，用于返回时恢复
+    // 保存的 CoverFlow 状态（用于恢复）
     CoverFlowState m_savedState;
 
-    // Auto-test
-    int m_autoTestHoldFrames = 0; // >0 means auto-exit after this many frames
-    // 自动测试：>0 表示在此帧数后自动退出
+    // 自动测试
+    int m_autoTestHoldFrames = 0;  // >0 表示在此帧数后自动退出
 
-    // Compare mode (slider before/after)
-    // 对比模式：左右分割显示原图和特效处理后的图像
-    bool m_compareMode = true;        // before/after comparison (enabled by default, toggle with C key)
-    float m_compareSplitPos = 0.5f;   // split position (0=left all original, 1=right all effect)
-    bool m_compareDragging = false;  // is user dragging the split handle?
-    TextureHandle m_effectTex = {0};  // FBO texture for effect output
-    bool m_effectTexCreated = false;
+    // 对比模式（滑块 Before/After）
+    bool m_compareMode = true;         // 默认启用对比模式，按 C 键切换
+    float m_compareSplitPos = 0.5f;    // 分割位置（0=左侧全原图，1=右侧全效果图）
+    bool m_compareDragging = false;    // 用户是否正在拖动分割手柄
+    TextureHandle m_effectTex = {0};   // 效果输出的 FBO 纹理
+    bool m_effectTexCreated = false;  // 效果纹理是否已创建
 
-    // Screenshot counter (per-scene instance)
-    int m_screenshotCaptured = 0;     // 截图计数器（每个场景实例独立）
+    // 截图计数器（每个场景实例独立）
+    int m_screenshotCaptured = 0;
 
-    // Video playback
-    std::unique_ptr<VideoPlayer> m_videoPlayer;  // 视频播放器（unique_ptr 独占所有权）
+    // 视频播放
+    std::unique_ptr<VideoPlayer> m_videoPlayer;  // 视频播放器
     TextureHandle m_videoTex = {0};               // 视频帧纹理
     bool m_videoActive = false;                    // 视频是否正在播放
-    double m_videoLastFrameTime = 0.0;             // 上一帧视频更新时间戳
+    double m_videoLastFrameTime = 0.0;            // 上一帧视频时间戳
 
-    void LoadImageFromFile(const std::string& path);   // 从文件加载图片（拖放支持）
-    void LoadVideoFromFile(const std::string& path);   // 从文件加载视频（拖放支持）
-    void StopVideo();                                   // 停止视频播放
-    void EnsureEffectTexture();                         // 确保对比模式用的 FBO 纹理已创建
+    void LoadImageFromFile(const std::string& path);  // 从文件加载图片
+    void LoadVideoFromFile(const std::string& path);  // 从文件加载视频
+    void StopVideo();                                 // 停止视频播放
+    void EnsureEffectTexture();                       // 确保效果纹理已创建
 
-    // Compare view rendering
-    void RenderCompareView(IRenderBackend* backend);       // 渲染对比视图
-    void RenderFullscreenEffect(IRenderBackend* backend);  // 渲染全屏特效
+    // 对比视图渲染
+    void RenderCompareView(IRenderBackend* backend);
+    void RenderFullscreenEffect(IRenderBackend* backend);
 };
 ```
-
-#### 功能说明
-
-`EffectDetailScene.h` 定义了特效详情页场景的完整数据结构和接口。该场景是整个应用的核心交互场景之一，用户在此查看单个后处理特效的全屏效果。
-
-#### 实现原理
-
-该类继承自 `Scene` 基类，遵循场景生命周期模式（`OnEnter` -> `OnUpdate`/`OnRender`/`OnImGui` 循环 -> `GetNextScene`）。通过组合模式持有渲染后端指针、调试面板、视频播放器等组件，实现关注点分离。
-
-#### 为什么这样实现
-
-- **状态保存/恢复机制**：`CoverFlowState` 结构体使场景切换时能完整恢复封面流的滚动位置、选中索引、图片池等状态，避免用户迷失位置。
-- **对比模式独立纹理**：`m_effectTex` 作为 FBO 纹理，将特效渲染结果离屏保存，再由 ImGui 进行 Before/After 合成显示，解耦了渲染与 UI 展示。
-- **视频播放器所有权转移**：使用 `unique_ptr` 管理视频播放器，在场景间转移时语义清晰，避免双重释放或悬挂指针。
 
 ---
 
@@ -2352,1400 +3155,1596 @@ private:
 
 #### 构造函数
 
+**分析**：构造函数非常简洁，仅通过初始化列表保存传入的特效卡片元数据和输入纹理句柄。此时不进行任何 GL 资源分配，所有重量级初始化推迟到 `OnEnter()` 中进行。这种"延迟初始化"模式确保了构造函数永远不会失败。
+
 ```cpp
 EffectDetailScene::EffectDetailScene(const EffectCard& card, TextureHandle inputTex)
-    : m_card(card)        // 初始化成员：保存特效卡片数据（着色器路径、参数定义等）
-    , m_inputTex(inputTex) // 初始化成员：保存输入纹理句柄（封面流传入的原始图像纹理）
+    : m_card(card)
+    , m_inputTex(inputTex)
 {
-    // 构造函数体为空，所有初始化通过成员初始化列表完成
-    // 其他成员使用类内默认值初始化（如 m_backend = nullptr, m_time = 0.0f 等）
 }
 ```
 
-#### 功能说明
-
-构造函数接收从 `CoverFlowScene` 传递过来的特效卡片数据和输入纹理，仅做最小化初始化。重量级资源（着色器编译、纹理创建）推迟到 `OnEnter` 中执行。
-
-#### 实现原理
-
-采用"延迟初始化"（Lazy Initialization）设计模式。构造时只保存传入参数，不执行任何可能失败或耗时的操作。这确保了场景对象可以快速创建，而实际的 GL 资源加载在场景激活时才进行。
-
-#### 为什么这样实现
-
-- **快速创建**：场景切换时需要先创建新场景再销毁旧场景，构造函数保持轻量可避免卡顿。
-- **后端可用性**：构造时 `m_backend` 尚未设置，无法执行 GL 操作。`OnEnter` 时后端已就绪，是安全的初始化时机。
-
 #### 析构函数
+
+**分析**：析构函数承担资源清理的"安全网"角色。它检查 `m_backend` 指针是否有效，然后逐一释放顶点着色器、片段着色器和效果纹理（FBO 纹理）。注意 `OnExit()` 也会执行相同的清理逻辑——这是双重保险模式，确保无论场景如何退出（正常返回、异常中断），GL 资源都不会泄漏。最后调用 `StopVideo()` 停止视频播放并释放播放器。
 
 ```cpp
 EffectDetailScene::~EffectDetailScene()
 {
-    // Release GL resources to prevent accumulation across scene switches
-    // 释放 GL 资源，防止场景切换时资源累积泄漏
-    if (m_backend) {  // 确保后端指针有效
-        if (m_vertShader.id != INVALID_SHADER.id) {  // 顶点着色器有效
-            m_backend->DestroyShader(m_vertShader);  // 通过后端接口销毁顶点着色器
-            m_vertShader = INVALID_SHADER;            // 重置句柄为无效值
+    // 释放 GL 资源，防止场景切换时资源累积
+    if (m_backend) {
+        if (m_vertShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_vertShader);  // 销毁顶点着色器
+            m_vertShader = INVALID_SHADER;
         }
-        if (m_fragShader.id != INVALID_SHADER.id) {  // 片段着色器有效
-            m_backend->DestroyShader(m_fragShader);    // 通过后端接口销毁片段着色器
-            m_fragShader = INVALID_SHADER;            // 重置句柄为无效值
+        if (m_fragShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_fragShader);  // 销毁片段着色器
+            m_fragShader = INVALID_SHADER;
         }
-        if (m_effectTexCreated && m_effectTex.id != INVALID_TEXTURE.id) {  // 对比模式 FBO 纹理有效
-            m_backend->DestroyTexture(m_effectTex);    // 销毁对比模式纹理
-            m_effectTex = {0};                          // 重置句柄
-            m_effectTexCreated = false;                 // 标记为未创建
+        if (m_effectTexCreated && m_effectTex.id != INVALID_TEXTURE.id) {
+            m_backend->DestroyTexture(m_effectTex);  // 销毁效果纹理
+            m_effectTex = {0};
+            m_effectTexCreated = false;
         }
     }
-    StopVideo();  // 停止视频播放（关闭 FFmpeg 管道，释放播放器）
+    StopVideo();  // 停止视频播放并释放播放器
 }
 ```
 
-#### 功能说明
+#### SetVideoPlayer
 
-析构函数作为资源释放的"安全网"，确保即使 `OnExit` 未被调用（如异常退出），GL 资源也不会泄漏。它销毁着色器、对比模式纹理，并停止视频播放。
-
-#### 实现原理
-
-采用 RAII（Resource Acquisition Is Initialization）模式的变体。虽然资源在 `OnEnter` 中获取而非构造函数，但析构函数仍负责释放，形成"获取-释放"配对。`OnExit` 也会执行相同的释放操作，形成双重保险。
-
-#### 为什么这样实现
-
-- **防御性编程**：场景生命周期中可能出现异常路径（如 Application 提前销毁），析构函数确保资源不泄漏。
-- **幂等释放**：通过将句柄重置为 `INVALID_SHADER` / `{0}`，多次调用释放函数不会产生问题（`OnExit` + 析构函数双重调用安全）。
-
----
-
-### 4.3 SetVideoPlayer — 视频播放器所有权转移
+**分析**：此方法用于从 CoverFlowScene 接管视频播放器的所有权。使用 `std::move` 转移 `unique_ptr`，避免拷贝。如果视频正在播放（`active == true`），则将视频纹理设为当前输入纹理，使后续着色器渲染使用视频帧作为输入源。
 
 ```cpp
 void EffectDetailScene::SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime) {
-    m_videoPlayer = std::move(player);   // 转移视频播放器的独占所有权（原指针置空）
-    m_videoTex = videoTex;                // 保存视频帧纹理句柄
-    m_videoActive = active;               // 标记视频是否正在播放
-    m_videoLastFrameTime = lastFrameTime; // 保存上一帧时间戳（用于帧率控制）
+    m_videoPlayer = std::move(player);     // 转移视频播放器所有权
+    m_videoTex = videoTex;                 // 保存视频纹理句柄
+    m_videoActive = active;                // 记录播放状态
+    m_videoLastFrameTime = lastFrameTime;  // 保存上一帧时间戳
     if (active) {
-        m_inputTex = m_videoTex;  // Use video texture as input for effect rendering
-        // 如果视频正在播放，将视频纹理设为特效的输入纹理
-        // 这样特效着色器将处理视频帧而非静态图片
+        m_inputTex = m_videoTex;  // 将视频纹理设为着色器输入
     }
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-从 `CoverFlowScene` 接收视频播放器的所有权。当用户在封面流中正在播放视频并点击进入详情页时，视频播放不应中断，而是无缝转移到详情页继续播放。
+```cpp
+EffectDetailScene::EffectDetailScene(const EffectCard& card, TextureHandle inputTex)
+    : m_card(card)
+    , m_inputTex(inputTex)
+{
+}
 
-#### 实现原理
+EffectDetailScene::~EffectDetailScene()
+{
+    // 释放 GL 资源以防止场景切换时资源累积
+    if (m_backend) {
+        if (m_vertShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_vertShader);
+            m_vertShader = INVALID_SHADER;
+        }
+        if (m_fragShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_fragShader);
+            m_fragShader = INVALID_SHADER;
+        }
+        if (m_effectTexCreated && m_effectTex.id != INVALID_TEXTURE.id) {
+            m_backend->DestroyTexture(m_effectTex);
+            m_effectTex = {0};
+            m_effectTexCreated = false;
+        }
+    }
+    StopVideo();
+}
 
-使用 C++11 的 `std::unique_ptr` 的移动语义实现所有权转移。`std::move` 将播放器从 CoverFlowScene 转移到 EffectDetailScene，原指针自动置空，确保同一时间只有一个所有者。
-
-#### 为什么这样实现
-
-- **无缝视频体验**：用户在封面流看到视频预览后进入详情页，视频应继续播放而非重新开始。
-- **独占所有权**：`unique_ptr` 语义明确，编译器强制执行所有权唯一性，避免误用。
-- **状态连续性**：`lastFrameTime` 参数确保帧率控制计时器在场景切换后保持连续，不会出现跳帧。
+void EffectDetailScene::SetVideoPlayer(std::unique_ptr<VideoPlayer> player, TextureHandle videoTex, bool active, double lastFrameTime) {
+    m_videoPlayer = std::move(player);
+    m_videoTex = videoTex;
+    m_videoActive = active;
+    m_videoLastFrameTime = lastFrameTime;
+    if (active) {
+        m_inputTex = m_videoTex;  // 使用视频纹理作为效果渲染的输入
+    }
+}
+```
 
 ---
 
-### 4.4 OnEnter — 着色器加载与参数初始化
+### 4.3 OnEnter
+
+#### 第一段：后端检查与调试面板初始化
+
+**分析**：`OnEnter()` 在场景被激活时调用。首先检查 `m_backend` 是否有效——如果没有渲染后端，整个场景无法工作，直接返回。然后初始化调试面板（`DebugPanel`），将 effect.json 中定义的参数传入面板，面板会为每个参数生成对应的 ImGui 控件。
 
 ```cpp
 void EffectDetailScene::OnEnter()
 {
-    if (!m_backend) {  // 防御性检查：后端指针必须有效
+    if (!m_backend) {
         fprintf(stderr, "[EffectDetailScene] OnEnter called without backend!\n");
-        return;  // 无后端则无法执行任何 GL 操作，直接返回
+        return;
     }
 
-    // Initialize debug panel with effect parameters (works on all backends)
-    // 用特效参数初始化调试面板（适用于所有后端类型）
+    // 用特效参数初始化调试面板（所有后端通用）
     m_debugPanel.SetParams(m_card.params);
-
-    // Initialize uniform values from card params defaults
-    // 从卡片参数的默认值初始化 uniform 变量
-    m_uniformFloats.clear();   // 清空 float uniform 数组
-    m_uniformInts.clear();    // 清空 int uniform 数组
-    for (const auto& p : m_card.params) {  // 遍历所有参数定义
-        switch (p.type) {  // 根据参数类型分别处理
-        case ParamType::Float:  // 单个 float 参数
-            m_uniformFloats.push_back(p.defaultVal[0]);  // 取默认值第1个分量
-            break;
-        case ParamType::Int:     // 整数参数
-        case ParamType::Bool:    // 布尔参数（以 int 存储）
-            m_uniformInts.push_back(static_cast<int32_t>(p.defaultVal[0]));  // 转为 int32
-            break;
-        case ParamType::Float2:  // 二维向量参数
-            m_uniformFloats.push_back(p.defaultVal[0]);  // x 分量
-            m_uniformFloats.push_back(p.defaultVal[1]);  // y 分量
-            break;
-        case ParamType::Float3:  // 三维向量参数
-        case ParamType::Color:   // 颜色参数（RGB 三分量）
-            m_uniformFloats.push_back(p.defaultVal[0]);  // r/x 分量
-            m_uniformFloats.push_back(p.defaultVal[1]);  // g/y 分量
-            m_uniformFloats.push_back(p.defaultVal[2]);  // b/z 分量
-            break;
-        case ParamType::Float4:  // 四维向量参数
-            m_uniformFloats.push_back(p.defaultVal[0]);  // x 分量
-            m_uniformFloats.push_back(p.defaultVal[1]);  // y 分量
-            m_uniformFloats.push_back(p.defaultVal[2]);  // z 分量
-            m_uniformFloats.push_back(p.defaultVal[3]);  // w 分量
-            break;
-        }
-    }
-    m_expectedFloatCount = m_uniformFloats.size();  // 记录期望的 float 数量，用于后续校验
-
-    // Load SPIR-V shaders (works on all backends)
-    // 加载 SPIR-V 着色器（适用于所有后端）
-    // OpenGL uses VAO vertex input, Vulkan uses VertexIndex-generated triangle
-    // OpenGL 使用 VAO 顶点输入，Vulkan 使用 VertexIndex 生成的三角形
-    std::string vertPath = m_card.vertSpirvPath;  // 获取顶点着色器 SPIR-V 路径
-    if (m_backend->GetType() == BackendType::Vulkan) {  // 如果后端是 Vulkan
-        // Replace fullscreen.vert.spv with fullscreen_vk.vert.spv for Vulkan
-        // 将 fullscreen.vert.spv 替换为 fullscreen_vk.vert.spv（Vulkan 专用版本）
-        size_t pos = vertPath.find("fullscreen.vert.spv");  // 查找 OpenGL 版本文件名
-        if (pos != std::string::npos) {  // 找到了
-            vertPath.replace(pos, 19, "fullscreen_vk.vert.spv");  // 替换为 Vulkan 版本
-        }
-    }
-    auto vertSpirv = ShaderLoader::LoadSPIRV(vertPath);  // 加载顶点着色器 SPIR-V 二进制
-
-    auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);  // 加载片段着色器 SPIR-V 二进制
-
-    if (vertSpirv.empty() || fragSpirv.empty()) {  // 检查着色器是否加载成功
-        fprintf(stderr, "[EffectDetailScene] Failed to load SPIR-V shaders\n");
-        return;  // 加载失败则退出，场景仍可运行但无特效渲染
-    }
-
-    // Always use SPIR-V shaders (consistent with CoverFlowScene thumbnail path).
-    // 始终使用 SPIR-V 着色器（与 CoverFlowScene 缩略图路径一致）
-    // GLSL+UBO has unreliable reflection on NVIDIA when vertex/fragment shader
-    // types are mixed (SPIR-V vs GLSL). Pure SPIR-V works correctly in all cases.
-    // 在 NVIDIA 上混合使用 SPIR-V 和 GLSL 时 UBO 反射不可靠，纯 SPIR-V 在所有情况下正常工作
-    m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());  // 创建顶点着色器
-    m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());  // 创建片段着色器
-    printf("[EffectDetailScene] Using SPIR-V shaders\n");  // 日志输出
-
-    if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) {
-        // 检查着色器创建是否成功
-        fprintf(stderr, "[EffectDetailScene] Failed to create shaders\n");
-        return;  // 创建失败则退出
-    }
-}
 ```
 
-#### 功能说明
+#### 第二段：从参数默认值初始化 Uniform 数组
 
-`OnEnter` 是场景的初始化入口，负责三大任务：(1) 从 `EffectCard` 的参数定义初始化调试面板和 uniform 默认值；(2) 根据后端类型选择正确的顶点着色器变体；(3) 加载 SPIR-V 着色器二进制并通过后端接口编译。
-
-#### 实现原理
-
-参数初始化采用"展平数组"策略：将不同类型的参数（Float、Float2、Float3、Color、Float4）全部展平为一个连续的 `float` 数组，对应着色器 UBO 中的 `uParamFloat0~5` 字段。这种设计简化了数据传递，避免了复杂的类型映射。
-
-着色器加载使用 SPIR-V 中间格式而非 GLSL 源码。SPIR-V 是 Khronos 标准的着色器中间语言，OpenGL 4.6+ 和 Vulkan 均原生支持，实现了"一次编译、多后端运行"。
-
-#### 为什么这样实现
-
-- **统一 SPIR-V**：注释中明确说明了原因——NVIDIA 驱动在混合 SPIR-V 顶点着色器和 GLSL 片段着色器时，UBO 反射（`glGetUniformBlockIndex`）可能返回错误结果。纯 SPIR-V 路径在所有硬件上行为一致。
-- **展平 uniform 数组**：UBO 的 std140 布局要求严格的内存对齐，展平数组直接按偏移量写入，避免了结构体对齐的复杂性。
-- **Vulkan 顶点着色器变体**：Vulkan 不支持 `gl_VertexID` 直接生成全屏三角形（需要 `VertexIndex` 内建变量），因此需要不同的顶点着色器。
-
----
-
-### 4.5 OnExit — 场景退出与资源释放
+**分析**：遍历 `m_card.params`（来自 effect.json），根据每个参数的类型（Float、Int、Bool、Float2、Float3、Color、Float4）将默认值压入 `m_uniformFloats` 或 `m_uniformInts` 向量。这个数组将在每帧渲染时传递给着色器。`m_expectedFloatCount` 记录了预期的 float 数量，用于后续 DebugPanel 可能修改数组长度时的修正。
 
 ```cpp
-void EffectDetailScene::OnExit()
-{
-    // Stop video playback
-    // 停止视频播放
-    StopVideo();
-
-    // Release GL resources (destructor also does this as safety net)
-    // 释放 GL 资源（析构函数也会执行此操作作为安全网）
-    if (m_backend) {  // 确保后端有效
-        if (m_vertShader.id != INVALID_SHADER.id) {  // 顶点着色器有效
-            m_backend->DestroyShader(m_vertShader);  // 销毁顶点着色器
-            m_vertShader = INVALID_SHADER;            // 重置句柄
-        }
-        if (m_fragShader.id != INVALID_SHADER.id) {  // 片段着色器有效
-            m_backend->DestroyShader(m_fragShader);    // 销毁片段着色器
-            m_fragShader = INVALID_SHADER;              // 重置句柄
-        }
-        if (m_effectTexCreated && m_effectTex.id != INVALID_TEXTURE.id) {  // FBO 纹理有效
-            m_backend->DestroyTexture(m_effectTex);    // 销毁 FBO 纹理
-            m_effectTex = {0};                          // 重置句柄
-            m_effectTexCreated = false;                 // 标记为未创建
+    // 从卡片参数默认值初始化 uniform 值
+    m_uniformFloats.clear();
+    m_uniformInts.clear();
+    for (const auto& p : m_card.params) {
+        switch (p.type) {
+        case ParamType::Float:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            break;
+        case ParamType::Int:
+        case ParamType::Bool:
+            m_uniformInts.push_back(static_cast<int32_t>(p.defaultVal[0]));
+            break;
+        case ParamType::Float2:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            break;
+        case ParamType::Float3:
+        case ParamType::Color:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            m_uniformFloats.push_back(p.defaultVal[2]);
+            break;
+        case ParamType::Float4:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            m_uniformFloats.push_back(p.defaultVal[2]);
+            m_uniformFloats.push_back(p.defaultVal[3]);
+            break;
         }
     }
+    m_expectedFloatCount = m_uniformFloats.size();
+```
 
-    printf("[EffectDetailScene] Exited: %s\n", m_card.name.c_str());  // 日志输出特效名称
+#### 第三段：加载 SPIR-V 着色器
+
+**分析**：从 effect.json 中记录的路径加载 SPIR-V 二进制着色器。对于 Vulkan 后端，需要将 `fullscreen.vert.spv` 替换为 `fullscreen_vk.vert.spv`（Vulkan 使用 `gl_VertexIndex` 生成三角形，而 OpenGL 使用 VAO 顶点输入）。使用 `ShaderLoader::LoadSPIRV()` 读取文件，然后通过后端接口创建着色器。注释中解释了为什么统一使用 SPIR-V 而非 GLSL：NVIDIA 驱动在混合使用 SPIR-V 和 GLSL 时 UBO 反射不可靠。
+
+```cpp
+    // 加载 SPIR-V 着色器（所有后端通用）
+    // OpenGL 使用 VAO 顶点输入，Vulkan 使用 VertexIndex 生成的三角形
+    std::string vertPath = m_card.vertSpirvPath;
+    if (m_backend->GetType() == BackendType::Vulkan) {
+        // 为 Vulkan 替换 fullscreen.vert.spv 为 fullscreen_vk.vert.spv
+        size_t pos = vertPath.find("fullscreen.vert.spv");
+        if (pos != std::string::npos) {
+            vertPath.replace(pos, 19, "fullscreen_vk.vert.spv");
+        }
+    }
+    auto vertSpirv = ShaderLoader::LoadSPIRV(vertPath);
+
+    auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);
+
+    if (vertSpirv.empty() || fragSpirv.empty()) {
+        fprintf(stderr, "[EffectDetailScene] Failed to load SPIR-V shaders\n");
+        return;
+    }
+
+    // 始终使用 SPIR-V 着色器（与 CoverFlowScene 缩略图路径一致）
+    // GLSL+UBO 在 NVIDIA 上混合顶点/片段着色器类型时反射不可靠
+    // 纯 SPIR-V 在所有情况下都能正常工作
+    m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
+    m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
+    printf("[EffectDetailScene] Using SPIR-V shaders\n");
+
+    if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) {
+        fprintf(stderr, "[EffectDetailScene] Failed to create shaders\n");
+        return;
+    }
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-在场景退出时（切换到其他场景之前）释放所有 GL 资源并停止视频播放。这是正常的资源释放路径，与析构函数形成双重保险。
+```cpp
+void EffectDetailScene::OnEnter()
+{
+    if (!m_backend) {
+        fprintf(stderr, "[EffectDetailScene] OnEnter called without backend!\n");
+        return;
+    }
 
-#### 实现原理
+    // 用特效参数初始化调试面板（所有后端通用）
+    m_debugPanel.SetParams(m_card.params);
+    
+    // 从卡片参数默认值初始化 uniform 值
+    m_uniformFloats.clear();
+    m_uniformInts.clear();
+    for (const auto& p : m_card.params) {
+        switch (p.type) {
+        case ParamType::Float:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            break;
+        case ParamType::Int:
+        case ParamType::Bool:
+            m_uniformInts.push_back(static_cast<int32_t>(p.defaultVal[0]));
+            break;
+        case ParamType::Float2:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            break;
+        case ParamType::Float3:
+        case ParamType::Color:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            m_uniformFloats.push_back(p.defaultVal[2]);
+            break;
+        case ParamType::Float4:
+            m_uniformFloats.push_back(p.defaultVal[0]);
+            m_uniformFloats.push_back(p.defaultVal[1]);
+            m_uniformFloats.push_back(p.defaultVal[2]);
+            m_uniformFloats.push_back(p.defaultVal[3]);
+            break;
+        }
+    }
+    m_expectedFloatCount = m_uniformFloats.size();
 
-资源释放顺序为：视频播放器 -> 着色器 -> 纹理。先停止视频（可能正在使用纹理），再释放着色器和纹理。每个资源释放后立即重置句柄，确保幂等性。
+    // 加载 SPIR-V 着色器（所有后端通用）
+    // OpenGL 使用 VAO 顶点输入，Vulkan 使用 VertexIndex 生成的三角形
+    std::string vertPath = m_card.vertSpirvPath;
+    if (m_backend->GetType() == BackendType::Vulkan) {
+        // 为 Vulkan 替换 fullscreen.vert.spv 为 fullscreen_vk.vert.spv
+        size_t pos = vertPath.find("fullscreen.vert.spv");
+        if (pos != std::string::npos) {
+            vertPath.replace(pos, 19, "fullscreen_vk.vert.spv");
+        }
+    }
+    auto vertSpirv = ShaderLoader::LoadSPIRV(vertPath);
 
-#### 为什么这样实现
+    auto fragSpirv = ShaderLoader::LoadSPIRV(m_card.fragSpirvPath);
 
-- **显式释放优先**：`OnExit` 是正常的资源释放点，析构函数是异常路径的安全网。正常情况下 `OnExit` 先执行，资源在此释放；如果 `OnExit` 未被调用（异常），析构函数兜底。
-- **日志追踪**：输出退出的特效名称，便于调试场景切换问题。
+    if (vertSpirv.empty() || fragSpirv.empty()) {
+        fprintf(stderr, "[EffectDetailScene] Failed to load SPIR-V shaders\n");
+        return;
+    }
+
+    // 始终使用 SPIR-V 着色器
+    m_vertShader = m_backend->CreateVertexShader(vertSpirv.data(), vertSpirv.size());
+    m_fragShader = m_backend->CreateFragmentShader(fragSpirv.data(), fragSpirv.size());
+    printf("[EffectDetailScene] Using SPIR-V shaders\n");
+
+    if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) {
+        fprintf(stderr, "[EffectDetailScene] Failed to create shaders\n");
+        return;
+    }
+}
+```
 
 ---
 
-### 4.6 OnUpdate — 帧更新与输入处理
+### 4.4 OnUpdate
+
+#### 第一段：时间累计与自动测试退出
+
+**分析**：每帧累加时间和帧计数。自动测试模式下，`m_autoTestHoldFrames` 递减，到达 0 时自动设置退出标志并返回 CoverFlow。这是 CI/CD 自动化测试的关键机制——无需用户交互即可遍历所有特效。
 
 ```cpp
 void EffectDetailScene::OnUpdate(float dt)
 {
-    m_time += dt;         // 累加时间增量，用于着色器动画（uTime）
-    m_frameCount++;       // 递增帧计数，用于着色器动画（uFrameCount）
+    m_time += dt;        // 累加时间
+    m_frameCount++;      // 递增帧计数
 
-    // Auto-test: auto-return after holdFrames
-    // 自动测试：在指定帧数后自动返回
-    if (m_autoTestHoldFrames > 0) {  // 如果设置了自动测试帧数
-        m_autoTestHoldFrames--;       // 递减计数器
-        if (m_autoTestHoldFrames <= 0) {  // 计数器归零
-            m_wantsExit = true;              // 标记请求退出
-            m_returnToCoverFlow = true;      // 标记返回封面流
+    // 自动测试：在 holdFrames 帧后自动返回
+    if (m_autoTestHoldFrames > 0) {
+        m_autoTestHoldFrames--;
+        if (m_autoTestHoldFrames <= 0) {
+            m_wantsExit = true;
+            m_returnToCoverFlow = true;
+            printf("[EffectDetailScene] Auto-test timer expired, returning to CoverFlow\n");
+        }
+    }
+```
+
+#### 第二段：ESC 键返回
+
+**分析**：监听 ImGui 的键盘输入事件，按下 ESC 键时设置退出标志。使用 ImGui 而非 GLFW 回调的好处是输入处理与 UI 系统统一，避免事件冲突。
+
+```cpp
+    // ESC 返回 CoverFlow
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+        m_wantsExit         = true;
+        m_returnToCoverFlow = true;
+        printf("[EffectDetailScene] ESC pressed, returning to CoverFlow\n");
+    }
+```
+
+#### 第三段：拖放文件处理
+
+**分析**：通过 `Application::ConsumeDroppedFile()` 获取用户拖入窗口的文件路径。根据文件扩展名判断是视频（.mp4/.mkv/.avi/.mov/.webm）还是图片，分别调用 `LoadVideoFromFile()` 或 `LoadImageFromFile()` 加载。扩展名转换使用手动 ASCII 偏移而非 `std::tolower`，避免 locale 依赖。
+
+```cpp
+    // ---- 拖放：检查是否有拖入的文件 ----
+    if (m_app) {
+        std::string dropped = m_app->ConsumeDroppedFile();
+        if (!dropped.empty()) {
+            // 检查是否为视频文件
+            std::string ext = dropped;
+            auto dot = ext.find_last_of('.');
+            if (dot != std::string::npos) {
+                ext = ext.substr(dot);
+                // 转换为小写
+                for (auto& c : ext) c = (c >= 'A' && c <= 'Z') ? c + 32 : c;
+                if (ext == ".mp4" || ext == ".mkv" || ext == ".avi" || ext == ".mov" || ext == ".webm") {
+                    LoadVideoFromFile(dropped);
+                } else {
+                    StopVideo();
+                    LoadImageFromFile(dropped);
+                }
+            }
+        }
+    }
+```
+
+#### 第四段：视频帧更新
+
+**分析**：如果视频正在播放，以 30fps 的固定间隔（ffmpeg 管道输出帧率）从 `VideoPlayer` 读取新帧。读取成功后通过 `UpdateTexture()` 将像素数据上传到 GPU 纹理，并将视频纹理设为当前输入纹理。视频结束时调用 `StopVideo()` 停止播放。
+
+```cpp
+    // ---- 视频播放器：更新帧 ----
+    if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
+        double now = ImGui::GetTime();
+        // ffmpeg 管道以固定 30fps 输出（见 StartFFmpegProcess: -r 30）
+        double frameInterval = 1.0 / 30.0;
+        if (now - m_videoLastFrameTime >= frameInterval) {
+            if (m_videoPlayer->ReadFrame()) {
+                m_backend->UpdateTexture(m_videoTex, 0, 0,
+                    m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
+                    m_videoPlayer->GetPixels());
+                m_inputTex = m_videoTex;  // 将视频帧设为着色器输入
+                m_videoLastFrameTime = now;
+            } else {
+                // 视频结束 — 停止循环
+                printf("[EffectDetailScene] Video ended, stopping playback\n");
+                StopVideo();
+            }
+        }
+    }
+}
+```
+
+#### 完整源码
+
+```cpp
+void EffectDetailScene::OnUpdate(float dt)
+{
+    m_time += dt;
+    m_frameCount++;
+
+    // 自动测试：在 holdFrames 帧后自动返回
+    if (m_autoTestHoldFrames > 0) {
+        m_autoTestHoldFrames--;
+        if (m_autoTestHoldFrames <= 0) {
+            m_wantsExit = true;
+            m_returnToCoverFlow = true;
             printf("[EffectDetailScene] Auto-test timer expired, returning to CoverFlow\n");
         }
     }
 
-    // ESC returns to CoverFlow
-    // ESC 键返回封面流
-    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {  // 检测 ESC 键按下
-        m_wantsExit         = true;  // 标记请求退出
-        m_returnToCoverFlow = true;  // 标记返回封面流
+    // ESC 返回 CoverFlow
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+        m_wantsExit         = true;
+        m_returnToCoverFlow = true;
         printf("[EffectDetailScene] ESC pressed, returning to CoverFlow\n");
     }
 
-    // ---- Drag-drop: check for dropped files ----
-    // ---- 拖放：检查是否有文件被拖入 ----
-    if (m_app) {  // 应用指针有效
-        std::string dropped = m_app->ConsumeDroppedFile();  // 取出拖放文件路径（消费队列）
-        if (!dropped.empty()) {  // 有文件被拖入
-            // Check if it's a video file
+    // ---- 拖放：检查是否有拖入的文件 ----
+    if (m_app) {
+        std::string dropped = m_app->ConsumeDroppedFile();
+        if (!dropped.empty()) {
             // 检查是否为视频文件
-            std::string ext = dropped;  // 复制路径字符串
-            auto dot = ext.find_last_of('.');  // 查找最后一个点（扩展名分隔符）
-            if (dot != std::string::npos) {  // 找到了扩展名
-                ext = ext.substr(dot);  // 提取扩展名（含点号）
-                // Convert to lowercase
-                // 转为小写（手动实现，避免依赖 locale）
+            std::string ext = dropped;
+            auto dot = ext.find_last_of('.');
+            if (dot != std::string::npos) {
+                ext = ext.substr(dot);
+                // 转换为小写
                 for (auto& c : ext) c = (c >= 'A' && c <= 'Z') ? c + 32 : c;
                 if (ext == ".mp4" || ext == ".mkv" || ext == ".avi" || ext == ".mov" || ext == ".webm") {
-                    // 支持的视频格式列表
-                    LoadVideoFromFile(dropped);  // 加载视频文件
+                    LoadVideoFromFile(dropped);
                 } else {
-                    StopVideo();  // 如果当前在播放视频，先停止
-                    LoadImageFromFile(dropped);  // 加载图片文件
+                    StopVideo();
+                    LoadImageFromFile(dropped);
                 }
             }
         }
     }
 
-    // ---- Video player: update frames ----
     // ---- 视频播放器：更新帧 ----
     if (m_videoActive && m_videoPlayer && m_videoPlayer->IsOpen() && m_backend) {
-        // 条件：视频激活 && 播放器有效 && 已打开 && 后端有效
-        double now = ImGui::GetTime();  // 获取当前时间（秒）
-        // ffmpeg pipe outputs at fixed 30fps (see StartFFmpegProcess: -r 30)
-        // FFmpeg 管道以固定 30fps 输出（见 StartFFmpegProcess: -r 30）
-        double frameInterval = 1.0 / 30.0;  // 帧间隔 = 1/30 秒
-        if (now - m_videoLastFrameTime >= frameInterval) {  // 到达下一帧时间
-            if (m_videoPlayer->ReadFrame()) {  // 从 FFmpeg 管道读取一帧
-                m_backend->UpdateTexture(m_videoTex, 0, 0,  // 更新视频纹理
+        double now = ImGui::GetTime();
+        // ffmpeg 管道以固定 30fps 输出
+        double frameInterval = 1.0 / 30.0;
+        if (now - m_videoLastFrameTime >= frameInterval) {
+            if (m_videoPlayer->ReadFrame()) {
+                m_backend->UpdateTexture(m_videoTex, 0, 0,
                     m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),
-                    m_videoPlayer->GetPixels());  // 像素数据指针
-                m_inputTex = m_videoTex;  // 将视频纹理设为特效输入
-                m_videoLastFrameTime = now;  // 更新帧时间戳
+                    m_videoPlayer->GetPixels());
+                m_inputTex = m_videoTex;
+                m_videoLastFrameTime = now;
             } else {
-                // Video ended — loop
-                // 视频结束（FFmpeg 管道关闭）
                 printf("[EffectDetailScene] Video ended, stopping playback\n");
-                StopVideo();  // 停止播放（当前实现为停止而非循环）
+                StopVideo();
             }
         }
     }
 }
 ```
 
-#### 功能说明
-
-`OnUpdate` 每帧调用一次，负责：(1) 累加时间和帧计数供着色器使用；(2) 处理 ESC 键和自动测试退出逻辑；(3) 处理文件拖放（图片或视频）；(4) 更新视频播放器帧。
-
-#### 实现原理
-
-时间管理使用简单的累加器模式。`m_time` 和 `m_frameCount` 直接传入着色器 UBO，供特效实现时间驱动动画（如波纹、闪烁等）。
-
-文件拖放通过 `Application::ConsumeDroppedFile()` 消费式队列实现。GLFW 的拖放回调将文件路径推入队列，`OnUpdate` 每帧检查并消费一个文件，避免在回调中执行耗时的 GL 操作。
-
-视频帧更新采用固定帧率（30fps）节流。`ImGui::GetTime()` 提供高精度时间戳，与 `m_videoLastFrameTime` 比较决定是否读取新帧。
-
-#### 为什么这样实现
-
-- **消费式拖放队列**：GLFW 的文件拖放回调在事件线程触发，直接在其中执行 GL 操作不安全。队列模式将文件路径传递到主线程的安全时机处理。
-- **固定帧率节流**：FFmpeg 管道按 30fps 输出，读取过快会阻塞，读取过慢会丢帧。精确匹配输出帧率可最大化流畅度。
-- **手动小写转换**：避免依赖 `std::tolower` 的 locale 行为差异，手动 ASCII 范围检查更可靠。
-
 ---
 
-### 4.7 OnRender — 全屏特效渲染与对比模式
+### 4.5 OnRender
+
+#### 第一段：前置检查与 Uniform 同步
+
+**分析**：`OnRender()` 是每帧渲染的入口。首先检查后端和着色器句柄是否有效。然后通过 `m_debugPanel.SetUniformValues()` 将 ImGui 面板中用户修改的参数值同步回 `m_uniformFloats` 和 `m_uniformInts`。由于 DebugPanel 可能缩减数组长度（例如某些参数被隐藏），需要用 `resize()` 恢复到预期长度，用 0.0f 填充缺失值。
 
 ```cpp
 void EffectDetailScene::OnRender(IRenderBackend* backend)
 {
-    if (!backend) return;  // 后端无效则跳过
+    if (!backend) return;
     if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) return;
-    // 着色器未加载成功则跳过（场景仍可显示 UI）
 
-    // Sync uniform values from debug panel
-    // 从调试面板同步 uniform 值（用户可能通过滑块修改了参数）
+    // 从调试面板同步 uniform 值
     m_debugPanel.SetUniformValues(m_uniformFloats, m_uniformInts);
-
-    // Restore correct UBO float count (DebugPanel may shrink the array)
-    // 恢复正确的 UBO float 数量（DebugPanel 可能缩小了数组）
+    
+    // 恢复正确的 UBO float 数量（DebugPanel 可能缩减数组）
     if (m_uniformFloats.size() != m_expectedFloatCount) {
-        m_uniformFloats.resize(m_expectedFloatCount, 0.0f);  // 用 0 填充到期望大小
+        m_uniformFloats.resize(m_expectedFloatCount, 0.0f);
     }
+```
 
-    // Get framebuffer size
+#### 第二段：获取视口尺寸与分发渲染
+
+**分析**：从后端获取当前帧缓冲区尺寸，保存到成员变量供 ImGui 绘制使用。然后根据 `m_compareMode` 标志选择渲染路径：对比模式下先渲染效果到 FBO 纹理（`RenderCompareView`），再由 ImGui 绘制分屏；非对比模式下直接全屏渲染效果（`RenderFullscreenEffect`）。
+
+```cpp
     // 获取帧缓冲区尺寸
     int width = 0, height = 0;
-    backend->GetFramebufferSize(width, height);  // 查询当前帧缓冲区大小
-    if (width <= 0 || height <= 0) return;  // 尺寸无效则跳过
-    m_viewportWidth = width;   // 缓存视口宽度
-    m_viewportHeight = height; // 缓存视口高度
+    backend->GetFramebufferSize(width, height);
+    if (width <= 0 || height <= 0) return;
+    m_viewportWidth = width;
+    m_viewportHeight = height;
 
-    if (m_compareMode) {  // 对比模式开启
-        RenderCompareView(backend);  // 渲染到 FBO 纹理，由 ImGui 合成显示
+    if (m_compareMode) {
+        RenderCompareView(backend);      // 对比模式：渲染到 FBO + ImGui 分屏
     } else {
-        RenderFullscreenEffect(backend);  // 直接全屏渲染特效
+        RenderFullscreenEffect(backend); // 全屏模式：直接渲染效果
     }
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-`OnRender` 是每帧渲染的入口，负责同步调试面板参数、获取视口尺寸，然后根据是否开启对比模式选择渲染路径。
+```cpp
+void EffectDetailScene::OnRender(IRenderBackend* backend)
+{
+    if (!backend) return;
+    if (m_vertShader.id == INVALID_SHADER.id || m_fragShader.id == INVALID_SHADER.id) return;
 
-#### 实现原理
+    // 从调试面板同步 uniform 值
+    m_debugPanel.SetUniformValues(m_uniformFloats, m_uniformInts);
+    
+    // 恢复正确的 UBO float 数量（DebugPanel 可能缩减数组）
+    if (m_uniformFloats.size() != m_expectedFloatCount) {
+        m_uniformFloats.resize(m_expectedFloatCount, 0.0f);
+    }
 
-渲染分为两条路径：
-1. **对比模式**：先将特效渲染到离屏 FBO 纹理（`m_effectTex`），然后由 `OnImGui` 中的 ImGui 绘图指令将原图和特效图合成为 Before/After 分割视图。
-2. **全屏模式**：直接将特效渲染到屏幕帧缓冲区。
+    // 获取帧缓冲区尺寸
+    int width = 0, height = 0;
+    backend->GetFramebufferSize(width, height);
+    if (width <= 0 || height <= 0) return;
+    m_viewportWidth = width;
+    m_viewportHeight = height;
 
-参数同步在渲染前执行，确保用户在调试面板中的修改立即反映到渲染结果。
-
-#### 为什么这样实现
-
-- **参数校验与修复**：`m_expectedFloatCount` 机制防止 DebugPanel 内部操作（如删除参数）导致 float 数组长度不匹配 UBO 布局，避免越界写入。
-- **对比模式离屏渲染**：将特效结果渲染到独立纹理，再由 ImGui 合成，可以利用 ImGui 的裁剪和混合功能实现平滑的分割线效果，无需编写额外的合成着色器。
+    if (m_compareMode) {
+        RenderCompareView(backend);
+    } else {
+        RenderFullscreenEffect(backend);
+    }
+}
+```
 
 ---
 
-### 4.8 RenderFullscreenEffect — 全屏特效渲染
+### 4.6 RenderFullscreenEffect
+
+**分析**：这是最直接的渲染路径——构建 `ShaderParams` 结构体，填入输入纹理、uniform 值、时间、帧计数和视口尺寸，然后调用后端的 `DrawFullscreenQuad()` 执行一次全屏四边形绘制。着色器会对整个屏幕的每个像素执行片段着色器，实现后处理效果。
 
 ```cpp
 void EffectDetailScene::RenderFullscreenEffect(IRenderBackend* backend)
 {
-    ShaderParams params;  // 创建着色器参数结构体
-    params.inputTextures.push_back(m_inputTex);  // 添加输入纹理（原图或视频帧）
-    params.uniformFloats = m_uniformFloats;        // 设置 float uniform 参数
-    params.uniformInts = m_uniformInts;            // 设置 int uniform 参数
-    params.time = m_time;                           // 设置时间
-    params.frameCount = m_frameCount;               // 设置帧计数
-    params.viewportWidth = m_viewportWidth;         // 设置视口宽度
-    params.viewportHeight = m_viewportHeight;       // 设置视口高度
+    ShaderParams params;
+    params.inputTextures.push_back(m_inputTex);     // 输入纹理（图片或视频帧）
+    params.uniformFloats = m_uniformFloats;           // float 参数数组
+    params.uniformInts = m_uniformInts;               // int 参数数组
+    params.time = m_time;                             // 累计时间
+    params.frameCount = m_frameCount;                  // 帧计数
+    params.viewportWidth = m_viewportWidth;            // 视口宽度
+    params.viewportHeight = m_viewportHeight;          // 视口高度
 
     backend->DrawFullscreenQuad(m_vertShader, m_fragShader, params);
-    // 调用后端接口绘制全屏四边形，执行后处理特效
 }
 ```
 
-#### 功能说明
-
-将所有渲染所需参数打包为 `ShaderParams` 结构体，委托给渲染后端的 `DrawFullscreenQuad` 方法执行实际的全屏后处理渲染。
-
-#### 实现原理
-
-`ShaderParams` 是一个纯数据结构，包含纹理、uniform、时间、帧计数和视口尺寸。后端接收此结构体后，会绑定着色器程序、设置 uniform/UBO、绑定纹理，然后绘制一个覆盖整个屏幕的四边形（两个三角形），片段着色器对每个像素执行后处理计算。
-
-#### 为什么这样实现
-
-- **参数打包模式**：将多个零散参数打包为结构体，接口清晰且易于扩展。新增参数只需修改结构体定义，不影响函数签名。
-- **后端抽象**：`EffectDetailScene` 不直接调用任何 GL API，通过 `IRenderBackend` 接口委托渲染，使场景代码与具体图形 API 解耦。
-
 ---
 
-### 4.9 RenderCompareView — 对比视图渲染
+### 4.7 RenderCompareView
+
+#### 第一段：确保效果纹理存在
+
+**分析**：对比视图需要先将效果渲染到一个离屏 FBO 纹理中，然后在 ImGui 中将原图和效果图分别绘制在分割线的左右两侧。`EnsureEffectTexture()` 使用懒初始化模式——仅在第一次需要时创建与屏幕尺寸匹配的 RGBA8 纹理。
 
 ```cpp
 void EffectDetailScene::RenderCompareView(IRenderBackend* backend)
 {
-    // 1. Ensure effect texture FBO exists and matches size
-    // 步骤1：确保特效纹理 FBO 存在且尺寸匹配
-    EnsureEffectTexture();  // 懒创建 FBO 纹理（首次调用时创建）
+    // 1. 确保效果纹理 FBO 存在且尺寸匹配
+    EnsureEffectTexture();
 
-    if (m_effectTex.id == INVALID_TEXTURE.id) return;  // FBO 纹理无效则跳过
+    if (m_effectTex.id == INVALID_TEXTURE.id) return;
+```
 
-    // 2. Render effect to FBO texture
-    // 步骤2：将特效渲染到 FBO 纹理（离屏渲染）
-    backend->BeginRenderToTexture(m_effectTex);  // 绑定 FBO 为渲染目标
-    RenderFullscreenEffect(backend);               // 执行全屏特效渲染（输出到 FBO）
-    backend->EndRenderToTexture();                 // 解绑 FBO，恢复默认帧缓冲区
+#### 第二段：渲染到 FBO 纹理
 
-    // 3. ImGui will handle the compare view display in OnImGui
-    // 步骤3：ImGui 将在 OnImGui 中处理对比视图的显示
-    // （原图和特效图通过 ImGui DrawList 合成为 Before/After 分割视图）
+**分析**：调用 `BeginRenderToTexture()` 将后续渲染输出重定向到 `m_effectTex` 关联的 FBO。然后调用 `RenderFullscreenEffect()` 执行效果渲染（此时渲染结果写入 FBO 而非屏幕）。最后调用 `EndRenderToTexture()` 恢复默认帧缓冲区。实际的分屏显示在 `OnImGui()` 中通过 ImGui DrawList 完成。
+
+```cpp
+    // 2. 将效果渲染到 FBO 纹理
+    backend->BeginRenderToTexture(m_effectTex);
+    RenderFullscreenEffect(backend);
+    backend->EndRenderToTexture();
+
+    // 3. ImGui 将在 OnImGui 中处理对比视图的显示
 }
 ```
 
-#### 功能说明
+#### EnsureEffectTexture 辅助方法
 
-对比视图渲染分三步：(1) 确保 FBO 纹理已创建；(2) 将特效渲染到离屏 FBO；(3) 实际的视觉合成由 `OnImGui` 中的 ImGui 绘图指令完成。
-
-#### 实现原理
-
-离屏渲染（Off-screen Rendering）通过 FBO（Frame Buffer Object）实现。`BeginRenderToTexture` 将渲染目标从屏幕切换到 FBO 附着的纹理，`RenderFullscreenEffect` 在此纹理上执行特效计算，`EndRenderToTexture` 恢复屏幕渲染。之后 ImGui 的 `AddImage` 指令将两张纹理（原图 + 特效结果）绘制到屏幕上，通过 UV 坐标裁剪实现分割效果。
-
-#### 为什么这样实现
-
-- **渲染与展示分离**：特效计算在 GL 着色器中完成（GPU 加速），视觉合成在 ImGui 中完成（CPU 灵活控制），各取所长。
-- **懒创建 FBO**：`EnsureEffectTexture` 仅在首次需要时创建纹理，避免在非对比模式下浪费 GPU 内存。
-- **无需合成着色器**：利用 ImGui 的 `AddImage` 天然支持 UV 裁剪，无需编写额外的 Before/After 合成着色器，简化了代码。
-
----
-
-### 4.10 EnsureEffectTexture — 确保 FBO 纹理已创建
+**分析**：懒初始化效果纹理。如果已创建则直接返回，否则获取当前帧缓冲区尺寸，创建 RGBA8 格式纹理（初始数据为 nullptr，即未初始化）。此纹理在后端内部会自动关联一个 FBO。
 
 ```cpp
 void EffectDetailScene::EnsureEffectTexture()
 {
-    if (m_effectTexCreated || !m_backend) return;  // 已创建或后端无效则跳过
+    if (m_effectTexCreated || !m_backend) return;
     int w = 0, h = 0;
-    m_backend->GetFramebufferSize(w, h);  // 获取当前帧缓冲区尺寸
-    if (w <= 0 || h <= 0) return;         // 尺寸无效则跳过（窗口可能最小化）
+    m_backend->GetFramebufferSize(w, h);
+    if (w <= 0 || h <= 0) return;
     m_effectTex = m_backend->CreateTexture(w, h, TextureFormat::RGBA8, nullptr);
-    // 创建与帧缓冲区同尺寸的 RGBA8 纹理（初始数据为 nullptr，即未初始化）
-    m_effectTexCreated = true;  // 标记为已创建
+    m_effectTexCreated = true;
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-懒创建对比模式所需的 FBO 纹理。纹理尺寸与当前帧缓冲区一致，格式为 RGBA8（每个通道 8 位，满足大多数后处理需求）。
+```cpp
+void EffectDetailScene::EnsureEffectTexture()
+{
+    if (m_effectTexCreated || !m_backend) return;
+    int w = 0, h = 0;
+    m_backend->GetFramebufferSize(w, h);
+    if (w <= 0 || h <= 0) return;
+    m_effectTex = m_backend->CreateTexture(w, h, TextureFormat::RGBA8, nullptr);
+    m_effectTexCreated = true;
+}
 
-#### 实现原理
+void EffectDetailScene::RenderCompareView(IRenderBackend* backend)
+{
+    // 1. 确保效果纹理 FBO 存在且尺寸匹配
+    EnsureEffectTexture();
 
-懒初始化（Lazy Initialization）模式。仅在首次进入对比模式时创建纹理，避免在不需要时浪费 GPU 内存。传入 `nullptr` 作为初始数据，因为纹理会在每帧被特效渲染结果覆盖。
+    if (m_effectTex.id == INVALID_TEXTURE.id) return;
 
-#### 为什么这样实现
+    // 2. 将效果渲染到 FBO 纹理
+    backend->BeginRenderToTexture(m_effectTex);
+    RenderFullscreenEffect(backend);
+    backend->EndRenderToTexture();
 
-- **按需分配**：用户可能从不使用对比模式，懒创建避免不必要的 GPU 内存占用。
-- **尺寸匹配**：FBO 纹理尺寸与屏幕一致，确保特效渲染的分辨率正确，避免缩放伪影。
+    // 3. ImGui 将在 OnImGui 中处理对比视图的显示
+}
+```
 
 ---
 
-### 4.11 OnImGui — UI 面板绘制
+### 4.8 OnImGui
+
+#### 第一段：快捷键处理
+
+**分析**：TAB 键切换调试面板的显示/隐藏，C 键切换对比模式的开/关。这些快捷键在 `OnImGui()` 而非 `OnUpdate()` 中处理，因为 ImGui 的键盘状态在 `NewFrame()` 之后才可用。
 
 ```cpp
 void EffectDetailScene::OnImGui()
 {
-    // TAB to toggle debug panel visibility
-    // TAB 键切换调试面板显示/隐藏
+    // TAB 切换调试面板可见性
     if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
-        m_showDebug = !m_showDebug;  // 切换布尔值
+        m_showDebug = !m_showDebug;
     }
-    // C to toggle compare mode
-    // C 键切换对比模式
+    // C 切换对比模式
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-        m_compareMode = !m_compareMode;  // 切换布尔值
+        m_compareMode = !m_compareMode;
     }
+```
 
-    // Get framebuffer size for positioning
-    // 获取帧缓冲区尺寸，用于窗口定位
+#### 第二段：对比视图 — 原图与效果图绘制
+
+**分析**：创建一个全屏无边框的 ImGui 窗口作为对比视图的画布。使用 `ImDrawList` 的 `AddImage()` 绘制两张纹理：原图铺满整个显示区域作为底层，效果图只绘制在分割线右侧（通过 UV 映射裁剪）。注意 UV 的 Y 轴翻转（`ImVec2(0,1)` 到 `ImVec2(1,0)`），因为 OpenGL 纹理坐标原点在左下角，而 ImGui 在左上角。
+
+```cpp
+    // 获取帧缓冲区尺寸用于定位
     int width = 0, height = 0;
     if (m_backend) {
         m_backend->GetFramebufferSize(width, height);
     }
 
-    // --- Compare mode: slider before/after overlay view ---
-    // --- 对比模式：滑块式 Before/After 叠加视图 ---
+    // --- 对比模式：滑块 Before/After 叠加视图 ---
     if (m_compareMode && m_effectTex.id != INVALID_TEXTURE.id && m_backend) {
-        // 条件：对比模式开启 && 特效纹理有效 && 后端有效
-        void* origImTex = m_backend->GetImTextureID(m_inputTex);   // 获取原图的 ImGui 纹理 ID
-        void* effectImTex = m_backend->GetImTextureID(m_effectTex); // 获取特效图的 ImGui 纹理 ID
+        void* origImTex = m_backend->GetImTextureID(m_inputTex);
+        void* effectImTex = m_backend->GetImTextureID(m_effectTex);
 
-        if (origImTex && effectImTex) {  // 两个纹理 ID 都有效
-            // 创建全屏无边框窗口作为对比视图的画布
-            ImGui::SetNextWindowPos(ImVec2(0, 0));  // 窗口位置：屏幕左上角
-            ImGui::SetNextWindowSize(ImVec2((float)width, (float)height));  // 窗口大小：全屏
-            ImGui::Begin("##CompareView", nullptr,  // "##" 前缀表示隐藏标题栏
+        if (origImTex && effectImTex) {
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSize(ImVec2((float)width, (float)height));
+            ImGui::Begin("##CompareView", nullptr,
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
-                // 窗口标志：无标题栏、不可调整大小、不可移动、无滚动条、
-                // 无背景（透明）、点击时不置顶
 
-            // Calculate display region
-            // 计算显示区域（排除窗口边框/标题栏后的内容区域）
-            ImVec2 winPos   = ImGui::GetWindowPos();              // 窗口位置
-            ImVec2 regionMin = ImGui::GetWindowContentRegionMin(); // 内容区域最小坐标
-            ImVec2 regionMax = ImGui::GetWindowContentRegionMax(); // 内容区域最大坐标
-            ImVec2 displayMin = ImVec2(winPos.x + regionMin.x, winPos.y + regionMin.y); // 显示区域左上角（屏幕坐标）
-            ImVec2 displayMax = ImVec2(winPos.x + regionMax.x, winPos.y + regionMax.y); // 显示区域右下角（屏幕坐标）
-            ImVec2 displaySize(displayMax.x - displayMin.x, displayMax.y - displayMin.y); // 显示区域尺寸
+            // 计算显示区域
+            ImVec2 winPos   = ImGui::GetWindowPos();
+            ImVec2 regionMin = ImGui::GetWindowContentRegionMin();
+            ImVec2 regionMax = ImGui::GetWindowContentRegionMax();
+            ImVec2 displayMin = ImVec2(winPos.x + regionMin.x, winPos.y + regionMin.y);
+            ImVec2 displayMax = ImVec2(winPos.x + regionMax.x, winPos.y + regionMax.y);
+            ImVec2 displaySize(displayMax.x - displayMin.x, displayMax.y - displayMin.y);
 
-            ImDrawList* dl = ImGui::GetWindowDrawList();  // 获取窗口绘图列表（用于自定义绘制）
+            ImDrawList* dl = ImGui::GetWindowDrawList();
 
-            // Split position in screen coordinates
-            // 分割线在屏幕坐标中的 X 位置
+            // 分割位置在屏幕坐标中的 X 值
             float splitX = displayMin.x + displaySize.x * m_compareSplitPos;
 
-            // Draw original image as the base layer (full display area)
-            // 绘制原图作为底层（覆盖整个显示区域）
-            // GL textures have bottom-left origin, ImGui expects top-left -> flip Y
-            // GL 纹理原点在左下角，ImGui 期望左上角 -> 翻转 Y 轴 UV
+            // 绘制原图作为底层（整个显示区域）
+            // GL 纹理原点在左下角，ImGui 期望左上角 → 翻转 Y
             dl->AddImage(origImTex, displayMin, displayMax, ImVec2(0, 1), ImVec2(1, 0));
-            // UV (0,1) 到 (1,0)：翻转 Y，使图像正确显示
 
-            // Draw effect image on the right side of the split (clipped)
-            // 在分割线右侧绘制特效图（通过 UV 裁剪实现）
-            // UV mapping: the left edge of the effect image maps to splitX
-            // UV 映射：特效图像的左边缘对应分割线位置
-            float uvMinX = m_compareSplitPos;  // UV 的 X 最小值 = 分割位置比例
+            // 在分割线右侧绘制效果图（裁剪）
+            // UV 映射：效果图左边缘映射到 splitX
+            float uvMinX = m_compareSplitPos;
             dl->AddImage(effectImTex,
-                ImVec2(splitX, displayMin.y), displayMax,  // 屏幕坐标：从分割线到右下角
-                ImVec2(uvMinX, 1), ImVec2(1, 0));  // UV 坐标：从分割比例到右下角，Y 翻转
+                ImVec2(splitX, displayMin.y), displayMax,
+                ImVec2(uvMinX, 1), ImVec2(1, 0));
+```
 
-            // Draw split line (blue, 3px)
-            // 绘制分割线（蓝色，3 像素宽）
+#### 第三段：分割线与拖拽手柄绘制
+
+**分析**：在分割位置绘制一条 3 像素宽的蓝色竖线，中间放置一个圆形拖拽手柄（蓝色外圈 + 白色内圈），手柄内有左右箭头图标提示用户可以拖动。同时在左上角标注 "Before"、右上角标注 "After"。
+
+```cpp
+            // 绘制分割线（蓝色，3px）
             dl->AddLine(ImVec2(splitX, displayMin.y), ImVec2(splitX, displayMax.y),
-                        IM_COL32(68, 175, 255, 255), 3.0f);  // RGBA(68,175,255) 蓝色
+                        IM_COL32(68, 175, 255, 255), 3.0f);
 
-            // Draw drag handle (circle at center of display height)
-            // 绘制拖动手柄（显示区域高度中心的圆形）
-            float handleY = (displayMin.y + displayMax.y) * 0.5f;  // 手柄 Y 坐标 = 垂直中心
+            // 绘制拖拽手柄（在显示区域高度的中间位置画圆）
+            float handleY = (displayMin.y + displayMax.y) * 0.5f;
             dl->AddCircleFilled(ImVec2(splitX, handleY), 14.0f, IM_COL32(68, 175, 255, 255));
-            // 外圈：蓝色，半径 14px
             dl->AddCircleFilled(ImVec2(splitX, handleY), 12.0f, IM_COL32(255, 255, 255, 255));
-            // 内圈：白色，半径 12px
 
-            // Draw handle icon (left/right arrows)
             // 绘制手柄图标（左右箭头）
             dl->AddTriangleFilled(
                 ImVec2(splitX - 6, handleY - 3), ImVec2(splitX - 2, handleY), ImVec2(splitX - 6, handleY + 3),
-                IM_COL32(68, 175, 255, 255));  // 左箭头（三角形）
+                IM_COL32(68, 175, 255, 255));
             dl->AddTriangleFilled(
                 ImVec2(splitX + 6, handleY - 3), ImVec2(splitX + 2, handleY), ImVec2(splitX + 6, handleY + 3),
-                IM_COL32(68, 175, 255, 255));  // 右箭头（三角形）
+                IM_COL32(68, 175, 255, 255));
 
-            // Labels: "Before" on left, "After" on right
             // 标签：左侧 "Before"，右侧 "After"
             dl->AddText(ImVec2(displayMin.x + 10, displayMin.y + 10),
-                        IM_COL32(255, 255, 255, 200), "Before");  // 半透明白色文字
+                        IM_COL32(255, 255, 255, 200), "Before");
             dl->AddText(ImVec2(displayMax.x - 60, displayMin.y + 10),
-                        IM_COL32(255, 255, 255, 200), "After");   // 半透明白色文字
+                        IM_COL32(255, 255, 255, 200), "After");
+```
 
-            // Handle mouse interaction for dragging the split
-            // 处理鼠标拖动分割线的交互
-            ImVec2 mousePos = ImGui::GetIO().MousePos;  // 获取鼠标位置
+#### 第四段：鼠标拖拽交互
+
+**分析**：实现分割线的鼠标拖拽交互。首先检测鼠标是否靠近分割线（20 像素范围内），如果是则将光标设为东西向调整大小样式。鼠标按下时开始拖拽，拖拽过程中实时更新分割位置（限制在 0.1~0.9 范围内），鼠标释放时结束拖拽。
+
+```cpp
+            // 处理分割线拖拽的鼠标交互
+            ImVec2 mousePos = ImGui::GetIO().MousePos;
             bool mouseInWindow = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
-            // 检查鼠标是否在窗口内（包括子窗口）
 
-            // Check if mouse is near the split line
-            // 检查鼠标是否靠近分割线
+            // 检测鼠标是否靠近分割线
             bool nearSplit = mouseInWindow &&
-                std::abs(mousePos.x - splitX) < 20.0f &&  // 距离分割线 < 20px
-                mousePos.y >= displayMin.y && mousePos.y <= displayMax.y;  // 在垂直范围内
+                std::abs(mousePos.x - splitX) < 20.0f &&
+                mousePos.y >= displayMin.y && mousePos.y <= displayMax.y;
 
-            // Set cursor to resize east-west when near split
-            // 靠近分割线时设置鼠标光标为东西调整大小样式
+            // 靠近分割线时设置光标为东西向调整大小
             if (nearSplit || m_compareDragging) {
-                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);  // 光标
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
             }
 
-            // Handle drag start (on mouse down)
-            // 处理拖动开始（鼠标按下时）
+            // 处理拖拽开始（鼠标按下）
             if (nearSplit && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                m_compareDragging = true;  // 开始拖动
+                m_compareDragging = true;
             }
 
-            // Handle drag update
-            // 处理拖动更新（鼠标移动时）
+            // 处理拖拽更新
             if (m_compareDragging && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                float newSplit = (mousePos.x - displayMin.x) / displaySize.x;  // 计算新的分割比例
-                m_compareSplitPos = std::clamp(newSplit, 0.1f, 0.9f);  // 限制在 10%~90% 范围内
+                float newSplit = (mousePos.x - displayMin.x) / displaySize.x;
+                m_compareSplitPos = std::clamp(newSplit, 0.1f, 0.9f);
             }
 
-            // Handle drag end
-            // 处理拖动结束（鼠标释放时）
+            // 处理拖拽结束
             if (m_compareDragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-                m_compareDragging = false;  // 结束拖动
+                m_compareDragging = false;
             }
 
-            ImGui::End();  // 结束对比视图窗口
+            ImGui::End();
         }
     }
+```
 
-    // --- InfoBar at bottom of screen ---
-    // --- 屏幕底部的信息栏 ---
+#### 第五段：底部信息栏
+
+**分析**：在屏幕底部创建一个 60 像素高的信息栏，显示当前特效名称（白色）、ESC 返回提示（灰色）和特效描述（浅灰色）。使用 `LanguageManager` 实现多语言支持。
+
+```cpp
+    // --- 底部信息栏 ---
     {
-        const float barHeight = 60.0f;  // 信息栏高度 60px
-        ImGui::SetNextWindowPos(ImVec2(0, (float)height - barHeight));  // 位置：屏幕底部
-        ImGui::SetNextWindowSize(ImVec2((float)width, barHeight));       // 大小：全宽 x 60px
-        ImGui::Begin("##InfoBar", nullptr,  // 隐藏标题栏
+        const float barHeight = 60.0f;
+        ImGui::SetNextWindowPos(ImVec2(0, (float)height - barHeight));
+        ImGui::SetNextWindowSize(ImVec2((float)width, barHeight));
+        ImGui::Begin("##InfoBar", nullptr,
             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-            ImGuiWindowFlags_NoSavedSettings);  // 不保存设置（避免影响布局）
+            ImGuiWindowFlags_NoSavedSettings);
         ImGui::TextColored(ImVec4(1, 1, 1, 0.9f), "%s", LanguageManager::Instance().CardName(m_card.id));
-        // 显示特效名称（白色，90% 不透明度），通过 LanguageManager 支持多语言
-        ImGui::SameLine();  // 在同一行继续
+        ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.7f, 0.7f), "%s", LanguageManager::Instance().EscReturn());
-        // 显示 "按 ESC 返回" 提示（灰色，70% 不透明度）
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 0.8f), "%s", LanguageManager::Instance().CardDesc(m_card.id));
-        // 显示特效描述（浅灰色，80% 不透明度）
         ImGui::End();
     }
+```
 
-    // --- Debug Panel ---
+#### 第六段：调试面板与素材库
+
+**分析**：调试面板显示所有着色器参数的滑动条/输入框，用户可实时调整参数值。面板渲染后立即同步 uniform 值，确保下一帧渲染使用最新参数。素材库面板显示 CoverFlow 中保存的图片和视频池，用户可点击切换输入源。
+
+```cpp
     // --- 调试面板 ---
-    if (m_showDebug) {  // 调试面板可见
+    if (m_showDebug) {
         ImGui::Begin(LanguageManager::Instance().EffectParams(), &m_showDebug);
-        // 窗口标题从 LanguageManager 获取，&m_showDebug 允许通过关闭按钮隐藏
-        m_debugPanel.Render(&m_showDebug);  // 渲染调试面板内容（滑块、颜色选择器等）
+        m_debugPanel.Render(&m_showDebug);
         ImGui::End();
-        // Update uniform values after UI interaction
         // UI 交互后更新 uniform 值
         m_debugPanel.SetUniformValues(m_uniformFloats, m_uniformInts);
         if (m_uniformFloats.size() != m_expectedFloatCount) {
-            m_uniformFloats.resize(m_expectedFloatCount, 0.0f);  // 校验并修复数组长度
+            m_uniformFloats.resize(m_expectedFloatCount, 0.0f);
         }
     }
 
-    // --- Asset Library Panel ---
-    // --- 资产库面板 ---
+    // --- 素材库面板 ---
     if (m_showDebug && !m_savedState.imagePool.empty()) {
-        // 条件：调试面板可见 && 图片池非空
         ImGui::SetNextWindowSize(ImVec2(250, 300), ImGuiCond_FirstUseEver);
-        // 首次使用时的默认大小 250x300
         if (ImGui::Begin(LanguageManager::Instance().AssetLibrary(), &m_showDebug)) {
-            // Images section
-            // 图片部分
+            // 图片区域
             if (ImGui::CollapsingHeader(LanguageManager::Instance().Images())) {
-                // 可折叠标题："图片"
                 for (size_t i = 0; i < m_savedState.imagePool.size(); i++) {
-                    const std::string& path = m_savedState.imagePool[i];  // 获取图片路径
-                    // Extract filename for display
+                    const std::string& path = m_savedState.imagePool[i];
                     // 提取文件名用于显示
                     std::string fname = path;
-                    size_t pos = path.find_last_of("/\\");  // 查找最后一个路径分隔符
-                    if (pos != std::string::npos) fname = path.substr(pos + 1);  // 截取文件名
-                    if (ImGui::SmallButton(fname.c_str())) {  // 小按钮显示文件名
-                        LoadImageFromFile(path);  // 点击后加载该图片
+                    size_t pos = path.find_last_of("/\\");
+                    if (pos != std::string::npos) fname = path.substr(pos + 1);
+                    if (ImGui::SmallButton(fname.c_str())) {
+                        LoadImageFromFile(path);
                     }
                 }
             }
-            // Videos section
-            // 视频部分
+            // 视频区域
             if (!m_savedState.videoPool.empty() && ImGui::CollapsingHeader(LanguageManager::Instance().Videos())) {
-                // 条件：视频池非空 && 可折叠标题展开
                 for (size_t i = 0; i < m_savedState.videoPool.size(); i++) {
                     const std::string& path = m_savedState.videoPool[i];
                     std::string fname = path;
                     size_t pos = path.find_last_of("/\\");
                     if (pos != std::string::npos) fname = path.substr(pos + 1);
                     if (ImGui::SmallButton(fname.c_str())) {
-                        LoadVideoFromFile(path);  // 点击后加载该视频
+                        LoadVideoFromFile(path);
                     }
                 }
             }
         }
         ImGui::End();
     }
+```
 
-    // ---- Detail page screenshot mode ----
-    // ---- 详情页截图模式（自动测试用） ----
-    if (getenv("AUTO_TEST_DETAILS")) {  // 检测环境变量，启用自动截图
-        static int detailScreenshotIndex = 0;  // 截图序号（static 跨实例保持）
-        static int frameCounter = 0;            // 帧计数器
-        static bool needsScreenshot = true;    // 是否需要截图（首帧为 true）
+#### 完整源码
 
-        frameCounter++;
+```cpp
+void EffectDetailScene::OnImGui()
+{
+    // TAB 切换调试面板可见性
+    if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
+        m_showDebug = !m_showDebug;
+    }
+    // C 切换对比模式
+    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+        m_compareMode = !m_compareMode;
+    }
 
-        // Take screenshot after UI renders
-        // 在 UI 渲染后截图（等待 5 帧让 UI 稳定）
-        if (needsScreenshot && frameCounter >= 5) {
-            char path[256];
-            snprintf(path, sizeof(path), "e:/AI/graph/hight-post-proc/screenshots/detail_%02d.ppm", detailScreenshotIndex);
-            // 生成截图文件路径
-            ScreenshotRequest::Request(path);  // 请求截图（在帧结束时执行）
-            printf("[DetailScreenshot] Requested screenshot: %s\n", path);
-            needsScreenshot = false;  // 已请求，标记为不需要
-        }
+    // 获取帧缓冲区尺寸用于定位
+    int width = 0, height = 0;
+    if (m_backend) {
+        m_backend->GetFramebufferSize(width, height);
+    }
 
-        // Exit after showing for a while
-        // 显示一段时间后退出
-        if (frameCounter >= 30) {  // 30 帧后退出（约 0.5 秒 @ 60fps）
-            frameCounter = 0;       // 重置帧计数器
-            detailScreenshotIndex++;  // 递增截图序号
-            if (detailScreenshotIndex < 18) {  // 还有更多特效要截图
-                needsScreenshot = true;  // 下一张需要截图
+    // --- 对比模式：滑块 Before/After 叠加视图 ---
+    if (m_compareMode && m_effectTex.id != INVALID_TEXTURE.id && m_backend) {
+        void* origImTex = m_backend->GetImTextureID(m_inputTex);
+        void* effectImTex = m_backend->GetImTextureID(m_effectTex);
+
+        if (origImTex && effectImTex) {
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSize(ImVec2((float)width, (float)height));
+            ImGui::Begin("##CompareView", nullptr,
+                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+            // 计算显示区域
+            ImVec2 winPos   = ImGui::GetWindowPos();
+            ImVec2 regionMin = ImGui::GetWindowContentRegionMin();
+            ImVec2 regionMax = ImGui::GetWindowContentRegionMax();
+            ImVec2 displayMin = ImVec2(winPos.x + regionMin.x, winPos.y + regionMin.y);
+            ImVec2 displayMax = ImVec2(winPos.x + regionMax.x, winPos.y + regionMax.y);
+            ImVec2 displaySize(displayMax.x - displayMin.x, displayMax.y - displayMin.y);
+
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+
+            // 分割位置在屏幕坐标中的 X 值
+            float splitX = displayMin.x + displaySize.x * m_compareSplitPos;
+
+            // 绘制原图作为底层（整个显示区域）
+            // GL 纹理原点在左下角，ImGui 期望左上角 → 翻转 Y
+            dl->AddImage(origImTex, displayMin, displayMax, ImVec2(0, 1), ImVec2(1, 0));
+
+            // 在分割线右侧绘制效果图（裁剪）
+            float uvMinX = m_compareSplitPos;
+            dl->AddImage(effectImTex,
+                ImVec2(splitX, displayMin.y), displayMax,
+                ImVec2(uvMinX, 1), ImVec2(1, 0));
+
+            // 绘制分割线（蓝色，3px）
+            dl->AddLine(ImVec2(splitX, displayMin.y), ImVec2(splitX, displayMax.y),
+                        IM_COL32(68, 175, 255, 255), 3.0f);
+
+            // 绘制拖拽手柄（圆形）
+            float handleY = (displayMin.y + displayMax.y) * 0.5f;
+            dl->AddCircleFilled(ImVec2(splitX, handleY), 14.0f, IM_COL32(68, 175, 255, 255));
+            dl->AddCircleFilled(ImVec2(splitX, handleY), 12.0f, IM_COL32(255, 255, 255, 255));
+
+            // 绘制手柄图标（左右箭头）
+            dl->AddTriangleFilled(
+                ImVec2(splitX - 6, handleY - 3), ImVec2(splitX - 2, handleY), ImVec2(splitX - 6, handleY + 3),
+                IM_COL32(68, 175, 255, 255));
+            dl->AddTriangleFilled(
+                ImVec2(splitX + 6, handleY - 3), ImVec2(splitX + 2, handleY), ImVec2(splitX + 6, handleY + 3),
+                IM_COL32(68, 175, 255, 255));
+
+            // 标签：左侧 "Before"，右侧 "After"
+            dl->AddText(ImVec2(displayMin.x + 10, displayMin.y + 10),
+                        IM_COL32(255, 255, 255, 200), "Before");
+            dl->AddText(ImVec2(displayMax.x - 60, displayMin.y + 10),
+                        IM_COL32(255, 255, 255, 200), "After");
+
+            // 处理分割线拖拽的鼠标交互
+            ImVec2 mousePos = ImGui::GetIO().MousePos;
+            bool mouseInWindow = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
+
+            // 检测鼠标是否靠近分割线
+            bool nearSplit = mouseInWindow &&
+                std::abs(mousePos.x - splitX) < 20.0f &&
+                mousePos.y >= displayMin.y && mousePos.y <= displayMax.y;
+
+            // 靠近分割线时设置光标为东西向调整大小
+            if (nearSplit || m_compareDragging) {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
             }
-            // Return to coverflow
-            // 返回封面流
-            m_returnToCoverFlow = true;
-            m_wantsExit = true;
+
+            // 处理拖拽开始（鼠标按下）
+            if (nearSplit && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                m_compareDragging = true;
+            }
+
+            // 处理拖拽更新
+            if (m_compareDragging && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                float newSplit = (mousePos.x - displayMin.x) / displaySize.x;
+                m_compareSplitPos = std::clamp(newSplit, 0.1f, 0.9f);
+            }
+
+            // 处理拖拽结束
+            if (m_compareDragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                m_compareDragging = false;
+            }
+
+            ImGui::End();
         }
+    }
+
+    // --- 底部信息栏 ---
+    {
+        const float barHeight = 60.0f;
+        ImGui::SetNextWindowPos(ImVec2(0, (float)height - barHeight));
+        ImGui::SetNextWindowSize(ImVec2((float)width, barHeight));
+        ImGui::Begin("##InfoBar", nullptr,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoSavedSettings);
+        ImGui::TextColored(ImVec4(1, 1, 1, 0.9f), "%s", LanguageManager::Instance().CardName(m_card.id));
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.7f, 0.7f), "%s", LanguageManager::Instance().EscReturn());
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 0.8f), "%s", LanguageManager::Instance().CardDesc(m_card.id));
+        ImGui::End();
+    }
+
+    // --- 调试面板 ---
+    if (m_showDebug) {
+        ImGui::Begin(LanguageManager::Instance().EffectParams(), &m_showDebug);
+        m_debugPanel.Render(&m_showDebug);
+        ImGui::End();
+        // UI 交互后更新 uniform 值
+        m_debugPanel.SetUniformValues(m_uniformFloats, m_uniformInts);
+        if (m_uniformFloats.size() != m_expectedFloatCount) {
+            m_uniformFloats.resize(m_expectedFloatCount, 0.0f);
+        }
+    }
+
+    // --- 素材库面板 ---
+    if (m_showDebug && !m_savedState.imagePool.empty()) {
+        ImGui::SetNextWindowSize(ImVec2(250, 300), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(LanguageManager::Instance().AssetLibrary(), &m_showDebug)) {
+            // 图片区域
+            if (ImGui::CollapsingHeader(LanguageManager::Instance().Images())) {
+                for (size_t i = 0; i < m_savedState.imagePool.size(); i++) {
+                    const std::string& path = m_savedState.imagePool[i];
+                    std::string fname = path;
+                    size_t pos = path.find_last_of("/\\");
+                    if (pos != std::string::npos) fname = path.substr(pos + 1);
+                    if (ImGui::SmallButton(fname.c_str())) {
+                        LoadImageFromFile(path);
+                    }
+                }
+            }
+            // 视频区域
+            if (!m_savedState.videoPool.empty() && ImGui::CollapsingHeader(LanguageManager::Instance().Videos())) {
+                for (size_t i = 0; i < m_savedState.videoPool.size(); i++) {
+                    const std::string& path = m_savedState.videoPool[i];
+                    std::string fname = path;
+                    size_t pos = path.find_last_of("/\\");
+                    if (pos != std::string::npos) fname = path.substr(pos + 1);
+                    if (ImGui::SmallButton(fname.c_str())) {
+                        LoadVideoFromFile(path);
+                    }
+                }
+            }
+        }
+        ImGui::End();
     }
 }
 ```
 
-#### 功能说明
-
-`OnImGui` 是 UI 渲染的核心，包含五大功能区域：(1) 对比模式的 Before/After 分割视图（含拖动交互）；(2) 底部信息栏（特效名称和操作提示）；(3) 调试参数面板（滑块/颜色选择器）；(4) 资产库面板（快速切换输入图片/视频）；(5) 自动测试截图模式。
-
-#### 实现原理
-
-**对比视图**使用 ImGui 的 `ImDrawList` 自定义绘制。通过两次 `AddImage` 调用叠加原图和特效图，利用 UV 坐标裁剪实现分割效果。原图绘制为全屏底层，特效图只绘制分割线右侧部分（UV 的 `uMinX = m_compareSplitPos`）。拖动交互通过三态状态机实现：`nearSplit && MouseClicked` -> `Dragging && MouseDown` -> `Dragging && MouseReleased`。
-
-**信息栏**使用固定位置的 ImGui 窗口，通过 `LanguageManager` 实现多语言支持。
-
-**调试面板**委托给 `DebugPanel::Render`，参数修改后立即通过 `SetUniformValues` 同步到 `m_uniformFloats`/`m_uniformInts`。
-
-#### 为什么这样实现
-
-- **UV 裁剪 vs 着色器裁剪**：使用 ImGui 的 `AddImage` UV 裁剪而非编写专门的合成着色器，代码更简洁，且天然支持 ImGui 的窗口管理和输入处理。
-- **Y 轴翻转**：OpenGL 纹理坐标原点在左下角（Y=0 在底部），而 ImGui 屏幕坐标原点在左上角（Y=0 在顶部）。`AddImage` 的 UV 参数 `(0,1)` 到 `(1,0)` 实现了 Y 轴翻转，使图像正确显示。
-- **拖动范围限制**：`std::clamp(newSplit, 0.1f, 0.9f)` 防止分割线被拖到极端位置导致一侧完全不可见。
-- **static 变量**：自动测试的截图序号和帧计数器使用 `static`，跨场景实例保持连续性，确保每个特效按序截图。
-
 ---
 
-### 4.12 GetNextScene — 返回封面流与状态恢复
+### 4.9 GetNextScene
+
+#### 第一段：重建 CoverFlowScene
+
+**分析**：当 `m_returnToCoverFlow` 为 true 时，创建新的 `CoverFlowScene` 并完整恢复之前保存的状态：输入纹理、纹理缓存、后端指针、应用指针、测试图片目录、选中卡片索引、图片池和自动测试状态。这种"状态快照-恢复"模式确保用户返回 CoverFlow 时看到的状态与离开时完全一致。
 
 ```cpp
 std::unique_ptr<Scene> EffectDetailScene::GetNextScene()
 {
-    if (m_returnToCoverFlow) {  // 如果需要返回封面流
+    if (m_returnToCoverFlow) {
         printf("[EffectDetailScene] Restoring CoverFlowScene with full state\n");
-
-        auto coverFlow = std::make_unique<CoverFlowScene>();  // 创建新的封面流场景
-        coverFlow->SetInputTexture(m_savedState.inputTex);  // 恢复输入纹理
+        auto coverFlow = std::make_unique<CoverFlowScene>();
+        coverFlow->SetInputTexture(m_savedState.inputTex);       // 恢复输入纹理
         coverFlow->SetInputTexCache(m_savedState.inputTexCache);  // 恢复纹理缓存
-        coverFlow->SetBackend(m_savedState.backend);  // 恢复后端指针
-        coverFlow->SetApplication(m_savedState.app);  // 恢复应用指针
-        // Thumbnails are now initialized internally by CoverFlowScene::OnEnter
-        // 缩略图现在由 CoverFlowScene::OnEnter 内部初始化
-        coverFlow->SetTestImageBaseDir(m_savedState.testImageBaseDir);  // 恢复测试图片目录
+        coverFlow->SetBackend(m_savedState.backend);              // 恢复后端
+        coverFlow->SetApplication(m_savedState.app);              // 恢复应用指针
+        // 缩略图由 CoverFlowScene::OnEnter 内部初始化
+        coverFlow->SetTestImageBaseDir(m_savedState.testImageBaseDir);
 
-        // Restore selected card index so user returns to the same card
         // 恢复选中的卡片索引，使用户返回到同一张卡片
         coverFlow->SetSelectedIndex(m_savedState.selectedIndex);
 
-        // Restore image pool
-        // 恢复图片池（用户通过拖放添加的图片）
+        // 恢复图片池
         for (const auto& img : m_savedState.imagePool) {
-            coverFlow->AddImageToPool(img);  // 逐个添加图片路径到池中
+            coverFlow->AddImageToPool(img);
         }
 
-        // Restore auto-test state
         // 恢复自动测试状态
-        if (m_savedState.autoTest) {  // 如果之前在自动测试模式
+        if (m_savedState.autoTest) {
             coverFlow->ResumeAutoTest(m_savedState.autoTestHoldFrames, m_savedState.autoTestCardIndex);
-            // 恢复自动测试的剩余帧数和当前卡片索引
         }
+```
 
-        // Transfer video player back to CoverFlowScene
+#### 第二段：视频播放器回传
+
+**分析**：如果详情页正在播放视频，将视频播放器所有权转移回 CoverFlowScene。使用 `std::move` 确保唯一所有权语义，避免两个场景同时持有播放器。转移后将本地的 `m_videoActive` 设为 false，防止析构时重复释放。
+
+```cpp
         // 将视频播放器转移回 CoverFlowScene
-        if (m_videoActive && m_videoPlayer) {  // 如果视频正在播放
+        if (m_videoActive && m_videoPlayer) {
             coverFlow->SetVideoPlayer(std::move(m_videoPlayer), m_videoTex, true, m_videoLastFrameTime);
-            // 移动转移视频播放器所有权回封面流
-            m_videoActive = false;  // 标记为不再活跃
-            m_videoTex = {0};        // 重置纹理句柄
+            m_videoActive = false;
+            m_videoTex = {0};
             printf("[EffectDetailScene] Transferred video player back to CoverFlow\n");
         }
 
         printf("[EffectDetailScene] CoverFlowScene restored (thumbs=%zu, pool=%zu)\n",
                m_savedState.thumbIds.size(), m_savedState.imagePool.size());
-        // 日志输出恢复的状态信息
-        return coverFlow;  // 返回新创建的封面流场景
+        return coverFlow;
     }
-    return nullptr;  // 不需要切换场景则返回空
+    return nullptr;
 }
 ```
 
-#### 功能说明
-
-在用户按 ESC 或自动测试计时器到期时，创建新的 `CoverFlowScene` 并恢复之前保存的完整状态，包括选中索引、图片池、视频播放器、自动测试进度等。
-
-#### 实现原理
-
-采用"销毁-重建"模式而非"暂停-恢复"模式。每次返回封面流都创建全新的 `CoverFlowScene` 对象，然后通过一系列 `Set*` 方法恢复状态。`CoverFlowState` 结构体作为状态快照，在进入详情页时保存，在返回时用于恢复。
-
-视频播放器通过 `std::move` 在两个场景间转移所有权，确保同一时间只有一个场景持有播放器。
-
-#### 为什么这样实现
-
-- **销毁-重建 vs 暂停-恢复**：销毁-重建模式更简单，避免了复杂的状态管理。`CoverFlowScene` 的 `OnEnter` 会重新初始化缩略图等资源，确保状态一致性。
-- **状态快照**：`CoverFlowState` 结构体是轻量的值类型（包含句柄、索引、路径等），复制成本低。
-- **视频播放器连续性**：通过所有权转移，视频在场景切换时无缝继续播放，用户不会感知到中断。
-
----
-
-### 4.13 LoadImageFromFile — 从文件加载图片
+#### 完整源码
 
 ```cpp
-void EffectDetailScene::LoadImageFromFile(const std::string& path)
+std::unique_ptr<Scene> EffectDetailScene::GetNextScene()
 {
-    if (!m_backend) return;  // 后端无效则跳过
+    if (m_returnToCoverFlow) {
+        printf("[EffectDetailScene] Restoring CoverFlowScene with full state\n");
+        auto coverFlow = std::make_unique<CoverFlowScene>();
+        coverFlow->SetInputTexture(m_savedState.inputTex);
+        coverFlow->SetInputTexCache(m_savedState.inputTexCache);
+        coverFlow->SetBackend(m_savedState.backend);
+        coverFlow->SetApplication(m_savedState.app);
+        // 缩略图由 CoverFlowScene::OnEnter 内部初始化
+        coverFlow->SetTestImageBaseDir(m_savedState.testImageBaseDir);
 
-    int iw, ih, comp;  // 图片宽度、高度、通道数（stb_image 输出参数）
-    stbi_set_flip_vertically_on_load(true);  // 设置 stb_image 加载时垂直翻转
-    // OpenGL 纹理坐标原点在左下角，图片文件通常原点在左上角，需要翻转
-    stbi_uc* data = stbi_load(path.c_str(), &iw, &ih, &comp, 4);
-    // 加载图片，强制 4 通道（RGBA），comp 返回原始通道数
-    stbi_set_flip_vertically_on_load(false);  // 恢复默认设置（不翻转）
+        // 恢复选中的卡片索引
+        coverFlow->SetSelectedIndex(m_savedState.selectedIndex);
 
-    if (!data) {  // 加载失败
-        fprintf(stderr, "[EffectDetailScene] Cannot load: %s\n", path.c_str());
-        return;
-    }
-
-    printf("[EffectDetailScene] Loading image: %s (%d x %d)\n", path.c_str(), iw, ih);
-
-    TextureHandle newTex = m_backend->CreateTexture(iw, ih, TextureFormat::RGBA8, data);
-    // 创建 GL 纹理，传入图片像素数据
-    stbi_image_free(data);  // 释放 stb_image 分配的像素数据
-
-    if (newTex.id != INVALID_TEXTURE.id) {  // 纹理创建成功
-        // Destroy old input texture to prevent leak
-        // 销毁旧的输入纹理以防止内存泄漏
-        if (m_inputTex.id != INVALID_TEXTURE.id) {
-            m_backend->DestroyTexture(m_inputTex);
+        // 恢复图片池
+        for (const auto& img : m_savedState.imagePool) {
+            coverFlow->AddImageToPool(img);
         }
-        m_inputTex = newTex;  // 更新输入纹理为新加载的图片
-        // Also update saved state so CoverFlow gets the new texture
-        // 同时更新保存的状态，使封面流也能获得新纹理
-        m_savedState.inputTex = newTex;
+
+        // 恢复自动测试状态
+        if (m_savedState.autoTest) {
+            coverFlow->ResumeAutoTest(m_savedState.autoTestHoldFrames, m_savedState.autoTestCardIndex);
+        }
+
+        // 将视频播放器转移回 CoverFlowScene
+        if (m_videoActive && m_videoPlayer) {
+            coverFlow->SetVideoPlayer(std::move(m_videoPlayer), m_videoTex, true, m_videoLastFrameTime);
+            m_videoActive = false;
+            m_videoTex = {0};
+            printf("[EffectDetailScene] Transferred video player back to CoverFlow\n");
+        }
+
+        printf("[EffectDetailScene] CoverFlowScene restored (thumbs=%zu, pool=%zu)\n",
+               m_savedState.thumbIds.size(), m_savedState.imagePool.size());
+        return coverFlow;
     }
+    return nullptr;
 }
 ```
-
-#### 功能说明
-
-使用 stb_image 库加载图片文件，创建 GL 纹理并替换当前输入纹理。支持拖放和资产库面板触发的图片加载。
-
-#### 实现原理
-
-stb_image 是一个单头文件图片加载库，支持 JPG、PNG、BMP 等常见格式。`stbi_load` 的第 5 个参数 `4` 表示强制输出 RGBA 格式，与 `TextureFormat::RGBA8` 匹配。`stbi_set_flip_vertically_on_load(true)` 在加载时翻转 Y 轴，使图片数据与 OpenGL 纹理坐标方向一致。
-
-#### 为什么这样实现
-
-- **stb_image 选择**：轻量级、零依赖、支持格式广泛，适合工具类应用。
-- **旧纹理销毁**：每次加载新图片都销毁旧纹理，防止 GPU 内存泄漏。这是必要的，因为用户可能反复拖放不同图片。
-- **状态同步**：更新 `m_savedState.inputTex` 确保返回封面流时使用最新的输入纹理。
-
----
-
-### 4.14 LoadVideoFromFile / StopVideo — 视频加载与停止
-
-```cpp
-void EffectDetailScene::LoadVideoFromFile(const std::string& path)
-{
-    if (!m_backend) return;  // 后端无效则跳过
-
-    // Stop any existing video
-    // 停止当前正在播放的视频（如果有）
-    StopVideo();
-
-    m_videoPlayer = std::make_unique<VideoPlayer>();  // 创建新的视频播放器
-    if (!m_videoPlayer->Open(path)) {  // 打开视频文件（启动 FFmpeg 管道）
-        fprintf(stderr, "[EffectDetailScene] Cannot open video: %s\n", path.c_str());
-        m_videoPlayer.reset();  // 打开失败，释放播放器
-        return;
-    }
-
-    // Create texture for video frames
-    // 为视频帧创建纹理
-    m_videoTex = m_backend->CreateTexture(
-        m_videoPlayer->GetWidth(), m_videoPlayer->GetHeight(),  // 视频尺寸
-        TextureFormat::RGBA8, m_videoPlayer->GetPixels());  // RGBA8 格式，初始帧数据
-
-    if (m_videoTex.id == INVALID_TEXTURE.id) {  // 纹理创建失败
-        fprintf(stderr, "[EffectDetailScene] Cannot create video texture\n");
-        m_videoPlayer->Close();  // 关闭视频
-        m_videoPlayer.reset();   // 释放播放器
-        return;
-    }
-
-    m_inputTex = m_videoTex;  // 将视频纹理设为特效输入
-    m_videoActive = true;      // 标记视频为活跃状态
-    m_videoLastFrameTime = ImGui::GetTime();  // 初始化帧时间戳
-    printf("[EffectDetailScene] Playing video: %s\n", path.c_str());
-}
-
-void EffectDetailScene::StopVideo()
-{
-    if (m_videoPlayer) {  // 播放器存在
-        m_videoPlayer->Close();  // 关闭 FFmpeg 管道
-        m_videoPlayer.reset();   // 释放播放器对象（unique_ptr）
-    }
-    m_videoActive = false;  // 标记视频为非活跃
-    // Note: we don't destroy m_videoTex here because it might still be referenced
-    // A proper implementation would use reference counting.
-    // 注意：此处不销毁 m_videoTex，因为它可能仍被引用
-    // 更完善的实现应使用引用计数
-}
-```
-
-#### 功能说明
-
-`LoadVideoFromFile` 打开视频文件并创建对应的 GL 纹理。视频通过 FFmpeg 管道解码，以 30fps 输出帧到纹理，特效着色器实时处理每一帧。`StopVideo` 停止视频播放并释放播放器资源。
-
-#### 实现原理
-
-`VideoPlayer::Open` 启动一个 FFmpeg 子进程，通过管道接收解码后的 RGB 帧数据。第一帧在 `Open` 时就已可用，用于初始化纹理。后续帧在 `OnUpdate` 中按 30fps 节流读取。
-
-#### 为什么这样实现
-
-- **先停后建**：加载新视频前先调用 `StopVideo()`，确保旧的 FFmpeg 管道被正确关闭，避免资源泄漏。
-- **首帧初始化**：使用第一帧数据初始化纹理，避免显示空白帧。
-- **纹理生命周期解耦**：`StopVideo` 不销毁视频纹理，因为它可能仍作为 `m_inputTex` 被特效着色器引用。纹理在场景退出时统一销毁，不会泄漏。
 
 ---
 
 ## 5. OpenGL 渲染后端
 
-`OpenGLBackend` 是 `IRenderBackend` 接口的 OpenGL 4.6 实现，负责着色器编译（SPIR-V）、纹理管理、全屏四边形渲染、FBO 离屏渲染、3D 卡片渲染和 ImGui 集成。
+`OpenGLBackend` 是 `IRenderBackend` 接口的 OpenGL 4.6 实现，负责所有 GPU 资源管理、着色器编译、全屏后处理渲染、3D 卡片渲染和 ImGui 集成。它使用 SPIR-V 作为着色器中间语言，通过 `glShaderBinary` + `glSpecializeShader` 加载，实现了与 Vulkan 后端的着色器共享。
 
-### 5.1 IRenderBackend 接口定义
+---
+
+### 5.1 IRenderBackend 接口
+
+#### 接口概览
+
+**分析**：`IRenderBackend` 是纯虚接口（抽象基类），定义了渲染后端必须实现的全部功能。设计上遵循"接口隔离"原则，将功能分为几个逻辑组：
+
+1. **生命周期**：`Init`/`Shutdown`/`BeginFrame`/`EndFrame`/`WaitIdle`
+2. **视口管理**：`Resize`/`GetFramebufferSize`
+3. **着色器管理**：支持 SPIR-V（`CreateVertexShader`/`CreateFragmentShader`）和 GLSL（`CreateVertexShaderFromGLSL`/`CreateFragmentShaderFromGLSL`）两种路径
+4. **纹理管理**：`CreateTexture`/`UpdateTexture`/`DestroyTexture`/`GetImTextureID`
+5. **管线对象**：`CreatePipeline`/`DestroyPipeline`/`BindPipeline`（OpenGL 中为兼容性桩实现）
+6. **全屏渲染**：`DrawFullscreenQuad`（核心后处理绘制入口）
+7. **3D 卡片**：`DrawCards`（封面流 3D 卡片渲染）
+8. **帧缓冲操作**：`BlitToScreen`/`BeginRenderToTexture`/`EndRenderToTexture`
+9. **ImGui 集成**：`ImGuiInit`/`ImGuiNewFrame`/`ImGuiRender`/`ImGuiShutdown`
+10. **查询**：`GetType`/`GetName`/`GetMaxTextureSize`
+
+`PipelineDesc` 结构体描述管线创建参数（着色器句柄 + 尺寸 + 混合开关）。`ShaderParams` 结构体封装每次全屏绘制所需的全部数据：输入纹理数组、uniform float/int 数组、视口尺寸、时间和帧计数。`CardDrawInfo` 结构体描述单张 3D 卡片的变换参数（位置、缩放、旋转、不透明度）。
 
 ```cpp
 #pragma once
 
-#include "BackendType.h"  // BackendType 枚举（OpenGL / Vulkan）
+#include "BackendType.h"
 
 #include <cstdint>
 #include <vector>
 #include <string>
 
-// Forward declaration
-// 前向声明：GLFW 窗口句柄
+// 前向声明
 struct GLFWwindow;
 
-// Pipeline description for creating pipelines
-// 管线描述结构体，用于创建渲染管线
+// 管线描述（用于创建管线）
 struct PipelineDesc {
-    ShaderHandle vertShader;  // 顶点着色器句柄
-    ShaderHandle fragShader;  // 片段着色器句柄
-    int width;                 // 渲染宽度
-    int height;                // 渲染高度
-    bool blendEnable = true;   // 是否启用混合（默认启用）
+    ShaderHandle vertShader;   // 顶点着色器句柄
+    ShaderHandle fragShader;   // 片段着色器句柄
+    int width;                 // 宽度
+    int height;                // 高度
+    bool blendEnable = true;   // 是否启用混合
 };
 
 // ---------------------------------------------------------------------------
-// ShaderParams — data passed per fullscreen-quad draw
+// ShaderParams — 每次全屏四边形绘制时传入的数据
 // ---------------------------------------------------------------------------
-// ShaderParams — 每次全屏四边形绘制时传递的数据
 struct ShaderParams {
     std::vector<TextureHandle> inputTextures;  // 输入纹理数组（最多 8 张）
-    std::vector<float>         uniformFloats;   // float uniform 参数数组
-    std::vector<int32_t>       uniformInts;     // int uniform 参数数组
-    int   viewportWidth  = 1280;  // 视口宽度（默认 1280）
-    int   viewportHeight = 720;   // 视口高度（默认 720）
-    float time           = 0.0f;  // 时间（秒）
-    uint32_t frameCount  = 0;     // 帧计数
+    std::vector<float>         uniformFloats;  // float 类型 uniform 值
+    std::vector<int32_t>       uniformInts;    // int 类型 uniform 值
+    int   viewportWidth  = 1280;               // 视口宽度
+    int   viewportHeight = 720;                // 视口高度
+    float time           = 0.0f;               // 累计时间
+    uint32_t frameCount  = 0;                   // 帧计数
 };
 
 // ---------------------------------------------------------------------------
-// IRenderBackend — pure virtual render backend interface
-// ---------------------------------------------------------------------------
 // IRenderBackend — 纯虚渲染后端接口
+// ---------------------------------------------------------------------------
 class IRenderBackend {
 public:
-    // ---- nested CardDrawInfo -----------------------------------------------
-    // 嵌套结构体：3D 卡片绘制信息
+    // ---- 嵌套结构体：卡片绘制信息 ----
     struct CardDrawInfo {
-        TextureHandle texture;  // 卡片纹理
-        float posX, posY, posZ;      // 位置 (X, Y, Z)
-        float scaleX, scaleY;        // 缩放 (X, Y)
-        float rotationY;             // Y 轴旋转角度（弧度）
-        float opacity;               // 不透明度 (0.0 ~ 1.0)
+        TextureHandle texture;     // 卡片纹理
+        float posX, posY, posZ;    // 位置
+        float scaleX, scaleY;     // 缩放
+        float rotationY;          // Y 轴旋转角度
+        float opacity;            // 不透明度
     };
 
-    virtual ~IRenderBackend() = default;  // 虚析构函数（确保正确释放派生类）
+    virtual ~IRenderBackend() = default;
 
-    // ---- Lifecycle ---------------------------------------------------------
-    virtual bool Init(GLFWwindow* window) = 0;
-    virtual void Shutdown()               = 0;
-    virtual void BeginFrame()             = 0;
-    virtual void EndFrame()               = 0;
-    virtual void WaitIdle()               = 0;
+    // ---- 生命周期 ----
+    virtual bool Init(GLFWwindow* window) = 0;    // 初始化后端
+    virtual void Shutdown()               = 0;    // 关闭后端
+    virtual void BeginFrame()             = 0;    // 帧开始
+    virtual void EndFrame()               = 0;    // 帧结束（交换缓冲区）
+    virtual void WaitIdle()               = 0;    // 等待 GPU 空闲
 
-    // ---- Viewport ----------------------------------------------------------
+    // ---- 视口 ----
     virtual void Resize(int width, int height)              = 0;
     virtual void GetFramebufferSize(int& width, int& height) = 0;
 
-    // ---- Shaders -----------------------------------------------------------
+    // ---- 着色器 ----
     virtual ShaderHandle CreateVertexShader(const uint32_t* spirv, size_t size)   = 0;
     virtual ShaderHandle CreateFragmentShader(const uint32_t* spirv, size_t size) = 0;
     virtual ShaderHandle CreateVertexShaderFromGLSL(const std::string& source)    = 0;
     virtual ShaderHandle CreateFragmentShaderFromGLSL(const std::string& source)  = 0;
     virtual void         DestroyShader(ShaderHandle handle)                        = 0;
 
-    // ---- Textures ----------------------------------------------------------
+    // ---- 纹理 ----
     virtual TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) = 0;
     virtual void          UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) = 0;
     virtual void          DestroyTexture(TextureHandle handle)                                        = 0;
     virtual void*         GetImTextureID(TextureHandle handle)                                        = 0;
 
-    // ---- Pipelines ---------------------------------------------------------
+    // ---- 管线 ----
     virtual PipelineHandle CreatePipeline(const PipelineDesc& desc) = 0;
     virtual void           DestroyPipeline(PipelineHandle handle)  = 0;
     virtual void           BindPipeline(PipelineHandle handle)     = 0;
 
-    // ---- Fullscreen quad ---------------------------------------------------
+    // ---- 全屏四边形 ----
     virtual void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) = 0;
 
-    // ---- Cards (3D card rendering) -----------------------------------------
+    // ---- 3D 卡片渲染 ----
     virtual void DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) = 0;
 
-    // ---- Blit --------------------------------------------------------------
+    // ---- Blit ----
     virtual void BlitToScreen(TextureHandle src) = 0;
 
-    // ---- Render targets ----------------------------------------------------
+    // ---- 渲染目标 ----
     virtual void BeginRenderToTexture(TextureHandle target) = 0;
     virtual void EndRenderToTexture()                       = 0;
 
-    // ---- Utility -----------------------------------------------------------
+    // ---- 工具 ----
     virtual void SetViewport(int x, int y, int width, int height) = 0;
     virtual void Clear(float r, float g, float b, float a)        = 0;
 
-    // ---- ImGui -------------------------------------------------------------
+    // ---- ImGui ----
     virtual void ImGuiInit(GLFWwindow* window) = 0;
     virtual void ImGuiNewFrame()               = 0;
     virtual void ImGuiRender()                 = 0;
     virtual void ImGuiShutdown()               = 0;
 
-    // ---- Query -------------------------------------------------------------
+    // ---- 查询 ----
     virtual BackendType GetType()                     const = 0;
     virtual const char* GetName()                     const = 0;
     virtual int         GetMaxTextureSize()           const = 0;
 };
 ```
 
-#### 功能说明
-
-`IRenderBackend` 是渲染后端的抽象接口，定义了所有后端（OpenGL、Vulkan）必须实现的操作。涵盖生命周期管理、着色器/纹理/管线资源管理、全屏渲染、3D 卡片渲染、FBO 离屏渲染和 ImGui 集成。
-
-#### 实现原理
-
-采用纯虚接口（Pure Virtual Interface）模式，所有方法都是纯虚函数（`= 0`）。通过指针或引用调用，运行时多态决定实际执行的是 OpenGL 还是 Vulkan 实现。
-
-`ShaderParams` 和 `PipelineDesc` 是值类型结构体，作为接口的数据传输对象（DTO），封装了渲染所需的全部参数。
-
-#### 为什么这样实现
-
-- **后端可替换性**：接口抽象使 OpenGL 和 Vulkan 后端可互换，上层代码（场景、应用）无需修改。
-- **最小接口原则**：接口只包含上层需要的操作，不暴露 GL/Vulkan 特有细节（如 VAO、FBO、CommandBuffer）。
-- **ShaderParams 打包**：将多个零散参数打包为结构体，接口更清晰，新增参数不影响函数签名。
-
 ---
 
 ### 5.2 OpenGLBackend 头文件
 
+#### 类声明概览
+
+**分析**：`OpenGLBackend` 继承 `IRenderBackend`，声明了所有接口方法的 override 实现。私有成员可分为：
+
+1. **GL 资源池**：`m_shaders`（着色器 ID → GL 着色器对象映射）、`m_programCache`（vs+fs 组合 → GL 程序缓存）、`m_textures`（纹理 ID → GL 纹理对象映射）、`m_framebuffers`（纹理 ID → GL FBO 映射）
+2. **自增 ID 计数器**：`m_nextShaderId`、`m_nextTextureId`，用于生成不重复的句柄 ID
+3. **纹理元数据**：`m_textureFormats`、`m_texWidths`、`m_texHeights`，记录每个纹理的格式和尺寸
+4. **全屏四边形几何**：`m_quadVAO`、`m_quadVBO`（顶点数组对象和缓冲区）
+5. **临时 UBO**：`m_tempUBO`（每帧绘制的 uniform 缓冲区对象）
+6. **帧缓冲区状态**：`m_defaultFBO`（GLFW 创建的默认 FBO）、`m_currentFBO`（当前绑定的 FBO）
+
+私有辅助方法包括句柄转换（`GetGLShader`/`GetGLTexture`/`GetGLFramebuffer`）、程序缓存查找（`GetOrCreateProgram`）、格式转换（`GLInternalFormat`/`GLFormat`/`GLType`）和几何体初始化（`SetupQuadVAO`/`BindDefaultState`）。
+
 ```cpp
 #pragma once
 
-#include "IRenderBackend.h"  // 渲染后端抽象接口
+#include "IRenderBackend.h"
 
-#include <GLFW/glfw3.h>  // GLFW 窗口管理库
+#include <GLFW/glfw3.h>
 
 #include <string>
-#include <unordered_map>  // 哈希表（用于着色器/纹理/程序缓存）
+#include <unordered_map>
 #include <vector>
 
 class OpenGLBackend : public IRenderBackend {
 public:
-    OpenGLBackend()  = default;   // 默认构造函数
-    ~OpenGLBackend() override = default;  // 默认析构函数（实际清理在 Shutdown 中）
+    OpenGLBackend()  = default;
+    ~OpenGLBackend() override = default;
 
-    // ---- Lifecycle / Viewport / Shaders / Textures / Pipelines ----
-    // （省略重复的接口声明，与 IRenderBackend 完全对应）
+    // ---- 生命周期 ----
+    bool Init(GLFWwindow* window) override;
+    void Shutdown() override;
+    void BeginFrame() override;
+    void EndFrame() override;
+    void WaitIdle() override;
 
-    /// Save current framebuffer to PPM file for debugging.
+    // ---- 视口 ----
+    void Resize(int width, int height) override;
+    void GetFramebufferSize(int& width, int& height) override;
+
+    // ---- 着色器 ----
+    ShaderHandle CreateVertexShader(const uint32_t* spirv, size_t size) override;
+    ShaderHandle CreateFragmentShader(const uint32_t* spirv, size_t size) override;
+    /// 从 GLSL 源码创建着色器（SPIR-V UBO 查询失败时的回退路径）
+    ShaderHandle CreateVertexShaderFromGLSL(const std::string& glslSource) override;
+    ShaderHandle CreateFragmentShaderFromGLSL(const std::string& glslSource) override;
+    void         DestroyShader(ShaderHandle handle) override;
+
+    // ---- 纹理 ----
+    TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) override;
+    void          UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) override;
+    void          DestroyTexture(TextureHandle handle) override;
+    void*         GetImTextureID(TextureHandle handle) override;
+
+    // ---- 管线 ----
+    PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
+    void           DestroyPipeline(PipelineHandle handle) override;
+    void           BindPipeline(PipelineHandle handle) override;
+
+    /// 保存当前帧缓冲区到 PPM 文件用于调试
     void SaveScreenshot(const char* path) const;
 
-    // ---- Query -------------------------------------------------------------
+    // ---- 全屏四边形 ----
+    void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;
+
+    // ---- 3D 卡片渲染 ----
+    void DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) override;
+
+    // ---- Blit ----
+    void BlitToScreen(TextureHandle src) override;
+
+    // ---- 渲染目标 ----
+    void BeginRenderToTexture(TextureHandle target) override;
+    void EndRenderToTexture() override;
+
+    // ---- 工具 ----
+    void SetViewport(int x, int y, int width, int height) override;
+    void Clear(float r, float g, float b, float a) override;
+
+    // ---- ImGui ----
+    void ImGuiInit(GLFWwindow* window) override;
+    void ImGuiNewFrame() override;
+    void ImGuiRender() override;
+    void ImGuiShutdown() override;
+
+    // ---- 查询 ----
     BackendType GetType()           const override { return BackendType::OpenGL; }
     const char* GetName()           const override { return "OpenGL 4.6 (SPIR-V)"; }
     int         GetMaxTextureSize() const override;
 
 private:
-    // ---- Internal helpers --------------------------------------------------
-    GLuint GetGLShader(ShaderHandle handle) const;      // 从句柄获取 GL 着色器对象 ID
-    GLuint GetGLTexture(TextureHandle handle) const;     // 从句柄获取 GL 纹理对象 ID
-    GLuint GetGLFramebuffer(TextureHandle textureHandle) const;  // 获取或创建 FBO
+    // ---- 内部辅助方法 ----
+    GLuint GetGLShader(ShaderHandle handle) const;       // 句柄 → GL 着色器对象
+    GLuint GetGLTexture(TextureHandle handle) const;     // 句柄 → GL 纹理对象
+    GLuint GetGLFramebuffer(TextureHandle textureHandle) const;  // 句柄 → GL FBO
 
-    /// Get or create a linked GL program from vs+fs handles. Cached.
+    /// 获取或创建链接的 GL 程序（vs+fs 组合）。带缓存。
     GLuint GetOrCreateProgram(GLuint vsKey, GLuint fsKey, GLuint vsGL, GLuint fsGL);
 
-    static GLint  GLInternalFormat(TextureFormat fmt);  // 转换纹理内部格式
-    static GLenum GLFormat(TextureFormat fmt);          // 转换纹理数据格式
-    static GLenum GLType(TextureFormat fmt);            // 转换纹理数据类型
+    static GLint  GLInternalFormat(TextureFormat fmt);  // 格式 → GL 内部格式
+    static GLenum GLFormat(TextureFormat fmt);          // 格式 → GL 数据格式
+    static GLenum GLType(TextureFormat fmt);             // 格式 → GL 数据类型
 
-    void SetupQuadVAO();     // 设置全屏四边形 VAO/VBO/EBO
-    void BindDefaultState(); // 设置默认 GL 状态
+    void SetupQuadVAO();       // 初始化全屏四边形 VAO
+    void BindDefaultState();   // 设置默认 OpenGL 状态
 
-    // ---- Members -----------------------------------------------------------
-    GLFWwindow* m_window     = nullptr;  // GLFW 窗口指针
-    int         m_width      = 0;       // 帧缓冲区宽度
-    int         m_height     = 0;       // 帧缓冲区高度
+    // ---- 成员变量 ----
+    GLFWwindow* m_window     = nullptr;   // GLFW 窗口句柄
+    int         m_width      = 0;         // 帧缓冲区宽度
+    int         m_height     = 0;         // 帧缓冲区高度
 
-    // Shader pool: handle ID -> GL shader object
-    // 着色器池：句柄 ID -> GL 着色器对象
-    std::unordered_map<uint32_t, GLuint> m_shaders;
-    uint32_t m_nextShaderId = 1;  // 下一个着色器句柄 ID（自增）
+    // 着色器池
+    std::unordered_map<uint32_t, GLuint> m_shaders;     // ID → GL 着色器对象
+    uint32_t m_nextShaderId = 1;                         // 下一个着色器 ID
 
-    // Program cache (key = vs_id << 32 | fs_id)
-    // 程序缓存：复合键 = (顶点着色器ID << 32) | 片段着色器ID
-    std::unordered_map<uint64_t, GLuint> m_programCache;
+    // 程序缓存（key = vs_id << 32 | fs_id）
+    std::unordered_map<uint64_t, GLuint> m_programCache;  // 组合键 → GL 程序
 
-    // Texture pool
-    std::unordered_map<uint32_t, GLuint> m_textures;
-    std::unordered_map<uint32_t, TextureFormat> m_textureFormats;
-    std::unordered_map<uint32_t, int> m_texWidths;   // 纹理宽度记录
-    std::unordered_map<uint32_t, int> m_texHeights;  // 纹理高度记录
-    uint32_t m_nextTextureId = 1;
+    // 纹理池
+    std::unordered_map<uint32_t, GLuint> m_textures;       // ID → GL 纹理对象
+    std::unordered_map<uint32_t, TextureFormat> m_textureFormats;  // ID → 格式
+    std::unordered_map<uint32_t, int> m_texWidths;         // ID → 宽度
+    std::unordered_map<uint32_t, int> m_texHeights;        // ID → 高度
+    uint32_t m_nextTextureId = 1;                           // 下一个纹理 ID
 
-    // Framebuffer pool (keyed by texture id)
-    std::unordered_map<uint32_t, GLuint> m_framebuffers;
+    // 帧缓冲区池（以纹理 ID 为键）
+    std::unordered_map<uint32_t, GLuint> m_framebuffers;  // 纹理 ID → GL FBO
 
-    // Temp UBO for per-draw uniform data
+    // 临时 UBO（用于每帧绘制的 uniform 数据）
     GLuint m_tempUBO = 0;
 
-    // Fullscreen quad
+    // 全屏四边形
     GLuint m_quadVAO = 0;  // 顶点数组对象
-    GLuint m_quadVBO = 0;  // 顶点缓冲对象
+    GLuint m_quadVBO = 0;  // 顶点缓冲区对象
 
-    // Default framebuffer
-    GLuint m_defaultFBO = 0;   // GLFW 创建的默认 FBO
-    GLuint m_currentFBO  = 0;  // 当前绑定的 FBO
+    // 默认帧缓冲区
+    GLuint m_defaultFBO = 0;  // GLFW 创建的默认 FBO
+    GLuint m_currentFBO  = 0; // 当前绑定的 FBO
 };
 ```
 
-#### 功能说明
-
-`OpenGLBackend` 头文件声明了 OpenGL 4.6 渲染后端的完整实现。它管理三类 GL 资源池（着色器、纹理、FBO），维护程序缓存以避免重复链接，并持有全屏四边形的几何数据。
-
-#### 实现原理
-
-资源管理采用"句柄池"模式。外部代码通过不透明的 `ShaderHandle`/`TextureHandle` 操作资源，内部通过 `unordered_map` 将句柄 ID 映射到 GL 对象 ID。句柄 ID 从 1 开始自增，0 保留为无效值。
-
-程序缓存使用 64 位复合键 `(vs_id << 32) | fs_id`，确保同一对着色器只链接一次。
-
-#### 为什么这样实现
-
-- **句柄抽象**：外部代码不直接操作 GL 对象 ID，通过句柄间接访问。这使得后端可以自由管理 GL 对象的生命周期。
-- **程序缓存**：着色器链接是昂贵操作（尤其 SPIR-V 特化）。缓存避免重复链接，显著提升性能。
-- **unordered_map**：O(1) 平均查找复杂度，适合频繁的句柄->GL ID 查找。
-
 ---
 
-### 5.3 Init — GL 上下文初始化
+### 5.3 Init
+
+#### 第一段：上下文初始化与 GL 函数加载
+
+**分析**：`Init()` 是后端初始化的入口。首先保存 GLFW 窗口句柄并设为当前 OpenGL 上下文。然后通过 `LoadGL46Functions()`（glad 生成的加载器）加载所有 OpenGL 4.6 函数指针。如果加载失败，整个后端无法工作。
 
 ```cpp
-// ============================================================================
-// Uniform buffer layout matching SPIR-V shaders (std140)
-// ============================================================================
-// 与 SPIR-V 着色器匹配的 Uniform 缓冲区布局（std140 标准布局）
-#pragma pack(push, 1)  // 设置 1 字节对齐（紧密打包）
-struct UniformData {
-    float uParamFloat0;       // offset 0  — 第 1 个 float 参数
-    float uParamFloat1;       // offset 4  — 第 2 个 float 参数
-    float uParamFloat2;       // offset 8  — 第 3 个 float 参数
-    float uParamFloat3;       // offset 12 — 第 4 个 float 参数
-    float uParamFloat4;       // offset 16 — 第 5 个 float 参数
-    float uParamFloat5;       // offset 20 — 第 6 个 float 参数
-    float uResolution[2];     // offset 24 (vec2, 8-byte aligned) — 分辨率 (宽, 高)
-    float uTime;              // offset 32 — 时间（秒）
-    float uFrameCount;        // offset 36 — 帧计数
-    // Padding to 48 bytes (std140 rounds up to vec4 = 16-byte boundary)
-    // 填充到 48 字节（std140 规则向上取整到 vec4 = 16 字节边界）
-    float padding[3];         // offset 40, 3 floats = 12 bytes
-}; // total: 48 bytes  // 总计 48 字节
-#pragma pack(pop)  // 恢复默认对齐
-
-// ============================================================================
-// Fullscreen quad vertex data
-// ============================================================================
-// 全屏四边形顶点数据
-static const float kQuadVertices[] = {
-    // Position (2D)    // UV coords
-    -1.0f, -1.0f,       0.0f, 0.0f,  // 左下角
-     1.0f, -1.0f,       1.0f, 0.0f,  // 右下角
-     1.0f,  1.0f,       1.0f, 1.0f,  // 右上角
-    -1.0f,  1.0f,       0.0f, 1.0f   // 左上角
-};
-
-static const unsigned int kQuadIndices[] = {
-    0, 1, 2,  // 第一个三角形
-    0, 2, 3   // 第二个三角形
-};
-
-static constexpr int kFullscreenQuadVertexCount = 6;  // 2 个三角形 x 3 顶点
-
 bool OpenGLBackend::Init(GLFWwindow* window) {
-    m_window = window;  // 保存窗口指针
-    if (!m_window) {  // 验证窗口有效
+    m_window = window;
+    if (!m_window) {
         fprintf(stderr, "[OpenGL] Invalid window handle\n");
         return false;
     }
 
-    // Make context current
-    glfwMakeContextCurrent(m_window);  // 激活 GL 上下文
+    // 设为当前 OpenGL 上下文
+    glfwMakeContextCurrent(m_window);
 
-    // Load OpenGL function pointers via glad
-    if (!LoadGL46Functions(m_window)) {  // 加载 GL 4.6 函数指针
+    // 通过 glad 加载 OpenGL 函数指针
+    if (!LoadGL46Functions(m_window)) {
         fprintf(stderr, "[OpenGL] Failed to initialize GLAD\n");
         return false;
     }
+```
 
-    // Get initial framebuffer size
-    glfwGetFramebufferSize(m_window, &m_width, &m_height);  // 获取帧缓冲区尺寸
+#### 第二段：帧缓冲区与 UBO 初始化
 
-    // Get the default FBO (the one GLFW created for us)
+**分析**：获取 GLFW 窗口的初始帧缓冲区尺寸。通过 `glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING)` 读取当前绑定的 FBO ID 作为默认 FBO（GLFW 可能创建非零的默认 FBO，例如在 macOS 上）。创建临时 UBO（Uniform Buffer Object）用于每帧绘制时传递 uniform 数据，大小为 `UniformData` 结构体（48 字节），使用 `GL_DYNAMIC_DRAW` 提示频繁更新。
+
+```cpp
+    // 获取初始帧缓冲区尺寸
+    glfwGetFramebufferSize(m_window, &m_width, &m_height);
+
+    // 获取 GLFW 创建的默认 FBO
     GLint defaultFBO = 0;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &defaultFBO);  // 查询当前 FBO
-    m_defaultFBO = static_cast<GLuint>(defaultFBO);  // 保存默认 FBO
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &defaultFBO);
+    m_defaultFBO = static_cast<GLuint>(defaultFBO);
     m_currentFBO = m_defaultFBO;
 
-    // Create temp UBO for per-draw uniform data (fallback path)
-    glGenBuffers(1, &m_tempUBO);  // 生成 UBO
+    // 创建临时 UBO 用于每帧绘制的 uniform 数据（回退路径）
+    glGenBuffers(1, &m_tempUBO);
     glBindBuffer(GL_UNIFORM_BUFFER, m_tempUBO);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), nullptr, GL_DYNAMIC_DRAW);
-    // 分配 48 字节 UBO，动态绘制模式
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+```
 
-    // Setup fullscreen quad VAO/VBO
-    SetupQuadVAO();  // 设置全屏四边形几何
+#### 第三段：几何体初始化与默认状态
 
-    // Set default OpenGL state
-    BindDefaultState();  // 设置默认 GL 状态
+**分析**：调用 `SetupQuadVAO()` 创建全屏四边形的顶点数组对象（包含位置和 UV 属性的交错顶点数据）。调用 `BindDefaultState()` 设置 OpenGL 的默认渲染状态（深度测试、混合、面剔除等）。最后打印 GL 版本信息确认初始化成功。
+
+```cpp
+    // 设置全屏四边形 VAO/VBO
+    SetupQuadVAO();
+
+    // 设置默认 OpenGL 状态
+    BindDefaultState();
 
     printf("[OpenGL] Initialized - GL Version: %s\n", (const char*)glGetString(GL_VERSION));
     return true;
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-`Init` 是 OpenGL 后端的初始化入口，负责：(1) 激活 GL 上下文；(2) 通过 GLAD 加载 OpenGL 4.6 函数指针；(3) 获取帧缓冲区尺寸和默认 FBO；(4) 创建临时 UBO；(5) 设置全屏四边形几何；(6) 设置默认 GL 状态。
+```cpp
+bool OpenGLBackend::Init(GLFWwindow* window) {
+    m_window = window;
+    if (!m_window) {
+        fprintf(stderr, "[OpenGL] Invalid window handle\n");
+        return false;
+    }
 
-#### 实现原理
+    // 设为当前 OpenGL 上下文
+    glfwMakeContextCurrent(m_window);
 
-GLAD 在运行时解析 GL 驱动导出的函数地址。`LoadGL46Functions` 加载所有 OpenGL 4.6 核心函数，使 `glCreateShader`、`glShaderBinary` 等 SPIR-V 相关函数可用。
+    // 通过 glad 加载 OpenGL 4.6 函数指针
+    if (!LoadGL46Functions(m_window)) {
+        fprintf(stderr, "[OpenGL] Failed to initialize GLAD\n");
+        return false;
+    }
 
-默认 FBO 通过 `glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING)` 查询，而非假设为 0。这在某些平台上可能不是 0。
+    // 获取初始帧缓冲区尺寸
+    glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
-`UniformData` 结构体使用 `#pragma pack(push, 1)` 紧密打包，确保与 SPIR-V 着色器中声明的 std140 UBO 布局完全匹配。
+    // 获取 GLFW 创建的默认 FBO
+    GLint defaultFBO = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &defaultFBO);
+    m_defaultFBO = static_cast<GLuint>(defaultFBO);
+    m_currentFBO = m_defaultFBO;
 
-#### 为什么这样实现
+    // 创建临时 UBO 用于每帧绘制的 uniform 数据
+    glGenBuffers(1, &m_tempUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_tempUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-- **GLAD 而非 GLEW**：GLAD 支持 OpenGL 4.6 和 SPIR-V 扩展，生成更轻量的加载代码。
-- **动态 UBO**：`GL_DYNAMIC_DRAW` 提示驱动此缓冲区每帧更新，驱动可能将其放置在 CPU 可快速写入的内存区域。
-- **紧密打包**：`#pragma pack(push, 1)` 确保 C++ 结构体的内存布局与 GLSL std140 规则完全一致，避免对齐不匹配导致的 uniform 值错误。
+    // 设置全屏四边形 VAO/VBO
+    SetupQuadVAO();
+
+    // 设置默认 OpenGL 状态
+    BindDefaultState();
+
+    printf("[OpenGL] Initialized - GL Version: %s\n", (const char*)glGetString(GL_VERSION));
+    return true;
+}
+```
 
 ---
 
-### 5.4 CreateTexture — 纹理创建
+### 5.4 CreateTexture
+
+#### 第一段：纹理对象创建与参数设置
+
+**分析**：通过 `glGenTextures` 生成 GL 纹理对象，绑定到 `GL_TEXTURE_2D` 目标。设置纹理环绕模式为 `GL_CLAMP_TO_EDGE`（防止边缘采样产生接缝），过滤模式为 `GL_LINEAR`（双线性过滤，保证缩放质量）。
 
 ```cpp
 TextureHandle OpenGLBackend::CreateTexture(int width, int height, TextureFormat format, const void* data) {
-    GLuint texture;  // GL 纹理对象 ID
-    glGenTextures(1, &texture);  // 生成一个纹理对象
+    GLuint texture;
+    glGenTextures(1, &texture);
     if (texture == 0) {
         fprintf(stderr, "[OpenGL] Failed to create texture\n");
         return INVALID_TEXTURE;
     }
 
-    glBindTexture(GL_TEXTURE_2D, texture);  // 绑定纹理
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-    // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // 水平边缘钳位
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  // 垂直边缘钳位
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);    // 缩小：线性
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);    // 放大：线性
+    // 设置纹理参数
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+```
 
-    // Allocate texture storage
-    GLint internalFormat = GLInternalFormat(format);  // 转换内部格式
-    GLenum glFormat = GLFormat(format);                // 转换数据格式
-    GLenum glType = GLType(format);                    // 转换数据类型
+#### 第二段：纹理存储分配与元数据记录
+
+**分析**：通过三个静态辅助方法（`GLInternalFormat`/`GLFormat`/`GLType`）将抽象的 `TextureFormat` 枚举转换为 OpenGL 具体的格式常量。调用 `glTexImage2D` 一次性分配存储并上传初始数据（`data` 可为 nullptr，表示仅分配不初始化）。最后生成唯一 ID，将 GL 纹理对象和元数据存入对应的池中。
+
+```cpp
+    // 分配纹理存储
+    GLint internalFormat = GLInternalFormat(format);
+    GLenum glFormat = GLFormat(format);
+    GLenum glType = GLType(format);
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, glFormat, glType, data);
-    // 分配存储并上传初始数据（data 可为 nullptr）
 
-    glBindTexture(GL_TEXTURE_2D, 0);  // 解绑纹理
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-    uint32_t id = m_nextTextureId++;  // 分配新句柄 ID
-    m_textures[id] = texture;         // 存入纹理池
-    m_textureFormats[id] = format;     // 记录格式
-    m_texWidths[id] = width;          // 记录宽度
-    m_texHeights[id] = height;        // 记录高度
+    uint32_t id = m_nextTextureId++;
+    m_textures[id] = texture;          // 保存 GL 纹理对象
+    m_textureFormats[id] = format;     // 保存格式
+    m_texWidths[id] = width;           // 保存宽度
+    m_texHeights[id] = height;         // 保存高度
 
-    return TextureHandle{id};  // 返回句柄
+    return TextureHandle{id};
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-创建一个 2D 纹理对象，可选上传初始像素数据。设置边缘钳位和线性过滤参数，并将纹理注册到内部纹理池。
+```cpp
+TextureHandle OpenGLBackend::CreateTexture(int width, int height, TextureFormat format, const void* data) {
+    GLuint texture;
+    glGenTextures(1, &texture);
+    if (texture == 0) {
+        fprintf(stderr, "[OpenGL] Failed to create texture\n");
+        return INVALID_TEXTURE;
+    }
 
-#### 实现原理
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-使用 `glTexImage2D` 一次性分配存储和上传数据。边缘钳位（`GL_CLAMP_TO_EDGE`）避免后处理特效在边缘出现接缝。线性过滤确保缩放时图像平滑。
+    // 设置纹理参数
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-#### 为什么这样实现
+    // 分配纹理存储
+    GLint internalFormat = GLInternalFormat(format);
+    GLenum glFormat = GLFormat(format);
+    GLenum glType = GLType(format);
 
-- **边缘钳位**：后处理特效采样边缘像素时，钳位比重复（REPEAT）更合适，避免不自然的重复图案。
-- **线性过滤**：对于缩略图等缩放场景，线性过滤视觉效果更好。
-- **格式记录**：`m_textureFormats`/`m_texWidths`/`m_texHeights` 在 `UpdateTexture` 和 FBO 创建时需要查询。
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, glFormat, glType, data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    uint32_t id = m_nextTextureId++;
+    m_textures[id] = texture;
+    m_textureFormats[id] = format;
+    m_texWidths[id] = width;
+    m_texHeights[id] = height;
+
+    return TextureHandle{id};
+}
+```
 
 ---
 
-### 5.5 CreateVertexShader / CreateFragmentShader — SPIR-V 着色器加载
+### 5.5 着色器加载
+
+#### 第一段：SPIR-V 着色器创建（以顶点着色器为例）
+
+**分析**：OpenGL 4.6 支持 `GL_ARB_gl_spirv` 扩展（核心特性），允许直接加载 SPIR-V 二进制。流程为：创建空着色器对象 → `glShaderBinary` 加载 SPIR-V 二进制 → `glSpecializeShader` 指定入口点 "main" → 检查编译状态。这种路径避免了 GLSL 编译器的开销，且与 Vulkan 后端共享同一份着色器二进制。片段着色器的创建流程完全相同，仅 `GL_VERTEX_SHADER` 替换为 `GL_FRAGMENT_SHADER`。
 
 ```cpp
 ShaderHandle OpenGLBackend::CreateVertexShader(const uint32_t* spirv, size_t size) {
-    if (spirv == nullptr || size == 0) {  // 验证输入
+    if (spirv == nullptr || size == 0) {
         fprintf(stderr, "[OpenGL] Empty SPIR-V data for vertex shader\n");
         return INVALID_SHADER;
     }
 
-    GLuint shader = glCreateShader(GL_VERTEX_SHADER);  // 创建顶点着色器对象
+    GLuint shader = glCreateShader(GL_VERTEX_SHADER);
     if (shader == 0) {
         fprintf(stderr, "[OpenGL] Failed to create vertex shader object\n");
         return INVALID_SHADER;
     }
 
-    // Load SPIR-V binary
+    // 加载 SPIR-V 二进制
     glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V,
                    spirv, static_cast<GLsizei>(size * sizeof(uint32_t)));
-    // 加载 SPIR-V 二进制数据到着色器对象
 
-    // Specialize with default entry point "main"
+    // 以默认入口点 "main" 进行特化
     glSpecializeShader(shader, "main", 0, nullptr, nullptr);
-    // 特化入口点 "main"，无特化常量
 
-    // Check compilation status
+    // 检查编译状态
     GLint success = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -3756,49 +4755,165 @@ ShaderHandle OpenGLBackend::CreateVertexShader(const uint32_t* spirv, size_t siz
         return INVALID_SHADER;
     }
 
-    uint32_t id = m_nextShaderId++;  // 分配新句柄 ID
-    m_shaders[id] = shader;           // 存入着色器池
+    uint32_t id = m_nextShaderId++;
+    m_shaders[id] = shader;
+    return ShaderHandle{id};
+}
+```
+
+#### 第二段：GLSL 着色器创建（回退路径）
+
+**分析**：当 SPIR-V 路径不可用时（例如某些旧驱动），提供 GLSL 源码编译的回退路径。使用传统的 `glShaderSource` + `glCompileShader` 流程。此路径在当前项目中主要作为调试手段，生产环境统一使用 SPIR-V。
+
+```cpp
+ShaderHandle OpenGLBackend::CreateVertexShaderFromGLSL(const std::string& glslSource) {
+    if (glslSource.empty()) {
+        fprintf(stderr, "[OpenGL] Empty GLSL source for vertex shader\n");
+        return INVALID_SHADER;
+    }
+
+    GLuint shader = glCreateShader(GL_VERTEX_SHADER);
+    if (shader == 0) {
+        fprintf(stderr, "[OpenGL] Failed to create vertex shader object\n");
+        return INVALID_SHADER;
+    }
+
+    const char* source = glslSource.c_str();
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+
+    GLint success = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog);
+        fprintf(stderr, "[OpenGL] Vertex shader compilation failed: %s\n", infoLog);
+        glDeleteShader(shader);
+        return INVALID_SHADER;
+    }
+
+    uint32_t id = m_nextShaderId++;
+    m_shaders[id] = shader;
+    return ShaderHandle{id};
+}
+```
+
+#### 第三段：DestroyShader — 级联清理
+
+**分析**：销毁着色器时不仅删除 GL 着色器对象，还必须清理程序缓存中所有引用该着色器的程序。遍历 `m_programCache`，解析组合键（高 32 位为 vs ID，低 32 位为 fs ID），找到匹配的程序后删除并从缓存中移除。这确保了着色器销毁后不会留下悬空引用。
+
+```cpp
+void OpenGLBackend::DestroyShader(ShaderHandle handle) {
+    if (handle.id == 0) return;
+
+    auto it = m_shaders.find(handle.id);
+    if (it != m_shaders.end()) {
+        // 移除所有使用此着色器的缓存程序
+        std::vector<uint64_t> keysToRemove;
+        for (auto& [key, program] : m_programCache) {
+            uint32_t vsId = static_cast<uint32_t>(key >> 32);
+            uint32_t fsId = static_cast<uint32_t>(key & 0xFFFFFFFF);
+            if (vsId == handle.id || fsId == handle.id) {
+                glDeleteProgram(program);
+                keysToRemove.push_back(key);
+            }
+        }
+        for (auto key : keysToRemove) {
+            m_programCache.erase(key);
+        }
+
+        glDeleteShader(it->second);  // 删除 GL 着色器对象
+        m_shaders.erase(it);        // 从池中移除
+    }
+}
+```
+
+#### 完整源码（顶点着色器 SPIR-V 创建 + 销毁）
+
+```cpp
+ShaderHandle OpenGLBackend::CreateVertexShader(const uint32_t* spirv, size_t size) {
+    if (spirv == nullptr || size == 0) {
+        fprintf(stderr, "[OpenGL] Empty SPIR-V data for vertex shader\n");
+        return INVALID_SHADER;
+    }
+
+    GLuint shader = glCreateShader(GL_VERTEX_SHADER);
+    if (shader == 0) {
+        fprintf(stderr, "[OpenGL] Failed to create vertex shader object\n");
+        return INVALID_SHADER;
+    }
+
+    // 加载 SPIR-V 二进制
+    glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V,
+                   spirv, static_cast<GLsizei>(size * sizeof(uint32_t)));
+
+    // 以默认入口点 "main" 进行特化
+    glSpecializeShader(shader, "main", 0, nullptr, nullptr);
+
+    // 检查编译状态
+    GLint success = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog);
+        fprintf(stderr, "[OpenGL] Vertex shader SPIR-V specialization failed: %s\n", infoLog);
+        glDeleteShader(shader);
+        return INVALID_SHADER;
+    }
+
+    uint32_t id = m_nextShaderId++;
+    m_shaders[id] = shader;
     return ShaderHandle{id};
 }
 
-// CreateFragmentShader 实现完全相同，仅 GL_VERTEX_SHADER 替换为 GL_FRAGMENT_SHADER
-// 此处省略重复代码，参见 5.5 节源文件
+void OpenGLBackend::DestroyShader(ShaderHandle handle) {
+    if (handle.id == 0) return;
+
+    auto it = m_shaders.find(handle.id);
+    if (it != m_shaders.end()) {
+        // 移除所有使用此着色器的缓存程序
+        std::vector<uint64_t> keysToRemove;
+        for (auto& [key, program] : m_programCache) {
+            uint32_t vsId = static_cast<uint32_t>(key >> 32);
+            uint32_t fsId = static_cast<uint32_t>(key & 0xFFFFFFFF);
+            if (vsId == handle.id || fsId == handle.id) {
+                glDeleteProgram(program);
+                keysToRemove.push_back(key);
+            }
+        }
+        for (auto key : keysToRemove) {
+            m_programCache.erase(key);
+        }
+
+        glDeleteShader(it->second);
+        m_shaders.erase(it);
+    }
+}
 ```
-
-#### 功能说明
-
-从 SPIR-V 二进制数据创建 OpenGL 着色器。使用 `glShaderBinary` 加载 SPIR-V 二进制，然后通过 `glSpecializeShader` 特化入口点。片段着色器实现完全相同。
-
-#### 实现原理
-
-OpenGL 4.6 支持 `GL_ARB_gl_spirv` 扩展（核心特性），允许直接加载 SPIR-V 二进制。流程为：`glCreateShader` -> `glShaderBinary`（上传 SPIR-V） -> `glSpecializeShader`（特化入口点） -> 检查状态。
-
-#### 为什么这样实现
-
-- **SPIR-V vs GLSL**：SPIR-V 是预编译的中间格式，跳过运行时 GLSL 编译，加载更快且无驱动编译器差异。
-- **glSpecializeShader**：SPIR-V 支持特化常量（Specialization Constants），API 要求必须调用此函数。此处不使用特化常量（数量为 0）。
-- **错误日志**：特化失败时输出详细日志，便于调试。
 
 ---
 
-### 5.6 CreatePipeline — 管线创建（懒创建 GL Program）
+### 5.6 CreatePipeline
+
+**分析**：OpenGL 没有像 Vulkan 那样的管线状态对象（Pipeline State Object）。`CreatePipeline` 仅将顶点和片段着色器 ID 打包为一个 64 位句柄返回（高 16 位为 vs ID，低 16 位为 fs ID）。实际的 GL 程序创建在 `DrawFullscreenQuad` 中延迟进行。`DestroyPipeline` 和 `BindPipeline` 同样是兼容性桩实现——程序的生命周期由着色器销毁和缓存管理。
 
 ```cpp
 PipelineHandle OpenGLBackend::CreatePipeline(const PipelineDesc& desc) {
-    // OpenGL doesn't have pipeline objects like Vulkan
-    // OpenGL 没有管线对象，只返回编码了着色器 ID 的句柄
+    // OpenGL 没有管线对象，仅将着色器 ID 打包为句柄
+    // 实际程序在 DrawFullscreenQuad 中延迟创建
     uint32_t id = (desc.vertShader.id << 16) | desc.fragShader.id;
     return PipelineHandle{id};
 }
 
 void OpenGLBackend::DestroyPipeline(PipelineHandle handle) {
-    // Nothing to destroy in OpenGL
+    // OpenGL 中无需销毁——程序由缓存管理，在着色器销毁时清理
     (void)handle;
 }
 
 void OpenGLBackend::BindPipeline(PipelineHandle handle) {
-    uint32_t vsId = handle.id >> 16;        // 高 16 位 = 顶点着色器 ID
-    uint32_t fsId = handle.id & 0xFFFF;     // 低 16 位 = 片段着色器 ID
+    // 从管线句柄提取着色器 ID
+    uint32_t vsId = handle.id >> 16;
+    uint32_t fsId = handle.id & 0xFFFF;
 
     GLuint vs = GetGLShader({vsId});
     GLuint fs = GetGLShader({fsId});
@@ -3812,75 +4927,88 @@ void OpenGLBackend::BindPipeline(PipelineHandle handle) {
 }
 ```
 
-#### 功能说明
-
-OpenGL 后端的管线管理是接口兼容性实现。管线句柄仅编码着色器 ID，实际 GL 程序在首次使用时懒创建。
-
-#### 实现原理
-
-`CreatePipeline` 将两个着色器 ID 编码为 32 位值（各 16 位）。`BindPipeline` 解码后调用 `GetOrCreateProgram`。`DestroyPipeline` 为空操作。
-
-#### 为什么这样实现
-
-- **接口兼容**：`IRenderBackend` 定义管线接口以适配 Vulkan PSO。OpenGL 提供空壳，上层代码无需区分后端。
-- **懒创建**：GL 程序创建推迟到实际绘制时，避免创建未使用的程序。
-
 ---
 
 ### 5.7 DrawFullscreenQuad — 核心渲染流程
 
+#### 第一段：获取或创建 GL Program
+
+**分析**：OpenGL 没有管线对象概念，每次绘制需要绑定一个链接好的着色器程序。`GetOrCreateProgram` 使用 `m_programCache` 缓存已链接的程序，键为 `(vs_id << 32) | fs_id`。首次遇到某对 vs+fs 组合时，创建程序、链接、绑定 UBO 块，然后缓存。后续调用直接命中缓存，避免重复链接开销。
+
 ```cpp
 void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) {
-    GLuint vs = GetGLShader(vert);  // 获取 GL 顶点着色器对象
-    GLuint fs = GetGLShader(frag);  // 获取 GL 片段着色器对象
+    GLuint vs = GetGLShader(vert);
+    GLuint fs = GetGLShader(frag);
 
     if (vs == 0 || fs == 0) {
-        fprintf(stderr, "[OpenGL] Invalid shader handles in DrawFullscreenQuad\n");
+        fprintf(stderr, "[OpenGL] Invalid shader handles in DrawFullscreenQuad vs=%u fs=%u\n", vs, fs);
         return;
     }
 
-    // Use auto-increment IDs for cache key, GL shader objects for glAttachShader
+    // 使用自增 ID 作为程序缓存键（匹配 DestroyShader 的清理逻辑），
+    // 使用 GL 着色器对象 ID 进行 glAttachShader
     GLuint program = GetOrCreateProgram(vert.id, frag.id, vs, fs);
     if (program == 0) {
         fprintf(stderr, "[OpenGL] Failed to create shader program\n");
         return;
     }
 
-    glUseProgram(program);  // 使用着色器程序
+    glUseProgram(program);
+```
 
-    // Reset ALL GL state that ImGui may have changed
-    // 重置 ImGui 可能修改的所有 GL 状态
-    glDisable(GL_DEPTH_TEST);    // 禁用深度测试
-    glDisable(GL_SCISSOR_TEST);  // 禁用裁剪测试
-    glDisable(GL_STENCIL_TEST); // 禁用模板测试
-    glDisable(GL_CULL_FACE);     // 禁用面剔除
-    glEnable(GL_BLEND);          // 启用混合
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Alpha 混合
-    glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);  // 绑定当前 FBO
-    glViewport(0, 0, m_width, m_height);  // 全屏视口
+#### 第二段：重置 GL 状态
 
-    // Bind input textures (up to 8)
+**分析**：在绘制前必须重置所有可能被 ImGui 修改的 GL 状态。ImGui 的渲染会修改深度测试、裁剪测试、模板测试、面剔除等状态。如果不清除，后处理着色器可能在不正确的状态下执行，导致渲染异常。这是 OpenGL 立即模式 API 的典型痛点——全局状态机需要手动管理。
+
+```cpp
+    // 重置所有 ImGui 可能修改的 GL 状态
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);
+    glViewport(0, 0, m_width, m_height);
+```
+
+#### 第三段：绑定输入纹理
+
+**分析**：遍历 `params.inputTextures`（最多 8 张纹理），将每张纹理绑定到对应的纹理单元（`GL_TEXTURE0` 到 `GL_TEXTURE7`）。对于每个纹理单元，尝试设置采样器 uniform：先尝试 `uTexture0`~`uTexture7` 的命名约定，对于第一张纹理还额外尝试 `uInputTex`（兼容单纹理着色器）。
+
+```cpp
+    // 绑定输入纹理（最多 8 张）
     for (size_t i = 0; i < params.inputTextures.size() && i < 8; ++i) {
         GLuint tex = GetGLTexture(params.inputTextures[i]);
         if (tex != 0) {
             glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
             glBindTexture(GL_TEXTURE_2D, tex);
 
-            // Try sampler uniform: uTexture0, uTexture1, ...
+            // 尝试设置采样器 uniform
             char uniformName[32];
             snprintf(uniformName, sizeof(uniformName), "uTexture%d", static_cast<int>(i));
             GLint loc = glGetUniformLocation(program, uniformName);
-            if (loc >= 0) glUniform1i(loc, static_cast<GLint>(i));
+            if (loc >= 0) {
+                glUniform1i(loc, static_cast<GLint>(i));
+            }
 
-            // Also try "uInputTex" for single-texture shaders
+            // 对单纹理着色器也尝试 "uInputTex"
             if (i == 0) {
                 loc = glGetUniformLocation(program, "uInputTex");
-                if (loc >= 0) glUniform1i(loc, 0);
+                if (loc >= 0) {
+                    glUniform1i(loc, 0);
+                }
             }
         }
     }
+```
 
-    // Fill uniform data structure
+#### 第四段：填充 Uniform 数据
+
+**分析**：将 `ShaderParams` 中的 uniform 值填入 `UniformData` 结构体（48 字节，std140 布局）。最多支持 6 个 float 参数（`uParamFloat0`~`uParamFloat5`），加上分辨率（vec2）、时间（float）和帧计数（float）。填充完成后检查程序是否有 UBO 块。
+
+```cpp
+    // 填充 uniform 数据结构
     UniformData data = {};
     if (params.uniformFloats.size() > 0) data.uParamFloat0 = params.uniformFloats[0];
     if (params.uniformFloats.size() > 1) data.uParamFloat1 = params.uniformFloats[1];
@@ -3888,17 +5016,28 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     if (params.uniformFloats.size() > 3) data.uParamFloat3 = params.uniformFloats[3];
     if (params.uniformFloats.size() > 4) data.uParamFloat4 = params.uniformFloats[4];
     if (params.uniformFloats.size() > 5) data.uParamFloat5 = params.uniformFloats[5];
+
     data.uResolution[0] = static_cast<float>(params.viewportWidth);
     data.uResolution[1] = static_cast<float>(params.viewportHeight);
     data.uTime = params.time;
     data.uFrameCount = static_cast<float>(params.frameCount);
+```
 
-    // ---- Check if program has UBO ----
+#### 第五段：UBO 路径 vs 独立 Uniform 路径
+
+**分析**：这是整个渲染函数最关键的分叉点。通过 `glGetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &nb)` 检测程序是否有 UBO 块。
+
+- **UBO 路径**（SPIR-V 着色器）：将 uniform 数据打包为 48 字节的原始缓冲区，通过 `glBindBufferBase` 绑定到 binding point 1。SPIR-V 着色器通过 `layout(binding=1) uniform Params { ... }` 声明 UBO 块。
+- **独立 Uniform 路径**（GLSL 着色器）：使用 `glGetUniformLocation` 逐个设置 uniform。先尝试裸名称（如 `uParamFloat0`），再尝试带 `Params.` 前缀的名称（兼容命名块 uniform）。
+
+```cpp
+    // ---- 检查程序是否有 UBO ----
     GLint nb=0;
     glGetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &nb);
 
     if (nb > 0) {
-        // ---- UBO path (SPIR-V or NVIDIA-baked) ----
+        // ---- UBO 路径（SPIR-V 或 NVIDIA 预编译） ----
+        // 确保 "Params" uniform 块绑定到 binding point 1
         GLuint blockIndex = glGetUniformBlockIndex(program, "Params");
         if (blockIndex != GL_INVALID_INDEX) {
             glUniformBlockBinding(program, blockIndex, 1);
@@ -3916,9 +5055,11 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         glBufferData(GL_UNIFORM_BUFFER, UBO_SIZE, ubo, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_tempUBO);
     } else {
-        // ---- Individual uniform path (GLSL) ----
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, 0); // unbind any UBO
+        // ---- 独立 uniform 路径（GLSL） ----
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, 0); // 解绑上一帧的 UBO
         GLint loc;
+
+        // 辅助 lambda：先尝试裸名称，再尝试 Params. 前缀
         auto getLoc = [&](const char* name) -> GLint {
             GLint l = glGetUniformLocation(program, name);
             if (l >= 0) return l;
@@ -3926,16 +5067,32 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
             snprintf(buf, sizeof(buf), "Params.%s", name);
             return glGetUniformLocation(program, buf);
         };
-        // 设置每个 uniform（省略重复的 if/loc/getLoc 模式，完整代码见源文件）
-        // ... uParamFloat0~5, uResolution, uTime, uFrameCount
-    }
 
-    // Draw fullscreen quad
+        if (params.uniformFloats.size() > 0) {
+            loc = getLoc("uParamFloat0");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[0]);
+        }
+        // ... (uParamFloat1~5 类似)
+        loc = getLoc("uResolution");
+        if (loc >= 0) glUniform2f(loc, (float)params.viewportWidth, (float)params.viewportHeight);
+        loc = getLoc("uTime");
+        if (loc >= 0) glUniform1f(loc, params.time);
+        loc = getLoc("uFrameCount");
+        if (loc >= 0) glUniform1ui(loc, params.frameCount);
+    }
+```
+
+#### 第六段：绘制与清理
+
+**分析**：绑定全屏四边形 VAO，使用 `glDrawElements` 绘制两个三角形（6 个索引）。绘制完成后解绑所有纹理单元、重置活动纹理单元为 `GL_TEXTURE0`、解绑程序。这种"绘制后清理"模式确保不会影响后续的 ImGui 渲染。
+
+```cpp
+    // 绘制全屏四边形
     glBindVertexArray(m_quadVAO);
     glDrawElements(GL_TRIANGLES, kFullscreenQuadVertexCount, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 
-    // Cleanup
+    // 清理：解绑所有纹理单元并重置状态
     for (size_t i = 0; i < 8; ++i) {
         glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -3945,85 +5102,329 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-`DrawFullscreenQuad` 是整个渲染管线的核心函数，负责：(1) 获取或创建着色器程序；(2) 重置 GL 状态；(3) 绑定输入纹理；(4) 通过 UBO 或单独 uniform 传递参数；(5) 绘制全屏四边形；(6) 清理状态。
+```cpp
+void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) {
+    GLuint vs = GetGLShader(vert);
+    GLuint fs = GetGLShader(frag);
 
-#### 实现原理
+    if (vs == 0 || fs == 0) {
+        fprintf(stderr, "[OpenGL] Invalid shader handles in DrawFullscreenQuad vs=%u fs=%u\n", vs, fs);
+        return;
+    }
 
-**双路径 uniform 传递**：查询程序是否有活跃 UBO 块。有则使用 UBO 路径（高效，一次 `glBufferData` 传递所有参数）；无则使用单独 `glUniform*` 调用。
+    // 使用自增 ID 作为程序缓存键，GL 着色器对象 ID 用于 glAttachShader
+    GLuint program = GetOrCreateProgram(vert.id, frag.id, vs, fs);
+    if (program == 0) {
+        fprintf(stderr, "[OpenGL] Failed to create shader program\n");
+        return;
+    }
 
-**UBO 数据布局**：48 字节通过 `memcpy` 精确控制偏移，与 `UniformData` 结构体和 SPIR-V 着色器的 std140 布局完全匹配。
+    glUseProgram(program);
 
-**状态重置**：绘制前显式重置所有可能被 ImGui 修改的 GL 状态。
+    // 重置所有 ImGui 可能修改的 GL 状态
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);
+    glViewport(0, 0, m_width, m_height);
 
-#### 为什么这样实现
+    // 绑定输入纹理（最多 8 张）
+    for (size_t i = 0; i < params.inputTextures.size() && i < 8; ++i) {
+        GLuint tex = GetGLTexture(params.inputTextures[i]);
+        if (tex != 0) {
+            glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+            glBindTexture(GL_TEXTURE_2D, tex);
 
-- **双路径兼容**：SPIR-V 着色器使用 UBO，GLSL 着色器使用单独 uniform。双路径确保两种着色器都能正确接收参数。
-- **状态重置必要性**：ImGui 的渲染会修改 GL 状态（启用裁剪、修改混合函数等）。不清除则后处理渲染可能受影响。
-- **Params. 前缀查找**：GLSL 着色器中 uniform 可能定义在命名块内，完整名称为 `Params.uParamFloat0`。lambda 先尝试裸名称再尝试带前缀名称，兼容两种情况。
+            // 尝试设置采样器 uniform
+            char uniformName[32];
+            snprintf(uniformName, sizeof(uniformName), "uTexture%d", static_cast<int>(i));
+            GLint loc = glGetUniformLocation(program, uniformName);
+            if (loc >= 0) {
+                glUniform1i(loc, static_cast<GLint>(i));
+            }
+
+            // 对单纹理着色器也尝试 "uInputTex"
+            if (i == 0) {
+                loc = glGetUniformLocation(program, "uInputTex");
+                if (loc >= 0) {
+                    glUniform1i(loc, 0);
+                }
+            }
+        }
+    }
+
+    // 填充 uniform 数据结构
+    UniformData data = {};
+    if (params.uniformFloats.size() > 0) data.uParamFloat0 = params.uniformFloats[0];
+    if (params.uniformFloats.size() > 1) data.uParamFloat1 = params.uniformFloats[1];
+    if (params.uniformFloats.size() > 2) data.uParamFloat2 = params.uniformFloats[2];
+    if (params.uniformFloats.size() > 3) data.uParamFloat3 = params.uniformFloats[3];
+    if (params.uniformFloats.size() > 4) data.uParamFloat4 = params.uniformFloats[4];
+    if (params.uniformFloats.size() > 5) data.uParamFloat5 = params.uniformFloats[5];
+
+    data.uResolution[0] = static_cast<float>(params.viewportWidth);
+    data.uResolution[1] = static_cast<float>(params.viewportHeight);
+    data.uTime = params.time;
+    data.uFrameCount = static_cast<float>(params.frameCount);
+
+    // ---- 检查程序是否有 UBO ----
+    GLint nb=0;
+    glGetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &nb);
+
+    if (nb > 0) {
+        // ---- UBO 路径（SPIR-V 或 NVIDIA 预编译） ----
+        GLuint blockIndex = glGetUniformBlockIndex(program, "Params");
+        if (blockIndex != GL_INVALID_INDEX) {
+            glUniformBlockBinding(program, blockIndex, 1);
+        }
+
+        const size_t UBO_SIZE = 48;
+        uint8_t ubo[UBO_SIZE] = {};
+        for (size_t i = 0; i < params.uniformFloats.size() && i < 6; ++i) {
+            float v = params.uniformFloats[i];
+            memcpy(ubo + i * 4, &v, sizeof(float));
+        }
+        { float r[2]={(float)params.viewportWidth,(float)params.viewportHeight}; memcpy(ubo+24,r,8); }
+        { memcpy(ubo+32,&params.time,4); float fc=(float)params.frameCount; memcpy(ubo+36,&fc,4); }
+        glBindBuffer(GL_UNIFORM_BUFFER, m_tempUBO);
+        glBufferData(GL_UNIFORM_BUFFER, UBO_SIZE, ubo, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_tempUBO);
+    } else {
+        // ---- 独立 uniform 路径（GLSL） ----
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, 0); // 解绑上一帧的 UBO
+        GLint loc;
+
+        // 辅助 lambda：先尝试裸名称，再尝试 Params. 前缀
+        auto getLoc = [&](const char* name) -> GLint {
+            GLint l = glGetUniformLocation(program, name);
+            if (l >= 0) return l;
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Params.%s", name);
+            return glGetUniformLocation(program, buf);
+        };
+
+        if (params.uniformFloats.size() > 0) {
+            loc = getLoc("uParamFloat0");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[0]);
+        }
+        if (params.uniformFloats.size() > 1) {
+            loc = getLoc("uParamFloat1");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[1]);
+        }
+        if (params.uniformFloats.size() > 2) {
+            loc = getLoc("uParamFloat2");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[2]);
+        }
+        if (params.uniformFloats.size() > 3) {
+            loc = getLoc("uParamFloat3");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[3]);
+        }
+        if (params.uniformFloats.size() > 4) {
+            loc = getLoc("uParamFloat4");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[4]);
+        }
+        if (params.uniformFloats.size() > 5) {
+            loc = getLoc("uParamFloat5");
+            if (loc >= 0) glUniform1f(loc, params.uniformFloats[5]);
+        }
+        loc = getLoc("uResolution");
+        if (loc >= 0) glUniform2f(loc, (float)params.viewportWidth, (float)params.viewportHeight);
+        loc = getLoc("uTime");
+        if (loc >= 0) glUniform1f(loc, params.time);
+        loc = getLoc("uFrameCount");
+        if (loc >= 0) glUniform1ui(loc, params.frameCount);
+    }
+
+    // 绘制全屏四边形
+    glBindVertexArray(m_quadVAO);
+    glDrawElements(GL_TRIANGLES, kFullscreenQuadVertexCount, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+
+    // 清理：解绑所有纹理单元并重置状态
+    for (size_t i = 0; i < 8; ++i) {
+        glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    glActiveTexture(GL_TEXTURE0);
+    glUseProgram(0);
+}
+```
 
 ---
 
-### 5.8 BeginRenderToTexture / EndRenderToTexture — FBO 渲染
+### 5.8 FBO 渲染
+
+#### BeginRenderToTexture
+
+**分析**：将渲染输出重定向到指定纹理关联的 FBO。`GetGLFramebuffer` 使用懒初始化——如果该纹理还没有关联的 FBO，则创建一个新的 FBO 并将纹理附加为颜色附件 0。绑定 FBO 后，将视口设置为纹理的实际尺寸（而非窗口尺寸），确保渲染分辨率匹配。
 
 ```cpp
 void OpenGLBackend::BeginRenderToTexture(TextureHandle target) {
-    GLuint fbo = GetGLFramebuffer(target);  // 获取或创建 FBO
+    GLuint fbo = GetGLFramebuffer(target);
     if (fbo == 0) {
         fprintf(stderr, "[OpenGL] Failed to get/create framebuffer for texture\n");
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);  // 绑定 FBO 为渲染目标
-    m_currentFBO = fbo;  // 更新当前 FBO 记录
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    m_currentFBO = fbo;
 
-    // Get texture dimensions for viewport
+    // 获取纹理尺寸用于设置视口
     auto wIt = m_texWidths.find(target.id);
     auto hIt = m_texHeights.find(target.id);
     if (wIt != m_texWidths.end() && hIt != m_texHeights.end()) {
-        glViewport(0, 0, wIt->second, hIt->second);  // 视口匹配纹理尺寸
+        glViewport(0, 0, wIt->second, hIt->second);
+    }
+}
+```
+
+#### EndRenderToTexture
+
+**分析**：恢复默认帧缓冲区绑定，将 `m_currentFBO` 设回默认值，视口恢复为窗口尺寸。此后所有渲染输出将直接显示到屏幕。
+
+```cpp
+void OpenGLBackend::EndRenderToTexture() {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+    m_currentFBO = m_defaultFBO;
+    glViewport(0, 0, m_width, m_height);
+}
+```
+
+#### GetGLFramebuffer — FBO 懒创建
+
+**分析**：这是 FBO 管理的核心方法。首先在缓存中查找，命中则直接返回。未命中时创建新 FBO，将纹理附加为 `GL_COLOR_ATTACHMENT0`，检查完整性状态。注意此方法声明为 `const`，但需要修改 `m_framebuffers` 缓存——通过 `const_cast` 绕过，这是 OpenGL 后端中常见的实用主义做法。
+
+```cpp
+GLuint OpenGLBackend::GetGLFramebuffer(TextureHandle textureHandle) const {
+    if (textureHandle.id == 0) return 0;
+
+    // 检查帧缓冲区是否已存在
+    auto it = m_framebuffers.find(textureHandle.id);
+    if (it != m_framebuffers.end()) {
+        return it->second;
+    }
+
+    // 创建新的帧缓冲区
+    GLuint tex = GetGLTexture(textureHandle);
+    if (tex == 0) return 0;
+
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    if (fbo == 0) return 0;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        fprintf(stderr, "[OpenGL] Framebuffer incomplete: 0x%x\n", status);
+        glDeleteFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);
+        return 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);
+
+    // 存入缓存（const 方法需要修改缓存）
+    const_cast<OpenGLBackend*>(this)->m_framebuffers[textureHandle.id] = fbo;
+
+    return fbo;
+}
+```
+
+#### 完整源码
+
+```cpp
+GLuint OpenGLBackend::GetGLFramebuffer(TextureHandle textureHandle) const {
+    if (textureHandle.id == 0) return 0;
+
+    // 检查帧缓冲区是否已存在
+    auto it = m_framebuffers.find(textureHandle.id);
+    if (it != m_framebuffers.end()) {
+        return it->second;
+    }
+
+    // 创建新的帧缓冲区
+    GLuint tex = GetGLTexture(textureHandle);
+    if (tex == 0) return 0;
+
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    if (fbo == 0) return 0;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        fprintf(stderr, "[OpenGL] Framebuffer incomplete: 0x%x\n", status);
+        glDeleteFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);
+        return 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_currentFBO);
+
+    // 存入缓存（const 方法需要修改缓存）
+    const_cast<OpenGLBackend*>(this)->m_framebuffers[textureHandle.id] = fbo;
+
+    return fbo;
+}
+
+void OpenGLBackend::BeginRenderToTexture(TextureHandle target) {
+    GLuint fbo = GetGLFramebuffer(target);
+    if (fbo == 0) {
+        fprintf(stderr, "[OpenGL] Failed to get/create framebuffer for texture\n");
+        return;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    m_currentFBO = fbo;
+
+    // 获取纹理尺寸用于设置视口
+    auto wIt = m_texWidths.find(target.id);
+    auto hIt = m_texHeights.find(target.id);
+    if (wIt != m_texWidths.end() && hIt != m_texHeights.end()) {
+        glViewport(0, 0, wIt->second, hIt->second);
     }
 }
 
 void OpenGLBackend::EndRenderToTexture() {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);  // 恢复默认 FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
     m_currentFBO = m_defaultFBO;
-    glViewport(0, 0, m_width, m_height);  // 恢复全屏视口
+    glViewport(0, 0, m_width, m_height);
 }
 ```
 
-#### 功能说明
-
-`BeginRenderToTexture` 将渲染目标切换到指定纹理的 FBO，`EndRenderToTexture` 恢复默认帧缓冲区。实现了离屏渲染的 begin/end 模式。
-
-#### 实现原理
-
-`GetGLFramebuffer` 是懒创建函数：如果纹理对应的 FBO 尚不存在，自动创建并附着纹理为颜色附件。FBO 以纹理 ID 为键缓存在 `m_framebuffers` 中。
-
-#### 为什么这样实现
-
-- **Begin/End 配对**：语义清晰，调用者只需在 begin/end 之间执行渲染命令。
-- **懒创建 FBO**：仅首次需要时创建，减少不必要的 GL 对象。
-- **视口自动匹配**：渲染到纹理时自动设置视口，避免分辨率不匹配。
-
 ---
 
-### 5.9 DrawCards — 3D 卡片渲染
+### 5.9 DrawCards
+
+#### 第一段：卡片着色器编译（懒初始化）
+
+**分析**：`DrawCards` 使用硬编码的 GLSL 着色器（非 SPIR-V），因为卡片渲染是后端内部功能，不涉及跨后端共享。使用 `static GLuint cardProgram` 确保着色器只编译一次。顶点着色器实现 MVP 变换（Model-View-Projection），片段着色器实现纹理采样和透明度混合。
 
 ```cpp
 void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) {
     if (cards.empty() || !viewMat || !projMat) return;
 
-    // Build a simple card shader if needed (hardcoded GLSL)
-    static GLuint cardProgram = 0;  // 静态变量：只创建一次
+    // 按需构建卡片着色器（硬编码 GLSL）
+    static GLuint cardProgram = 0;
     if (cardProgram == 0) {
         const char* cardVS = R"(
             #version 460 core
             layout(location = 0) in vec3 aPos;
             layout(location = 1) in vec2 aTexCoord;
-            uniform mat4 uModel, uView, uProj;
+            uniform mat4 uModel;
+            uniform mat4 uView;
+            uniform mat4 uProj;
             out vec2 vTexCoord;
+            out float vOpacity;
             void main() {
                 gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
                 vTexCoord = aTexCoord;
@@ -4040,20 +5441,27 @@ void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const floa
                 FragColor = vec4(texColor.rgb, texColor.a * uOpacity);
             }
         )";
-        // 编译、链接 cardProgram（完整代码见源文件，此处省略重复的编译错误检查）
-        // ...
-    }
 
+        // 编译、链接着色器...
+        // (省略编译错误处理代码)
+```
+
+#### 第二段：卡片几何体与属性设置
+
+**分析**：创建临时 VAO/VBO/EBO 用于卡片渲染。顶点数据为交错格式：每个顶点包含 3 个位置分量（x,y,z）和 2 个 UV 分量（u,v），步长为 5 个 float。使用索引绘制（两个三角形组成一个四边形）。位置属性绑定到 location 0，UV 属性绑定到 location 1。
+
+```cpp
     glUseProgram(cardProgram);
 
-    // Set view and projection matrices
+    // 设置视图和投影矩阵
     GLint viewLoc = glGetUniformLocation(cardProgram, "uView");
     GLint projLoc = glGetUniformLocation(cardProgram, "uProj");
     if (viewLoc >= 0) glUniformMatrix4fv(viewLoc, 1, GL_FALSE, viewMat);
     if (projLoc >= 0) glUniformMatrix4fv(projLoc, 1, GL_FALSE, projMat);
 
-    // Card quad vertices (position + UV)
+    // 卡片四边形顶点（位置 + UV）
     static const float cardVerts[] = {
+        // pos x, y, z    uv u, v
         -0.5f, -0.5f, 0.0f,  0.0f, 1.0f,
          0.5f, -0.5f, 0.0f,  1.0f, 1.0f,
          0.5f,  0.5f, 0.0f,  1.0f, 0.0f,
@@ -4061,7 +5469,7 @@ void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const floa
     };
     static const unsigned int cardIdx[] = { 0, 1, 2, 0, 2, 3 };
 
-    // Create temporary VAO
+    // 创建临时 VAO 用于卡片渲染
     GLuint cardVAO, cardVBO, cardEBO;
     glGenVertexArrays(1, &cardVAO);
     glGenBuffers(1, &cardVBO);
@@ -4073,13 +5481,201 @@ void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const floa
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cardEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cardIdx), cardIdx, GL_STATIC_DRAW);
 
-    // Position (location 0): vec3
+    // 位置属性（location 0）：vec3
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    // UV (location 1): vec2
+
+    // UV 属性（location 1）：vec2
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+```
+
+#### 第三段：逐卡绘制与模型矩阵构建
+
+**分析**：遍历每张卡片，构建模型矩阵（缩放 → Y 轴旋转 → 平移）。矩阵乘法手动实现（三重循环），先应用缩放到单位矩阵，再乘以旋转矩阵，最后加上平移分量。将纹理绑定到单元 0，设置模型矩阵和不透明度 uniform，绘制 6 个索引（两个三角形）。
+
+```cpp
+    for (const auto& card : cards) {
+        GLuint tex = GetGLTexture(card.texture);
+        if (tex == 0) continue;
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+
+        // 构建模型矩阵：平移 * 绕Y旋转 * 缩放
+        float model[16] = {};
+
+        // 从单位矩阵开始
+        model[0] = model[5] = model[10] = model[15] = 1.0f;
+
+        // 应用缩放
+        model[0]  *= card.scaleX;
+        model[5]  *= card.scaleY;
+
+        // 应用绕 Y 轴旋转
+        float cosR = std::cos(card.rotationY);
+        float sinR = std::sin(card.rotationY);
+        float rotMat[16] = {};
+        rotMat[0]  =  cosR;
+        rotMat[2]  =  sinR;
+        rotMat[5]  =  1.0f;
+        rotMat[8]  = -sinR;
+        rotMat[10] =  cosR;
+        rotMat[15] =  1.0f;
+
+        // 矩阵乘法：result = rotMat * model
+        float result[16] = {};
+        for (int r = 0; r < 4; ++r) {
+            for (int c = 0; c < 4; ++c) {
+                for (int k = 0; k < 4; ++k) {
+                    result[r * 4 + c] += rotMat[r * 4 + k] * model[k * 4 + c];
+                }
+            }
+        }
+
+        // 应用平移
+        result[12] += card.posX;
+        result[13] += card.posY;
+        result[14] += card.posZ;
+
+        if (modelLoc >= 0) glUniformMatrix4fv(modelLoc, 1, GL_FALSE, result);
+        if (opacityLoc >= 0) glUniform1f(opacityLoc, card.opacity);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+
+    // 清理临时卡片几何体
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &cardVAO);
+    glDeleteBuffers(1, &cardVBO);
+    glDeleteBuffers(1, &cardEBO);
+
+    glActiveTexture(GL_TEXTURE0);
+    glUseProgram(0);
+}
+```
+
+#### 完整源码
+
+```cpp
+void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) {
+    if (cards.empty() || !viewMat || !projMat) return;
+
+    // 按需构建卡片着色器（硬编码 GLSL）
+    static GLuint cardProgram = 0;
+    if (cardProgram == 0) {
+        const char* cardVS = R"(
+            #version 460 core
+            layout(location = 0) in vec3 aPos;
+            layout(location = 1) in vec2 aTexCoord;
+            uniform mat4 uModel;
+            uniform mat4 uView;
+            uniform mat4 uProj;
+            out vec2 vTexCoord;
+            out float vOpacity;
+            void main() {
+                gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
+                vTexCoord = aTexCoord;
+            }
+        )";
+        const char* cardFS = R"(
+            #version 460 core
+            in vec2 vTexCoord;
+            uniform sampler2D uCardTexture;
+            uniform float uOpacity;
+            out vec4 FragColor;
+            void main() {
+                vec4 texColor = texture(uCardTexture, vTexCoord);
+                FragColor = vec4(texColor.rgb, texColor.a * uOpacity);
+            }
+        )";
+
+        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vs, 1, &cardVS, nullptr);
+        glCompileShader(vs);
+        GLint success = 0;
+        glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            char log[512];
+            glGetShaderInfoLog(vs, 512, nullptr, log);
+            fprintf(stderr, "[OpenGL] Card vertex shader failed: %s\n", log);
+            glDeleteShader(vs);
+            return;
+        }
+
+        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fs, 1, &cardFS, nullptr);
+        glCompileShader(fs);
+        glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            char log[512];
+            glGetShaderInfoLog(fs, 512, nullptr, log);
+            fprintf(stderr, "[OpenGL] Card fragment shader failed: %s\n", log);
+            glDeleteShader(vs);
+            glDeleteShader(fs);
+            return;
+        }
+
+        cardProgram = glCreateProgram();
+        glAttachShader(cardProgram, vs);
+        glAttachShader(cardProgram, fs);
+        glLinkProgram(cardProgram);
+        glGetProgramiv(cardProgram, GL_LINK_STATUS, &success);
+        if (!success) {
+            char log[512];
+            glGetProgramInfoLog(cardProgram, 512, nullptr, log);
+            fprintf(stderr, "[OpenGL] Card program link failed: %s\n", log);
+            glDeleteProgram(cardProgram);
+            cardProgram = 0;
+            glDeleteShader(vs);
+            glDeleteShader(fs);
+            return;
+        }
+        glDetachShader(cardProgram, vs);
+        glDetachShader(cardProgram, fs);
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+    }
+
+    glUseProgram(cardProgram);
+
+    // 设置视图和投影矩阵
+    GLint viewLoc = glGetUniformLocation(cardProgram, "uView");
+    GLint projLoc = glGetUniformLocation(cardProgram, "uProj");
+    if (viewLoc >= 0) glUniformMatrix4fv(viewLoc, 1, GL_FALSE, viewMat);
+    if (projLoc >= 0) glUniformMatrix4fv(projLoc, 1, GL_FALSE, projMat);
+
+    // 卡片四边形顶点（位置 + UV）
+    static const float cardVerts[] = {
+        // pos x, y, z    uv u, v
+        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f,
+         0.5f, -0.5f, 0.0f,  1.0f, 1.0f,
+         0.5f,  0.5f, 0.0f,  1.0f, 0.0f,
+        -0.5f,  0.5f, 0.0f,  0.0f, 0.0f,
+    };
+    static const unsigned int cardIdx[] = { 0, 1, 2, 0, 2, 3 };
+
+    // 创建临时 VAO 用于卡片渲染
+    GLuint cardVAO, cardVBO, cardEBO;
+    glGenVertexArrays(1, &cardVAO);
+    glGenBuffers(1, &cardVBO);
+    glGenBuffers(1, &cardEBO);
+
+    glBindVertexArray(cardVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cardVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cardVerts), cardVerts, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cardEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cardIdx), cardIdx, GL_STATIC_DRAW);
+
+    // 位置属性（location 0）：vec3
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+    // UV 属性（location 1）：vec2
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
+    // 设置纹理采样器
     GLint texLoc = glGetUniformLocation(cardProgram, "uCardTexture");
     if (texLoc >= 0) glUniform1i(texLoc, 0);
 
@@ -4093,27 +5689,38 @@ void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const floa
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex);
 
-        // Build model matrix: translate * rotateY * scale
+        // 构建模型矩阵：平移 * 绕Y旋转 * 缩放
         float model[16] = {};
-        model[0] = model[5] = model[10] = model[15] = 1.0f;  // identity
-        model[0] *= card.scaleX;  // scale X
-        model[5] *= card.scaleY;  // scale Y
 
-        // Rotation around Y
+        // 从单位矩阵开始
+        model[0] = model[5] = model[10] = model[15] = 1.0f;
+
+        // 应用缩放
+        model[0]  *= card.scaleX;
+        model[5]  *= card.scaleY;
+
+        // 应用绕 Y 轴旋转
         float cosR = std::cos(card.rotationY);
         float sinR = std::sin(card.rotationY);
         float rotMat[16] = {};
-        rotMat[0] = cosR; rotMat[2] = sinR; rotMat[5] = 1.0f;
-        rotMat[8] = -sinR; rotMat[10] = cosR; rotMat[15] = 1.0f;
+        rotMat[0]  =  cosR;
+        rotMat[2]  =  sinR;
+        rotMat[5]  =  1.0f;
+        rotMat[8]  = -sinR;
+        rotMat[10] =  cosR;
+        rotMat[15] =  1.0f;
 
-        // model = rotMat * model
+        // 矩阵乘法：result = rotMat * model
         float result[16] = {};
-        for (int r = 0; r < 4; ++r)
-            for (int c = 0; c < 4; ++c)
-                for (int k = 0; k < 4; ++k)
-                    result[r*4+c] += rotMat[r*4+k] * model[k*4+c];
+        for (int r = 0; r < 4; ++r) {
+            for (int c = 0; c < 4; ++c) {
+                for (int k = 0; k < 4; ++k) {
+                    result[r * 4 + c] += rotMat[r * 4 + k] * model[k * 4 + c];
+                }
+            }
+        }
 
-        // Translation
+        // 应用平移
         result[12] += card.posX;
         result[13] += card.posY;
         result[14] += card.posZ;
@@ -4124,62 +5731,122 @@ void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const floa
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     }
 
-    // Cleanup temporary geometry
+    // 清理临时卡片几何体
     glBindVertexArray(0);
     glDeleteVertexArrays(1, &cardVAO);
     glDeleteBuffers(1, &cardVBO);
     glDeleteBuffers(1, &cardEBO);
+
     glActiveTexture(GL_TEXTURE0);
     glUseProgram(0);
 }
 ```
 
-#### 功能说明
-
-`DrawCards` 渲染封面流中的 3D 卡片。每张卡片是带纹理的四边形，支持位置、缩放、Y 轴旋转和不透明度变换。使用标准 MVP 矩阵管线。
-
-#### 实现原理
-
-**着色器**：使用硬编码 GLSL 460（非 SPIR-V），因为卡片着色器是后端内部实现细节。`static GLuint cardProgram` 确保只编译链接一次。
-
-**模型矩阵**：手动构建 4x4 列主序矩阵，变换顺序为 Scale -> RotateY -> Translate。矩阵乘法使用三重循环手动实现。
-
-#### 为什么这样实现
-
-- **硬编码 GLSL**：卡片着色器是 OpenGL 后端内部实现，不需要跨后端共享。使用 GLSL 简化代码。
-- **手动矩阵运算**：避免引入 GLM 等数学库依赖，保持项目轻量。
-- **临时 VAO**：卡片数量有限，每次创建/删除的开销可接受。
-
 ---
 
 ### 5.10 ImGui 集成
 
+#### 第一段：ImGuiInit — 上下文创建与字体加载
+
+**分析**：初始化 ImGui 上下文，启用键盘导航和 Docking 功能。字体加载采用"默认拉丁字体 + 中文字体合并"策略：先加载 ImGui 默认字体（覆盖拉丁字符），再以 MergeMode 将微软雅黑（msyh.ttc）的中文字形合并到同一字体图集中。使用 `GetGlyphRangesChineseFull()` 获取完整的中文字符范围。这种方案避免了为中文单独创建字体图集，减少纹理切换。
+
 ```cpp
 void OpenGLBackend::ImGuiInit(GLFWwindow* window) {
-    IMGUI_CHECKVERSION();  // 检查版本兼容性
-    ImGui::CreateContext();  // 创建上下文
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // 键盘导航
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;       // 窗口停靠
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // 启用键盘导航
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;        // 启用 Docking
 
-    // Load fonts: default Latin + Chinese merge
+    // 加载字体：默认拉丁字体 + 中文字体合并
+    // 优先尝试 Windows 系统字体
     const char* chineseFontPath = nullptr;
-    // Check for Microsoft YaHei
+    const char* latinFontPath = nullptr;
+
+    // 检查微软雅黑（msyh.ttc）— Windows 上最佳 CJK 覆盖
     if (GetFileAttributesA("C:\\Windows\\Fonts\\msyh.ttc") != INVALID_FILE_ATTRIBUTES) {
         chineseFontPath = "C:\\Windows\\Fonts\\msyh.ttc";
     }
 
     if (chineseFontPath) {
-        io.Fonts->AddFontDefault();  // 先加载默认拉丁字体
+        // 先加载默认 ImGui 字体（覆盖拉丁字形）
+        io.Fonts->AddFontDefault();
+
+        // 将中文字形合并到默认字体之上
         ImFontConfig cfg;
-        cfg.MergeMode = true;  // 合并模式
+        cfg.MergeMode = true;
         io.Fonts->AddFontFromFileTTF(chineseFontPath, 16.0f, &cfg,
-            io.Fonts->GetGlyphRangesChineseFull());  // 合并中文字形
+            io.Fonts->GetGlyphRangesChineseFull());
+    }
+    // 如果没有找到中文字体，使用 ImGui 默认字体（ProggyClean）
+
+    // 初始化 ImGui GLFW 后端
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+
+    // 初始化 ImGui OpenGL3 后端
+    ImGui_ImplOpenGL3_Init("#version 460 core");
+}
+```
+
+#### 第二段：ImGuiNewFrame / ImGuiRender / ImGuiShutdown
+
+**分析**：`ImGuiNewFrame` 按照正确的顺序调用 OpenGL3 → GLFW → ImGui 的 NewFrame，确保输入事件和 GL 状态正确初始化。`ImGuiRender` 先调用 `ImGui::Render()` 生成绘制数据，再通过 `ImGui_ImplOpenGL3_RenderDrawData` 将绘制命令转化为 OpenGL 调用。`ImGuiShutdown` 按相反顺序销毁后端和上下文。
+
+```cpp
+void OpenGLBackend::ImGuiNewFrame() {
+    ImGui_ImplOpenGL3_NewFrame();  // OpenGL3 后端新帧
+    ImGui_ImplGlfw_NewFrame();     // GLFW 后端新帧（处理输入事件）
+    ImGui::NewFrame();            // ImGui 核心新帧
+}
+
+void OpenGLBackend::ImGuiRender() {
+    ImGui::Render();                                       // 生成绘制数据
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // 转化为 GL 调用
+}
+
+void OpenGLBackend::ImGuiShutdown() {
+    ImGui_ImplOpenGL3_Shutdown();  // 销毁 OpenGL3 后端
+    ImGui_ImplGlfw_Shutdown();     // 销毁 GLFW 后端
+    ImGui::DestroyContext();       // 销毁 ImGui 上下文
+}
+```
+
+#### 完整源码
+
+```cpp
+void OpenGLBackend::ImGuiInit(GLFWwindow* window) {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    // 加载字体：默认拉丁字体 + 中文字体合并
+    const char* chineseFontPath = nullptr;
+
+    // 检查微软雅黑（msyh.ttc）
+    if (GetFileAttributesA("C:\\Windows\\Fonts\\msyh.ttc") != INVALID_FILE_ATTRIBUTES) {
+        chineseFontPath = "C:\\Windows\\Fonts\\msyh.ttc";
     }
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);  // GLFW 后端
-    ImGui_ImplOpenGL3_Init("#version 460 core");  // OpenGL3 后端
+    if (chineseFontPath) {
+        // 先加载默认 ImGui 字体
+        io.Fonts->AddFontDefault();
+
+        // 将中文字形合并到默认字体之上
+        ImFontConfig cfg;
+        cfg.MergeMode = true;
+        io.Fonts->AddFontFromFileTTF(chineseFontPath, 16.0f, &cfg,
+            io.Fonts->GetGlyphRangesChineseFull());
+    }
+
+    // 初始化 ImGui GLFW 后端
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+
+    // 初始化 ImGui OpenGL3 后端
+    ImGui_ImplOpenGL3_Init("#version 460 core");
 }
 
 void OpenGLBackend::ImGuiNewFrame() {
@@ -4200,349 +5867,242 @@ void OpenGLBackend::ImGuiShutdown() {
 }
 ```
 
-#### 功能说明
-
-ImGui 集成的四个函数：初始化上下文/字体/后端、每帧开始、渲染绘制数据、关闭清理。
-
-#### 实现原理
-
-ImGui 使用双后端架构：`imgui_impl_glfw` 处理平台操作（窗口、输入），`imgui_impl_opengl3` 处理 GL 渲染。
-
-字体加载采用"合并模式"：先加载默认拉丁字体，再以合并模式加载中文字体。合并模式下 ImGui 为每个字符查找第一个包含该字形的字体。
-
-#### 为什么这样实现
-
-- **微软雅黑优先**：Windows 上 CJK 覆盖最完整的系统字体。
-- **合并模式**：保留默认字体的拉丁字符质量，同时添加中文支持。
-- **`GetFileAttributesA` 检测**：比 `std::filesystem::exists` 更轻量，所有 Windows 版本可用。
-
 ---
 
-### 5.11 Shutdown — 资源清理
+### 5.11 Shutdown
+
+#### 第一段：着色器与程序清理
+
+**分析**：`Shutdown()` 按照依赖关系的逆序清理所有 GL 资源。首先遍历 `m_shaders` 删除所有着色器对象，然后遍历 `m_programCache` 删除所有程序对象。注意：程序必须在着色器之前或同时删除，因为程序引用着色器。
 
 ```cpp
 void OpenGLBackend::Shutdown() {
-    // Cleanup shaders
+    // 清理着色器
     for (auto& [id, shader] : m_shaders) {
-        if (shader != 0) glDeleteShader(shader);
+        if (shader != 0) {
+            glDeleteShader(shader);
+        }
     }
     m_shaders.clear();
 
-    // Cleanup programs
+    // 清理程序
     for (auto& [key, program] : m_programCache) {
-        if (program != 0) glDeleteProgram(program);
+        if (program != 0) {
+            glDeleteProgram(program);
+        }
     }
     m_programCache.clear();
+```
 
-    // Cleanup framebuffers
+#### 第二段：帧缓冲区、纹理与几何体清理
+
+**分析**：清理所有帧缓冲区对象、纹理对象（同时清理关联的格式和尺寸元数据）、全屏四边形的 VAO/VBO 和临时 UBO。最后绑定默认 FBO 并调用 `glFinish()` 确保所有 GPU 命令完成——这防止了在同一 GLFW 窗口上切换到 Vulkan 后端时出现资源冲突。
+
+```cpp
+    // 清理帧缓冲区
     for (auto& [id, fbo] : m_framebuffers) {
-        if (fbo != 0) glDeleteFramebuffers(1, &fbo);
+        if (fbo != 0) {
+            glDeleteFramebuffers(1, &fbo);
+        }
     }
     m_framebuffers.clear();
 
-    // Cleanup textures
+    // 清理纹理
     for (auto& [id, tex] : m_textures) {
-        if (tex != 0) glDeleteTextures(1, &tex);
+        if (tex != 0) {
+            glDeleteTextures(1, &tex);
+        }
     }
     m_textures.clear();
     m_textureFormats.clear();
     m_texWidths.clear();
     m_texHeights.clear();
 
-    // Cleanup quad
-    if (m_quadVAO != 0) { glDeleteVertexArrays(1, &m_quadVAO); m_quadVAO = 0; }
-    if (m_quadVBO != 0) { glDeleteBuffers(1, &m_quadVBO); m_quadVBO = 0; }
+    // 清理全屏四边形
+    if (m_quadVAO != 0) {
+        glDeleteVertexArrays(1, &m_quadVAO);
+        m_quadVAO = 0;
+    }
+    if (m_quadVBO != 0) {
+        glDeleteBuffers(1, &m_quadVBO);
+        m_quadVBO = 0;
+    }
 
-    // Cleanup UBO
-    if (m_tempUBO != 0) { glDeleteBuffers(1, &m_tempUBO); m_tempUBO = 0; }
+    // 清理 UBO
+    if (m_tempUBO != 0) {
+        glDeleteBuffers(1, &m_tempUBO);
+        m_tempUBO = 0;
+    }
 
-    // Unbind FBO and flush — prevents conflicts when switching to Vulkan
+    // 解绑 FBO 并刷新 — 防止在同一 GLFW 窗口上切换到 Vulkan 时冲突
     glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
-    glFinish();  // 等待所有 GL 命令完成
+    glFinish();
 
     printf("[OpenGL] Shutdown\n");
 }
 ```
 
-#### 功能说明
-
-释放 OpenGL 后端持有的所有 GL 资源：着色器、程序、FBO、纹理、VAO/VBO、UBO。最后恢复默认 FBO 并刷新命令队列。
-
-#### 实现原理
-
-资源清理顺序为：着色器 -> 程序 -> FBO -> 纹理 -> 几何 -> UBO。先清理依赖其他资源的对象。
-
-`glFinish()` 确保所有 GL 命令在返回前完成，在切换到 Vulkan 后端时尤为重要。
-
-#### 为什么这样实现
-
-- **全面清理**：遍历所有资源池逐一删除，确保无泄漏。
-- **glFinish 重要性**：GL 命令异步执行，`glFinish` 强制同步。不调用可能导致切换到 Vulkan 时竞争条件。
-- **恢复默认 FBO**：确保后端关闭后 GL 状态干净。
-
----
-
-### 5.12 辅助函数
-
-#### GetOrCreateProgram — 程序缓存与懒创建
+#### 完整源码
 
 ```cpp
-GLuint OpenGLBackend::GetOrCreateProgram(GLuint vsKey, GLuint fsKey, GLuint vsGL, GLuint fsGL) {
-    uint64_t key = (static_cast<uint64_t>(vsKey) << 32) | fsKey;
-    // 64 位缓存键
-
-    auto it = m_programCache.find(key);
-    if (it != m_programCache.end()) return it->second;  // 缓存命中
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vsGL);
-    glAttachShader(program, fsGL);
-    glLinkProgram(program);
-
-    GLint success = 0;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(program, sizeof(infoLog), nullptr, infoLog);
-        fprintf(stderr, "[OpenGL] Shader program linking failed: %s\n", infoLog);
-        glDeleteProgram(program);
-        return 0;
-    }
-
-    glDetachShader(program, vsGL);  // 链接后分离
-    glDetachShader(program, fsGL);
-
-    // Explicitly bind "Params" UBO to binding point 1
-    GLint nb = 0;
-    glGetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &nb);
-    if (nb > 0) {
-        GLuint blockIndex = glGetUniformBlockIndex(program, "Params");
-        if (blockIndex != GL_INVALID_INDEX) {
-            glUniformBlockBinding(program, blockIndex, 1);
+void OpenGLBackend::Shutdown() {
+    // 清理着色器
+    for (auto& [id, shader] : m_shaders) {
+        if (shader != 0) {
+            glDeleteShader(shader);
         }
     }
+    m_shaders.clear();
 
-    m_programCache[key] = program;
-    return program;
+    // 清理程序
+    for (auto& [key, program] : m_programCache) {
+        if (program != 0) {
+            glDeleteProgram(program);
+        }
+    }
+    m_programCache.clear();
+
+    // 清理帧缓冲区
+    for (auto& [id, fbo] : m_framebuffers) {
+        if (fbo != 0) {
+            glDeleteFramebuffers(1, &fbo);
+        }
+    }
+    m_framebuffers.clear();
+
+    // 清理纹理
+    for (auto& [id, tex] : m_textures) {
+        if (tex != 0) {
+            glDeleteTextures(1, &tex);
+        }
+    }
+    m_textures.clear();
+    m_textureFormats.clear();
+    m_texWidths.clear();
+    m_texHeights.clear();
+
+    // 清理全屏四边形
+    if (m_quadVAO != 0) {
+        glDeleteVertexArrays(1, &m_quadVAO);
+        m_quadVAO = 0;
+    }
+    if (m_quadVBO != 0) {
+        glDeleteBuffers(1, &m_quadVBO);
+        m_quadVBO = 0;
+    }
+
+    // 清理 UBO
+    if (m_tempUBO != 0) {
+        glDeleteBuffers(1, &m_tempUBO);
+        m_tempUBO = 0;
+    }
+
+    // 解绑 FBO 并刷新 — 防止在同一 GLFW 窗口上切换到 Vulkan 时冲突
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+    glFinish();
+
+    printf("[OpenGL] Shutdown\n");
 }
 ```
 
-#### 功能说明
 
-核心的程序缓存函数。以顶点+片段着色器 ID 为键，查找或创建链接后的 GL 程序。
-
-#### 实现原理
-
-64 位复合键确保唯一性。链接成功后立即分离着色器（GL 最佳实践）。显式绑定 UBO 到绑定点 1 解决跨驱动兼容性问题。
-
-#### 为什么这样实现
-
-- **性能关键**：封面流渲染 18 张缩略图时，缓存使链接只执行一次。
-- **显式绑定点**：某些驱动不遵守 `layout(binding=1)`，必须显式设置。
-
-#### SetupQuadVAO — 全屏四边形几何设置
-
-```cpp
-void OpenGLBackend::SetupQuadVAO() {
-    glGenVertexArrays(1, &m_quadVAO);
-    glBindVertexArray(m_quadVAO);
-
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(kQuadVertices), kQuadVertices, GL_STATIC_DRAW);
-
-    // Position (location 0): 2 floats
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-    // UV (location 1): 2 floats
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    // EBO for indexed drawing
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kQuadIndices), kQuadIndices, GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-    m_quadVBO = vbo;
-}
-```
-
-#### 功能说明
-
-创建全屏四边形的 VAO、VBO 和 EBO。顶点数据使用交错布局（位置 + UV 交替），通过索引绘制减少顶点数（4 个顶点而非 6 个）。
-
-#### 实现原理
-
-VAO 封装了顶点属性配置，绑定 VAO 后只需调用 `glDrawElements` 即可绘制。EBO（Element Buffer Object）通过索引复用顶点，将 4 个顶点的四边形用 2 个三角形（6 个索引）绘制。
-
-#### 为什么这样实现
-
-- **交错布局**：位置和 UV 在同一缓冲区中交替排列，提高缓存命中率。
-- **索引绘制**：4 个顶点 + 6 个索引，比 6 个独立顶点更节省内存和带宽。
-- **EBO 归属 VAO**：EBO 在 VAO 绑定时创建，由 VAO 管理生命周期。VBO 需要单独保存句柄以便清理。
-
-#### BindDefaultState — 默认 GL 状态
-
-```cpp
-void OpenGLBackend::BindDefaultState() {
-    glEnable(GL_DEPTH_TEST);    // 启用深度测试
-    glDepthFunc(GL_LESS);       // 深度函数：小于时通过
-    glEnable(GL_BLEND);         // 启用混合
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Alpha 混合
-    glDisable(GL_CULL_FACE);    // 禁用面剔除
-    glViewport(0, 0, m_width, m_height);  // 全屏视口
-}
-```
-
-#### 功能说明
-
-设置 OpenGL 的默认渲染状态，在 `Init` 中调用一次，作为后续渲染操作的基准状态。
-
-#### 为什么这样实现
-
-- **深度测试启用**：3D 卡片渲染需要深度测试，默认启用避免遗漏。
-- **Alpha 混合**：封面流卡片有透明度变化，混合是必需的。
-- **禁用面剔除**：全屏四边形和卡片可能从背面观察（旋转时），禁用剔除确保始终可见。
-
----
-
-> **文档说明**：本文档覆盖了 Shader Showcase 项目的第 4 章（EffectDetailScene 特效详情页）和第 5 章（OpenGL 渲染后端），对每个函数提供了完整源码、逐行中文注释、功能说明、实现原理和设计理由分析。
-
-# Shader Showcase 项目代码详解（第三部分）
-
-> 第6-8章：Vulkan 渲染后端、着色器加载与效果元数据、输入源与UI组件
+# Shader Showcase 技术文档（第三部分：第6-8章）
 
 ---
 
 ## 6. Vulkan 渲染后端
 
-本章深入分析 VulkanBackend 的完整实现，涵盖从 Vulkan 实例创建到全屏四边形渲染的整个生命周期。VulkanBackend 是整个项目的核心渲染引擎，实现了 `IRenderBackend` 接口，提供 SPIR-V 着色器支持、纹理管理和全屏后处理管线。
+本章详细分析 `VulkanBackend` 类的完整实现。该类继承自 `IRenderBackend` 接口，封装了 Vulkan 1.2 图形 API 的全部初始化、资源管理和渲染流程。与 OpenGL 后端不同，Vulkan 要求开发者显式管理每一个底层对象——从实例创建到命令缓冲录制——因此代码量更大，但性能可控性也更强。
 
-### 6.1 VulkanBackend 头文件
+---
 
-头文件定义了三个核心资源包装结构体和 VulkanBackend 类本身。
+### 6.1 头文件
+
+**文件**: `src/render/VulkanBackend.h`
+
+头文件定义了三类核心数据结构：Vulkan 资源包装器、后端类本身，以及辅助查询结构体。
+
+#### 第一段：Vulkan 资源包装结构体
+
+**分析**：Vulkan 没有内置的资源管理机制，所有 GPU 对象都以不透明句柄形式存在。本项目定义了三个包装结构体来统一管理这些句柄及其关联元数据：
+
+- `VulkanShader`：封装 `VkShaderModule` 和着色器阶段标志位（顶点/片元）。
+- `VulkanTexture`：封装图像三件套（Image + Memory + ImageView）外加 Sampler，并额外携带 FBO 相关的 Framebuffer 和 RenderPass 句柄，以及 ImGui 描述符集缓存。
+- `VulkanPipeline`：封装管线对象及其布局、描述集布局/池/集，以及管线自有的 UBO 缓冲区。
 
 ```cpp
-#pragma once
-#include "render/IRenderBackend.h"    // 引入渲染后端抽象接口
-#include <vulkan/vulkan.h>            // Vulkan 核心头文件
-#include <vector>                     // 动态数组容器
-#include <unordered_map>              // 哈希映射容器
-#include <memory>                     // 智能指针
-
-struct GLFWwindow;                   // 前向声明 GLFW 窗口类型
-
-// ============================================================================
-// Vulkan Resource Wrappers — Vulkan 资源包装结构体
-// ============================================================================
-
-// 着色器模块包装：持有 VkShaderModule 和着色器阶段标识
 struct VulkanShader {
-    VkShaderModule module = VK_NULL_HANDLE;           // Vulkan 着色器模块句柄
-    VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT; // 着色器阶段（顶点/片段）
+    VkShaderModule module = VK_NULL_HANDLE;
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
 };
 
-// 纹理包装：持有完整的 Vulkan 纹理资源链（Image + View + Sampler + 可选FBO）
 struct VulkanTexture {
-    VkImage image = VK_NULL_HANDLE;           // Vulkan 图像对象
-    VkDeviceMemory memory = VK_NULL_HANDLE;   // 图像绑定的设备内存
-    VkImageView view = VK_NULL_HANDLE;         // 图像视图（描述纹理的访问方式）
-    VkSampler sampler = VK_NULL_HANDLE;       // 采样器（描述纹理的过滤和寻址模式）
-    int width = 0, height = 0;               // 纹理宽高
-    VkFormat format = VK_FORMAT_UNDEFINED;    // 像素格式
-    bool isFBO = false;                       // 是否为帧缓冲对象（渲染目标）
-    VkFramebuffer framebuffer = VK_NULL_HANDLE;   // 帧缓冲（仅渲染目标使用）
-    VkRenderPass renderPass = VK_NULL_HANDLE;     // 渲染通道（仅渲染目标使用）
-    // ImGui 描述符集缓存（用于 GetImTextureID，避免重复创建）
+    VkImage image = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    VkSampler sampler = VK_NULL_HANDLE;
+    int width = 0, height = 0;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    bool isFBO = false;
+    VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
     VkDescriptorSet imguiDescriptorSet = VK_NULL_HANDLE;
 };
 
-// 管线包装：持有完整的 Vulkan 图形管线及其描述符资源
 struct VulkanPipeline {
-    VkPipeline pipeline = VK_NULL_HANDLE;             // 图形管线对象
-    VkPipelineLayout layout = VK_NULL_HANDLE;        // 管线布局（描述符集布局绑定）
-    VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE; // 描述符集布局
-    VkDescriptorPool descPool = VK_NULL_HANDLE;      // 描述符池
-    VkDescriptorSet descSet = VK_NULL_HANDLE;         // 预分配的描述符集（绑定纹理+UBO）
-    ShaderHandle vertShader;                           // 顶点着色器句柄
-    ShaderHandle fragShader;                           // 片段着色器句柄
-    // UBO 缓冲区：用于着色器 Params 块（binding=1），每帧复用
-    VkBuffer uboBuffer = VK_NULL_HANDLE;               // UBO 缓冲区对象
-    VkDeviceMemory uboMemory = VK_NULL_HANDLE;        // UBO 缓冲区内存
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorPool descPool = VK_NULL_HANDLE;
+    VkDescriptorSet descSet = VK_NULL_HANDLE;
+    ShaderHandle vertShader;
+    ShaderHandle fragShader;
+    VkBuffer uboBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory uboMemory = VK_NULL_HANDLE;
 };
+```
 
-// ============================================================================
-// Vulkan Backend — Vulkan 渲染后端主类
-// ============================================================================
+#### 第二段：VulkanBackend 类声明——核心成员
+
+**分析**：后端类的成员变量按功能域分组，包括：窗口引用与尺寸、Vulkan 核心对象（实例/物理设备/逻辑设备/队列）、Surface 与交换链、命令缓冲与同步对象、帧状态追踪、资源管理容器（使用 `unordered_map` + 自增 ID 的句柄系统）、当前渲染状态、ImGui 资源，以及延迟销毁队列和管线缓存。
+
+```cpp
 class VulkanBackend : public IRenderBackend {
 public:
-    VulkanBackend();                    // 构造函数
-    ~VulkanBackend() override;          // 析构函数（自动调用 Shutdown）
-
-    // Lifecycle — 生命周期管理
-    bool Init(GLFWwindow* window) override;   // 初始化整个 Vulkan 后端
-    void Shutdown() override;                 // 关闭并释放所有资源
-    void BeginFrame() override;               // 开始新帧（获取交换链图像、开始命令录制）
-    void EndFrame() override;                 // 结束帧（提交命令、呈现）
-    void WaitIdle() override;                 // 等待 GPU 空闲
-
-    // Viewport — 视口管理
-    void Resize(int width, int height) override;           // 标记窗口大小变更
-    void GetFramebufferSize(int& width, int& height) override; // 获取当前帧缓冲尺寸
-
-    // Shaders (SPIR-V) — 着色器管理
+    bool Init(GLFWwindow* window) override;
+    void Shutdown() override;
+    void BeginFrame() override;
+    void EndFrame() override;
+    void WaitIdle() override;
+    void Resize(int width, int height) override;
+    void GetFramebufferSize(int& width, int& height) override;
     ShaderHandle CreateVertexShader(const uint32_t* spirv, size_t size) override;
     ShaderHandle CreateFragmentShader(const uint32_t* spirv, size_t size) override;
-    ShaderHandle CreateVertexShaderFromGLSL(const std::string& source) override;
-    ShaderHandle CreateFragmentShaderFromGLSL(const std::string& source) override;
-    void DestroyShader(ShaderHandle handle) override;
-
-    // Textures — 纹理管理
     TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) override;
     void UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) override;
     void DestroyTexture(TextureHandle handle) override;
     void* GetImTextureID(TextureHandle handle) override;
-
-    // Pipelines — 管线管理
     PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
     void DestroyPipeline(PipelineHandle handle) override;
     void BindPipeline(PipelineHandle handle) override;
-
-    // Fullscreen draw — 全屏绘制
     void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;
-    void DrawCards(const std::vector<IRenderBackend::CardDrawInfo>& cards, const float* viewMatrix, const float* projMatrix) override;
-    void BlitToScreen(TextureHandle src) override;
-    void BeginRenderToTexture(TextureHandle target) override;  // 开始渲染到纹理（FBO）
-    void EndRenderToTexture() override;                        // 结束渲染到纹理
-
-    // Utility — 工具函数
-    void SetViewport(int x, int y, int width, int height) override;
-    void Clear(float r, float g, float b, float a) override;
-
-    // ImGui — ImGui 集成
+    void BeginRenderToTexture(TextureHandle target) override;
+    void EndRenderToTexture() override;
     void ImGuiInit(GLFWwindow* window) override;
     void ImGuiNewFrame() override;
     void ImGuiRender() override;
     void ImGuiShutdown() override;
-
-    // Query — 查询接口
     BackendType GetType() const override { return BackendType::Vulkan; }
     const char* GetName() const override { return "Vulkan 1.2 (SPIR-V)"; }
     int GetMaxTextureSize() const override;
 
 private:
-    // Window reference — 窗口引用
-    GLFWwindow* m_window = nullptr;     // GLFW 窗口指针
-    int m_width = 1280;                 // 当前宽度
-    int m_height = 720;                 // 当前高度
-    bool m_initialized = false;          // 是否已初始化
-    bool m_framebufferResized = false;  // 帧缓冲是否需要重建
+    GLFWwindow* m_window = nullptr;
+    int m_width = 1280;
+    int m_height = 720;
+    bool m_initialized = false;
+    bool m_framebufferResized = false;
 
-    // Core Vulkan Objects — Vulkan 核心对象
     VkInstance m_instance = VK_NULL_HANDLE;
     VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
     VkDevice m_device = VK_NULL_HANDLE;
@@ -4551,7 +6111,6 @@ private:
     uint32_t m_graphicsFamily = 0;
     uint32_t m_presentFamily = 0;
 
-    // Surface and Swapchain — 表面和交换链
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
     VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
     std::vector<VkImage> m_swapchainImages;
@@ -4561,20 +6120,16 @@ private:
     VkExtent2D m_swapchainExtent = {};
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
 
-    // Command Buffers — 命令缓冲
     VkCommandPool m_commandPool = VK_NULL_HANDLE;
     VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 
-    // Synchronization Objects — 同步对象
     VkSemaphore m_imageAvailableSemaphore = VK_NULL_HANDLE;
     VkSemaphore m_renderFinishedSemaphore = VK_NULL_HANDLE;
     VkFence m_inFlightFence = VK_NULL_HANDLE;
 
-    // Frame State — 帧状态
     uint32_t m_currentImageIndex = 0;
     bool m_isRecording = false;
 
-    // Resource Management — 资源管理
     uint32_t m_nextShaderId = 1;
     uint32_t m_nextTextureId = 1;
     uint32_t m_nextPipelineId = 1;
@@ -4582,19 +6137,195 @@ private:
     std::unordered_map<uint32_t, std::unique_ptr<VulkanTexture>> m_textures;
     std::unordered_map<uint32_t, std::unique_ptr<VulkanPipeline>> m_pipelines;
 
-    // Current State — 当前状态
     PipelineHandle m_currentPipeline = {0};
     VkFramebuffer m_currentFramebuffer = VK_NULL_HANDLE;
     VkRenderPass m_currentRenderPass = VK_NULL_HANDLE;
     bool m_isRenderToTexture = false;
 
-    // ImGui Vulkan Resources — ImGui Vulkan 资源
     VkDescriptorPool m_imguiDescriptorPool = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_imguiDescSetLayout = VK_NULL_HANDLE;
     bool m_imguiInitialized = false;
     bool m_imguiRenderPending = false;
 
-    // 延迟销毁队列（帧提交后销毁的资源）
+    struct DeferredDestroy {
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+        VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE;
+        VkDescriptorPool descPool = VK_NULL_HANDLE;
+        VkBuffer uboBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory uboMemory = VK_NULL_HANDLE;
+    };
+    std::vector<DeferredDestroy> m_deferredDestroys;
+    std::unordered_map<uint64_t, PipelineHandle> m_pipelineCache;
+};
+```
+
+#### 完整头文件源码
+
+```cpp
+#pragma once
+#include "render/IRenderBackend.h"
+#include <vulkan/vulkan.h>
+#include <vector>
+#include <unordered_map>
+#include <memory>
+
+struct GLFWwindow;
+
+// ============================================================================
+// Vulkan Resource Wrappers
+// ============================================================================
+struct VulkanShader {
+    VkShaderModule module = VK_NULL_HANDLE;           // 着色器模块句柄
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT; // 着色器阶段标志
+};
+
+struct VulkanTexture {
+    VkImage image = VK_NULL_HANDLE;                    // 图像对象
+    VkDeviceMemory memory = VK_NULL_HANDLE;             // 图像绑定的设备内存
+    VkImageView view = VK_NULL_HANDLE;                 // 图像视图
+    VkSampler sampler = VK_NULL_HANDLE;                 // 采样器
+    int width = 0, height = 0;                          // 纹理尺寸
+    VkFormat format = VK_FORMAT_UNDEFINED;               // 像素格式
+    bool isFBO = false;                                  // 是否为帧缓冲目标
+    VkFramebuffer framebuffer = VK_NULL_HANDLE;          // FBO 帧缓冲
+    VkRenderPass renderPass = VK_NULL_HANDLE;            // FBO 渲染通道
+    VkDescriptorSet imguiDescriptorSet = VK_NULL_HANDLE; // ImGui 纹理描述符集缓存
+};
+
+struct VulkanPipeline {
+    VkPipeline pipeline = VK_NULL_HANDLE;                // 图形管线
+    VkPipelineLayout layout = VK_NULL_HANDLE;            // 管线布局
+    VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE; // 描述符集布局
+    VkDescriptorPool descPool = VK_NULL_HANDLE;          // 描述符池
+    VkDescriptorSet descSet = VK_NULL_HANDLE;            // 预分配描述符集（绑定纹理+UBO）
+    ShaderHandle vertShader;                             // 顶点着色器句柄
+    ShaderHandle fragShader;                             // 片元着色器句柄
+    VkBuffer uboBuffer = VK_NULL_HANDLE;                 // 管线自有 UBO 缓冲区
+    VkDeviceMemory uboMemory = VK_NULL_HANDLE;           // UBO 绑定的设备内存
+};
+
+// ============================================================================
+// Vulkan Backend
+// ============================================================================
+class VulkanBackend : public IRenderBackend {
+public:
+    VulkanBackend();
+    ~VulkanBackend() override;
+
+    // 生命周期
+    bool Init(GLFWwindow* window) override;
+    void Shutdown() override;
+    void BeginFrame() override;
+    void EndFrame() override;
+    void WaitIdle() override;
+
+    // 视口
+    void Resize(int width, int height) override;
+    void GetFramebufferSize(int& width, int& height) override;
+
+    // 着色器（SPIR-V）
+    ShaderHandle CreateVertexShader(const uint32_t* spirv, size_t size) override;
+    ShaderHandle CreateFragmentShader(const uint32_t* spirv, size_t size) override;
+    ShaderHandle CreateVertexShaderFromGLSL(const std::string& source) override;
+    ShaderHandle CreateFragmentShaderFromGLSL(const std::string& source) override;
+    void DestroyShader(ShaderHandle handle) override;
+
+    // 纹理
+    TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) override;
+    void UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) override;
+    void DestroyTexture(TextureHandle handle) override;
+    void* GetImTextureID(TextureHandle handle) override;
+
+    // 管线
+    PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
+    void DestroyPipeline(PipelineHandle handle) override;
+    void BindPipeline(PipelineHandle handle) override;
+
+    // 全屏绘制
+    void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;
+    void DrawCards(const std::vector<IRenderBackend::CardDrawInfo>& cards,
+                  const float* viewMatrix, const float* projMatrix) override;
+    void BlitToScreen(TextureHandle src) override;
+    void BeginRenderToTexture(TextureHandle target) override;
+    void EndRenderToTexture() override;
+
+    // 工具函数
+    void SetViewport(int x, int y, int width, int height) override;
+    void Clear(float r, float g, float b, float a) override;
+
+    // ImGui
+    void ImGuiInit(GLFWwindow* window) override;
+    void ImGuiNewFrame() override;
+    void ImGuiRender() override;
+    void ImGuiShutdown() override;
+
+    // 查询
+    BackendType GetType() const override { return BackendType::Vulkan; }
+    const char* GetName() const override { return "Vulkan 1.2 (SPIR-V)"; }
+    int GetMaxTextureSize() const override;
+
+private:
+    // 窗口引用
+    GLFWwindow* m_window = nullptr;                       // GLFW 窗口指针
+    int m_width = 1280;                                    // 帧缓冲宽度
+    int m_height = 720;                                   // 帧缓冲高度
+    bool m_initialized = false;                            // 是否已初始化
+    bool m_framebufferResized = false;                     // 帧缓冲是否需要重建
+
+    // 核心 Vulkan 对象
+    VkInstance m_instance = VK_NULL_HANDLE;               // Vulkan 实例
+    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;   // 物理设备（GPU）
+    VkDevice m_device = VK_NULL_HANDLE;                    // 逻辑设备
+    VkQueue m_graphicsQueue = VK_NULL_HANDLE;              // 图形队列
+    VkQueue m_presentQueue = VK_NULL_HANDLE;               // 呈现队列
+    uint32_t m_graphicsFamily = 0;                          // 图形队列族索引
+    uint32_t m_presentFamily = 0;                          // 呈现队列族索引
+
+    // Surface 和交换链
+    VkSurfaceKHR m_surface = VK_NULL_HANDLE;              // 窗口 Surface
+    VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;           // 交换链
+    std::vector<VkImage> m_swapchainImages;                 // 交换链图像数组
+    std::vector<VkImageView> m_swapchainImageViews;        // 交换链图像视图数组
+    std::vector<VkFramebuffer> m_swapchainFramebuffers;   // 交换链帧缓冲数组
+    VkFormat m_swapchainFormat = VK_FORMAT_B8G8R8A8_UNORM; // 交换链格式
+    VkExtent2D m_swapchainExtent = {};                     // 交换链尺寸
+    VkRenderPass m_renderPass = VK_NULL_HANDLE;            // 主渲染通道
+
+    // 命令缓冲
+    VkCommandPool m_commandPool = VK_NULL_HANDLE;           // 命令池
+    VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;      // 主命令缓冲
+
+    // 同步对象
+    VkSemaphore m_imageAvailableSemaphore = VK_NULL_HANDLE;  // 图像可用信号量
+    VkSemaphore m_renderFinishedSemaphore = VK_NULL_HANDLE;  // 渲染完成信号量
+    VkFence m_inFlightFence = VK_NULL_HANDLE;                // 帧内飞行栅栏
+
+    // 帧状态
+    uint32_t m_currentImageIndex = 0;                       // 当前交换链图像索引
+    bool m_isRecording = false;                              // 是否正在录制命令
+
+    // 资源管理
+    uint32_t m_nextShaderId = 1;                             // 下一个着色器 ID
+    uint32_t m_nextTextureId = 1;                           // 下一个纹理 ID
+    uint32_t m_nextPipelineId = 1;                           // 下一个管线 ID
+    std::unordered_map<uint32_t, VulkanShader> m_shaders;    // 着色器存储
+    std::unordered_map<uint32_t, std::unique_ptr<VulkanTexture>> m_textures; // 纹理存储
+    std::unordered_map<uint32_t, std::unique_ptr<VulkanPipeline>> m_pipelines; // 管线存储
+
+    // 当前状态
+    PipelineHandle m_currentPipeline = {0};                  // 当前绑定的管线
+    VkFramebuffer m_currentFramebuffer = VK_NULL_HANDLE;     // 当前帧缓冲
+    VkRenderPass m_currentRenderPass = VK_NULL_HANDLE;        // 当前渲染通道
+    bool m_isRenderToTexture = false;                         // 是否在渲染到纹理
+
+    // ImGui Vulkan 资源
+    VkDescriptorPool m_imguiDescriptorPool = VK_NULL_HANDLE; // ImGui 描述符池
+    VkDescriptorSetLayout m_imguiDescSetLayout = VK_NULL_HANDLE; // ImGui 描述符集布局
+    bool m_imguiInitialized = false;                          // ImGui 是否已初始化
+    bool m_imguiRenderPending = false;                         // ImGui 渲染是否待执行
+
+    // 延迟销毁队列
     struct DeferredDestroy {
         VkPipeline pipeline = VK_NULL_HANDLE;
         VkPipelineLayout layout = VK_NULL_HANDLE;
@@ -4605,24 +6336,8 @@ private:
     };
     std::vector<DeferredDestroy> m_deferredDestroys;
 
-    // 管线缓存：复用相同着色器+渲染通道组合的管线
+    // 管线缓存
     std::unordered_map<uint64_t, PipelineHandle> m_pipelineCache;
-
-    // Queue family indices — 队列族索引结构体
-    struct QueueFamilyIndices {
-        uint32_t graphicsFamily = UINT32_MAX;
-        uint32_t presentFamily = UINT32_MAX;
-        bool isComplete() const { return graphicsFamily != UINT32_MAX && presentFamily != UINT32_MAX; }
-    };
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-
-    // Swapchain support details — 交换链支持详情结构体
-    struct SwapChainSupportDetails {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
-    };
-    SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 
     // 初始化辅助函数
     void CreateInstance();
@@ -4667,110 +6382,131 @@ private:
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+    struct QueueFamilyIndices {
+        uint32_t graphicsFamily = UINT32_MAX;
+        uint32_t presentFamily = UINT32_MAX;
+        bool isComplete() const { return graphicsFamily != UINT32_MAX && presentFamily != UINT32_MAX; }
+    };
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+
+    struct SwapChainSupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
+    SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 };
 ```
 
-#### 功能说明
-
-VulkanBackend 头文件定义了三个资源包装结构体（`VulkanShader`、`VulkanTexture`、`VulkanPipeline`）和主类 `VulkanBackend`。主类继承自 `IRenderBackend` 接口，提供了完整的 Vulkan 渲染后端实现。头文件中还包含了队列族索引结构体 `QueueFamilyIndices` 和交换链支持详情结构体 `SwapChainSupportDetails`，用于设备选择和交换链创建过程中的信息查询。
-
-#### 实现原理
-
-头文件采用"资源包装 + 哈希映射"的设计模式管理 Vulkan 资源。每个资源类型（着色器、纹理、管线）都有一个对应的包装结构体，通过 `unordered_map<uint32_t, Wrapper>` 存储，以自增 ID 作为键。这种设计将 Vulkan 的底层句柄与业务逻辑的句柄系统解耦，上层代码通过 `ShaderHandle`、`TextureHandle`、`PipelineHandle` 等轻量结构体操作资源，无需直接接触 Vulkan API。
-
-#### 为什么这样实现
-
-1. **资源包装结构体**：将 Vulkan 资源的多个关联句柄（如纹理的 Image + View + Sampler + Memory）封装在一起，确保资源创建和销毁时不会遗漏任何一个句柄。
-2. **哈希映射存储**：提供 O(1) 的资源查找性能，同时支持通过 ID 进行跨模块的资源引用。
-3. **延迟销毁队列**：Vulkan 命令是异步执行的，GPU 可能仍在使用已提交命令中引用的资源。延迟销毁确保在 GPU 完成使用后才释放资源。
-4. **管线缓存**：避免为相同的着色器组合重复创建管线，减少 GPU 管线创建开销。
-
 ---
 
-### 6.2 Init — Instance/Surface/Device/Swapchain 创建
+### 6.2 Init
 
-`Init` 函数是 VulkanBackend 的入口点，按顺序调用所有初始化步骤。
+**文件**: `src/render/VulkanBackend.cpp`
+
+#### 第一段：初始化入口与异常处理
+
+**分析**：`Init` 是 Vulkan 后端的入口函数，接收 GLFW 窗口指针后，按严格顺序依次调用 9 个初始化步骤。每个步骤都可能抛出 `std::runtime_error`，因此整个流程被包裹在 `try-catch` 中。
 
 ```cpp
 bool VulkanBackend::Init(GLFWwindow* window) {
-    m_window = window;                              // 保存 GLFW 窗口指针
-    glfwGetFramebufferSize(window, &m_width, &m_height); // 获取初始帧缓冲尺寸
+    m_window = window;
+    glfwGetFramebufferSize(window, &m_width, &m_height);
 
     try {
-        CreateInstance();        // 步骤1：创建 Vulkan 实例
-        CreateSurface();         // 步骤2：创建窗口表面
-        PickPhysicalDevice();    // 步骤3：选择物理设备（GPU）
-        CreateLogicalDevice();  // 步骤4：创建逻辑设备与队列
-        CreateSwapchain();       // 步骤5：创建交换链
-        CreateRenderPass();      // 步骤6：创建渲染通道
-        CreateFramebuffers();    // 步骤7：创建帧缓冲
-        CreateCommandPool();     // 步骤8：创建命令池
-        CreateCommandBuffers();  // 步骤9：分配命令缓冲
-        CreateSyncObjects();     // 步骤10：创建同步对象（信号量+栅栏）
+        CreateInstance();
+        CreateSurface();
+        PickPhysicalDevice();
+        CreateLogicalDevice();
+        CreateSwapchain();
+        CreateRenderPass();
+        CreateFramebuffers();
+        CreateCommandPool();
+        CreateCommandBuffers();
+        CreateSyncObjects();
     } catch (const std::exception& e) {
-        fprintf(stderr, "[Vulkan] Init failed: %s\n", e.what()); // 捕获初始化异常
-        return false;            // 初始化失败返回 false
+        fprintf(stderr, "[Vulkan] Init failed: %s\n", e.what());
+        return false;
     }
 
-    m_initialized = true;       // 标记初始化完成
+    m_initialized = true;
     printf("[Vulkan] Initialized successfully (%dx%d)\n", m_width, m_height);
-    return true;                 // 初始化成功返回 true
+    return true;
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-`Init` 函数是 Vulkan 后端的初始化入口，严格按照 Vulkan 规范要求的顺序执行十个初始化步骤。每个步骤都有独立的异常处理，任何步骤失败都会被 catch 捕获并输出错误信息。
+```cpp
+bool VulkanBackend::Init(GLFWwindow* window) {
+    m_window = window;                                       // 保存窗口指针
+    glfwGetFramebufferSize(window, &m_width, &m_height);     // 获取帧缓冲尺寸
 
-#### 实现原理
+    try {
+        CreateInstance();       // 创建 Vulkan 实例
+        CreateSurface();        // 创建窗口 Surface
+        PickPhysicalDevice();   // 选择物理设备（GPU）
+        CreateLogicalDevice();  // 创建逻辑设备与队列
+        CreateSwapchain();      // 创建交换链
+        CreateRenderPass();     // 创建渲染通道
+        CreateFramebuffers();   // 创建帧缓冲
+        CreateCommandPool();    // 创建命令池
+        CreateCommandBuffers(); // 分配命令缓冲
+        CreateSyncObjects();    // 创建同步对象（信号量+栅栏）
+    } catch (const std::exception& e) {
+        fprintf(stderr, "[Vulkan] Init failed: %s\n", e.what());
+        return false;
+    }
 
-Vulkan 的初始化有严格的依赖顺序：Instance 必须先于 Surface，Surface 必须先于 PhysicalDevice 选择（因为需要 Surface 来查询队列族支持），PhysicalDevice 必须先于 LogicalDevice，以此类推。使用 try-catch 包裹整个初始化序列，确保任何步骤失败时不会导致后续步骤在无效状态下执行。
-
-#### 为什么这样实现
-
-1. **顺序初始化**：Vulkan 对象之间存在严格的创建依赖关系，必须按序执行。
-2. **异常捕获**：Vulkan 的很多创建函数通过返回值报告错误，代码中使用 `VK_CHECK` 宏在检测到错误时打印日志但不抛出异常。然而，关键步骤（如设备选择）在失败时抛出 `std::runtime_error`，确保初始化流程能被中断。
-3. **单一入口点**：将所有初始化逻辑集中在一个函数中，调用者只需调用 `Init` 即可完成全部设置，降低了使用复杂度。
+    m_initialized = true;
+    printf("[Vulkan] Initialized successfully (%dx%d)\n", m_width, m_height);
+    return true;
+}
+```
 
 ---
 
-### 6.3 CreateInstance — Vulkan实例创建
+### 6.3 CreateInstance
+
+#### 第一段：验证层检查与应用信息
+
+**分析**：创建 Vulkan 实例前，首先检查系统是否支持请求的验证层（仅 Debug 模式启用）。然后填充 `VkApplicationInfo`，指定应用名称、引擎名称和目标 API 版本（Vulkan 1.2）。GLFW 通过 `glfwGetRequiredInstanceExtensions` 返回创建 Surface 所需的扩展列表。
 
 ```cpp
 void VulkanBackend::CreateInstance() {
-    // 检查验证层是否可用（仅在调试模式下启用）
     if (ENABLE_VALIDATION_LAYERS && !CheckValidationLayerSupport()) {
-        fprintf(stderr, "[Vulkan] Validation layers requested but not available\n");
         throw std::runtime_error("Validation layers requested but not available");
     }
 
-    // 设置应用程序信息
-    VkApplicationInfo appInfo{};                              // 零初始化应用信息结构体
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;        // 结构体类型标识
-    appInfo.pApplicationName = "Shader Showcase";            // 应用名称
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);     // 应用版本 1.0.0
-    appInfo.pEngineName = "Shader Showcase Engine";            // 引擎名称
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);        // 引擎版本 1.0.0
-    appInfo.apiVersion = VK_API_VERSION_1_2;                   // 请求 Vulkan 1.2 API
+    VkApplicationInfo appInfo{};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "Shader Showcase";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "Shader Showcase Engine";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_2;
 
-    // 从 GLFW 获取所需的实例扩展列表（如 VK_KHR_surface、VK_KHR_win32_surface）
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-    // 如果启用验证层，添加调试工具扩展
     if (ENABLE_VALIDATION_LAYERS) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME); // 调试回调扩展
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
+```
 
-    // 配置实例创建信息
-    VkInstanceCreateInfo createInfo{};                          // 零初始化创建信息
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;  // 结构体类型
-    createInfo.pApplicationInfo = &appInfo;                    // 指向应用信息
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size()); // 扩展数量
-    createInfo.ppEnabledExtensionNames = extensions.data();     // 扩展名称数组
+#### 第二段：实例创建
 
-    // 根据调试模式启用或禁用验证层
+**分析**：填充 `VkInstanceCreateInfo`，将应用信息、扩展列表和验证层列表传入，调用 `vkCreateInstance` 完成实例创建。
+
+```cpp
+    VkInstanceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
+
     if (ENABLE_VALIDATION_LAYERS) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(VALIDATION_LAYERS.size());
         createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
@@ -4778,64 +6514,140 @@ void VulkanBackend::CreateInstance() {
         createInfo.enabledLayerCount = 0;
     }
 
-    // 创建 Vulkan 实例
     VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance));
     printf("[Vulkan] Instance created\n");
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-创建 Vulkan 实例，这是使用 Vulkan API 的第一步。实例是 Vulkan 应用程序与 Vulkan 库之间的连接对象，所有后续的 Vulkan 对象都依赖于实例。
+```cpp
+void VulkanBackend::CreateInstance() {
+    if (ENABLE_VALIDATION_LAYERS && !CheckValidationLayerSupport()) {
+        fprintf(stderr, "[Vulkan] Validation layers requested but not available\n");
+        throw std::runtime_error("Validation layers requested but not available");
+    }
 
-#### 实现原理
+    VkApplicationInfo appInfo{};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "Shader Showcase";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "Shader Showcase Engine";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_2;
 
-通过 `VkApplicationInfo` 告知驱动程序应用程序的基本信息（名称、版本、请求的 API 版本）。通过 `glfwGetRequiredInstanceExtensions` 获取 GLFW 窗口系统所需的扩展（如 Windows 平台的 `VK_KHR_win32_surface`），确保 Vulkan 能与窗口系统集成。在调试模式下额外启用 `VK_EXT_debug_utils` 扩展和 `VK_LAYER_KHRONOS_validation` 验证层，用于运行时错误检测。
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-#### 为什么这样实现
+    if (ENABLE_VALIDATION_LAYERS) {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
 
-1. **VK_CHECK 宏**：封装了 Vulkan 结果检查，在出错时打印文件名和行号，便于调试。
-2. **GLFW 集成**：使用 `glfwGetRequiredInstanceExtensions` 而非硬编码扩展列表，确保跨平台兼容性。
-3. **条件验证层**：仅在 `_DEBUG` 模式下启用验证层，避免发布版本的性能开销。
-4. **API 版本 1.2**：请求 Vulkan 1.2 以获得更现代的特性支持。
+    VkInstanceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
+
+    if (ENABLE_VALIDATION_LAYERS) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(VALIDATION_LAYERS.size());
+        createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
+    } else {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance));
+    printf("[Vulkan] Instance created\n");
+}
+```
 
 ---
 
-### 6.4 CreateSurface — Win32原生Surface
+### 6.4 CreateSurface
+
+#### 第一段：Win32 原生 Surface 创建
+
+**分析**：本项目使用 GLFW 创建窗口，但 GLFW 默认以 OpenGL API 创建窗口。在某些 NVIDIA 驱动上，`glfwCreateWindowSurface` 会拒绝 OpenGL 窗口。解决方案是绕过 GLFW，直接使用 Win32 API 的 `vkCreateWin32SurfaceKHR`。
 
 ```cpp
 void VulkanBackend::CreateSurface() {
-    // 使用 Win32 原生 Surface 创建，而非 glfwCreateWindowSurface。
-    // 原因：GLFW_OPENGL_API 窗口在部分 NVIDIA 驱动上会被
-    // glfwCreateWindowSurface 拒绝，但 vkCreateWin32SurfaceKHR 可用于任何 HWND。
-    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};          // 零初始化
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);    // 当前进程模块句柄
-    surfaceCreateInfo.hwnd = glfwGetWin32Window(m_window);      // 从 GLFW 窗口获取 HWND
+    surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+    surfaceCreateInfo.hwnd = glfwGetWin32Window(m_window);
 
-    // 创建 Win32 Surface
     VK_CHECK(vkCreateWin32SurfaceKHR(m_instance, &surfaceCreateInfo, nullptr, &m_surface));
     printf("[Vulkan] Surface created (Win32 native)\n");
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-创建 Vulkan 窗口表面（Surface），它是 Vulkan 渲染输出与操作系统窗口之间的桥梁。Surface 定义了渲染结果呈现的目标区域。
+```cpp
+void VulkanBackend::CreateSurface() {
+    // 使用 Win32 原生 Surface 创建，绕过 glfwCreateWindowSurface
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);    // 当前进程实例句柄
+    surfaceCreateInfo.hwnd = glfwGetWin32Window(m_window);      // GLFW 窗口的 HWND
 
-#### 实现原理
-
-直接使用 Win32 API 的 `GetModuleHandle` 获取进程实例句柄，通过 GLFW 的 `glfwGetWin32Window` 从 GLFW 窗口获取原生 HWND，然后调用 `vkCreateWin32SurfaceKHR` 创建 Surface。这绕过了 GLFW 的 `glfwCreateWindowSurface`，因为后者在 OpenGL API 模式创建的窗口上可能失败。
-
-#### 为什么这样实现
-
-1. **绕过 GLFW 限制**：本项目同时支持 OpenGL 和 Vulkan 后端，窗口可能以 `GLFW_OPENGL_API` 模式创建。部分 NVIDIA 驱动会拒绝在此类窗口上调用 `glfwCreateWindowSurface`，但直接使用 Win32 HWND 创建 Surface 则没有此限制。
-2. **跨后端兼容**：允许在同一个 GLFW 窗口上切换 OpenGL 和 Vulkan 渲染后端。
-3. **Win32 原生调用**：通过 `#define GLFW_EXPOSE_NATIVE_WIN32` 和 `#include <GLFW/glfw3native.h>` 启用 GLFW 的原生窗口访问功能。
+    VK_CHECK(vkCreateWin32SurfaceKHR(m_instance, &surfaceCreateInfo, nullptr, &m_surface));
+    printf("[Vulkan] Surface created (Win32 native)\n");
+}
+```
 
 ---
 
-### 6.5 PickPhysicalDevice — GPU选择评分
+### 6.5 PickPhysicalDevice
+
+#### 第一段：设备枚举与评分选择
+
+**分析**：物理设备选择采用评分策略。独立显卡 +1000 分，集成显卡 +100 分，显存每 GB +1 分。
+
+```cpp
+void VulkanBackend::PickPhysicalDevice() {
+    uint32_t deviceCount = 0;
+    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr));
+    if (deviceCount == 0) throw std::runtime_error("No Vulkan-capable GPU found");
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data()));
+
+    int bestScore = -1;
+    VkPhysicalDevice bestDevice = VK_NULL_HANDLE;
+
+    for (const auto& device : devices) {
+        if (!IsDeviceSuitable(device)) continue;
+        VkPhysicalDeviceProperties props;
+        vkGetPhysicalDeviceProperties(device, &props);
+
+        int score = 0;
+        if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 1000;
+        else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) score += 100;
+
+        VkPhysicalDeviceMemoryProperties memProps;
+        vkGetPhysicalDeviceMemoryProperties(device, &memProps);
+        VkDeviceSize totalMemory = 0;
+        for (uint32_t i = 0; i < memProps.memoryHeapCount; i++) {
+            if (memProps.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+                totalMemory += memProps.memoryHeaps[i].size;
+        }
+        score += static_cast<int>(totalMemory / (1024 * 1024 * 1024));
+
+        if (score > bestScore) { bestScore = score; bestDevice = device; }
+    }
+
+    if (bestDevice == VK_NULL_HANDLE) throw std::runtime_error("No suitable GPU found");
+    m_physicalDevice = bestDevice;
+
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(m_physicalDevice, &props);
+    printf("[Vulkan] Physical device: %s\n", props.deviceName);
+}
+```
+
+#### 完整源码
 
 ```cpp
 void VulkanBackend::PickPhysicalDevice() {
@@ -4849,7 +6661,6 @@ void VulkanBackend::PickPhysicalDevice() {
     std::vector<VkPhysicalDevice> devices(deviceCount);
     VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data()));
 
-    // 评分选择最佳 GPU
     int bestScore = -1;
     VkPhysicalDevice bestDevice = VK_NULL_HANDLE;
 
@@ -4861,12 +6672,11 @@ void VulkanBackend::PickPhysicalDevice() {
 
         int score = 0;
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            score += 1000;  // 独立显卡 +1000 分
+            score += 1000;
         } else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-            score += 100;   // 集成显卡 +100 分
+            score += 100;
         }
 
-        // 根据显存大小加分（每 GB 加 1 分）
         VkPhysicalDeviceMemoryProperties memProps;
         vkGetPhysicalDeviceMemoryProperties(device, &memProps);
         VkDeviceSize totalMemory = 0;
@@ -4890,28 +6700,18 @@ void VulkanBackend::PickPhysicalDevice() {
     m_physicalDevice = bestDevice;
 
     VkPhysicalDeviceProperties props;
-    vkGetPhysicalDeviceProperties(m_physicalDevice, props);
+    vkGetPhysicalDeviceProperties(m_physicalDevice, &props);
     printf("[Vulkan] Physical device: %s\n", props.deviceName);
 }
 ```
 
-#### 功能说明
-
-枚举系统中所有支持 Vulkan 的物理设备（GPU），通过评分机制选择最佳的 GPU。评分标准包括设备类型（独立显卡 > 集成显卡）和显存大小。
-
-#### 实现原理
-
-首先枚举所有物理设备，然后对每个设备调用 `IsDeviceSuitable` 检查是否满足基本要求（支持图形队列、支持交换链扩展、交换链格式和呈现模式非空）。通过后的设备进入评分环节：独立显卡得 1000 分，集成显卡得 100 分，显存每 GB 加 1 分。最终选择得分最高的设备。
-
-#### 为什么这样实现
-
-1. **评分机制**：比简单的"第一个可用设备"更智能，优先选择性能更好的独立显卡。
-2. **显存考量**：对于后处理应用，显存大小直接影响可处理的纹理分辨率和数量。
-3. **IsDeviceSuitable 预检**：确保选中的设备具备所有必需的功能（队列族支持、交换链扩展、格式/呈现模式可用性），避免后续初始化失败。
-
 ---
 
-### 6.6 CreateLogicalDevice — 逻辑设备与队列
+### 6.6 CreateLogicalDevice
+
+#### 第一段：队列族查找与设备创建
+
+**分析**：逻辑设备创建首先查找图形队列族和呈现队列族的索引，使用 `std::set` 去重后为每个队列族创建队列创建信息，优先级设为 1.0f。
 
 ```cpp
 void VulkanBackend::CreateLogicalDevice() {
@@ -4919,7 +6719,6 @@ void VulkanBackend::CreateLogicalDevice() {
     m_graphicsFamily = indices.graphicsFamily;
     m_presentFamily = indices.presentFamily;
 
-    // 创建队列创建信息列表（去重：图形和呈现可能是同一队列族）
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
 
@@ -4933,7 +6732,54 @@ void VulkanBackend::CreateLogicalDevice() {
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceFeatures deviceFeatures{}; // 不请求额外特性
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(DEVICE_EXTENSIONS.size());
+    createInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
+
+    if (ENABLE_VALIDATION_LAYERS) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(VALIDATION_LAYERS.size());
+        createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
+    } else {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    VK_CHECK(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
+    vkGetDeviceQueue(m_device, indices.graphicsFamily, 0, &m_graphicsQueue);
+    vkGetDeviceQueue(m_device, indices.presentFamily, 0, &m_presentQueue);
+
+    printf("[Vulkan] Logical device created (graphics queue: %u, present queue: %u)\n",
+           indices.graphicsFamily, indices.presentFamily);
+}
+```
+
+#### 完整源码
+
+```cpp
+void VulkanBackend::CreateLogicalDevice() {
+    QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+    m_graphicsFamily = indices.graphicsFamily;
+    m_presentFamily = indices.presentFamily;
+
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
+
+    float queuePriority = 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -4960,23 +6806,13 @@ void VulkanBackend::CreateLogicalDevice() {
 }
 ```
 
-#### 功能说明
-
-创建逻辑设备（与物理设备通信的软件接口）并获取图形队列和呈现队列的句柄。
-
-#### 实现原理
-
-首先通过 `FindQueueFamilies` 查找支持图形操作和表面呈现的队列族。使用 `std::set` 对队列族索引去重（因为图形和呈现可能在同一队列族），然后为每个唯一队列族创建队列请求。请求 `VK_KHR_swapchain` 设备扩展以支持交换链操作。
-
-#### 为什么这样实现
-
-1. **队列族去重**：使用 `std::set` 避免为同一队列族创建重复的队列请求，这是 Vulkan 规范推荐的实践。
-2. **队列优先级 1.0**：由于只有一个队列，设为最高优先级确保命令及时执行。
-3. **不请求额外特性**：后处理应用不需要特殊硬件特性，保持设备创建简单。
-
 ---
 
-### 6.7 CreateSwapchain — 交换链管理
+### 6.7 CreateSwapchain
+
+#### 第一段：交换链参数选择
+
+**分析**：交换链创建涉及三个关键选择：Surface 格式（优先 B8G8R8A8 + SRGB）、呈现模式（优先 FIFO 即 VSync）、以及尺寸（使用 Surface 能力报告的当前尺寸）。图像数量设为最小值 +1 以实现双缓冲。
 
 ```cpp
 void VulkanBackend::CreateSwapchain() {
@@ -4990,7 +6826,13 @@ void VulkanBackend::CreateSwapchain() {
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
         imageCount = swapChainSupport.capabilities.maxImageCount;
     }
+```
 
+#### 第二段：交换链创建与图像获取
+
+**分析**：填充 `VkSwapchainCreateInfoKHR`，根据图形和呈现队列族是否相同选择共享模式或独占模式。创建交换链后获取图像句柄并保存格式和尺寸。
+
+```cpp
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = m_surface;
@@ -5010,8 +6852,6 @@ void VulkanBackend::CreateSwapchain() {
         createInfo.pQueueFamilyIndices = queueFamilyIndices;
     } else {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        createInfo.queueFamilyIndexCount = 0;
-        createInfo.pQueueFamilyIndices = nullptr;
     }
 
     createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
@@ -5035,35 +6875,84 @@ void VulkanBackend::CreateSwapchain() {
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-创建 Vulkan 交换链，它是渲染结果的缓冲队列。交换链管理着一组图像，应用程序渲染到其中一个图像，然后将其呈现到屏幕。
+```cpp
+void VulkanBackend::CreateSwapchain() {
+    SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice);
 
-#### 实现原理
+    VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+    VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
-首先查询物理设备的交换链支持详情，然后选择最佳配置：优先选择 `VK_FORMAT_B8G8R8A8_UNORM` + `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` 格式，优先选择 `VK_PRESENT_MODE_FIFO_KHR`（VSync）呈现模式。图像数量设为最小值 + 1 以实现双缓冲效果。
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    if (swapChainSupport.capabilities.maxImageCount > 0 &&
+        imageCount > swapChainSupport.capabilities.maxImageCount) {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+    }
 
-#### 为什么这样实现
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = m_surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-1. **FIFO 呈现模式**：选择 VSync 模式避免画面撕裂，对于后处理预览应用更稳定。
-2. **并发/独占模式自动选择**：根据队列族是否相同自动选择共享模式，确保在任何 GPU 上都能正确工作。
-3. **minImageCount + 1**：比最小值多一个图像实现双缓冲，减少等待时间。
+    QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+    uint32_t queueFamilyIndices[] = {indices.graphicsFamily, indices.presentFamily};
+
+    if (indices.graphicsFamily != indices.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
+
+    VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr));
+    m_swapchainImages.resize(imageCount);
+    VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data()));
+
+    m_swapchainFormat = surfaceFormat.format;
+    m_swapchainExtent = extent;
+    m_width = static_cast<int>(extent.width);
+    m_height = static_cast<int>(extent.height);
+
+    printf("[Vulkan] Swapchain created (%dx%d, %zu images)\n",
+           extent.width, extent.height, m_swapchainImages.size());
+}
+```
 
 ---
 
-### 6.8 CreateRenderPass — 渲染通道
+### 6.8 CreateRenderPass
+
+#### 第一段：渲染通道描述
+
+**分析**：渲染通道定义了帧缓冲输出的格式和操作。使用单颜色附件，加载操作为 CLEAR，存储操作为 STORE。`initialLayout` 为 `UNDEFINED`，`finalLayout` 为 `PRESENT_SRC_KHR`。
 
 ```cpp
 void VulkanBackend::CreateRenderPass() {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = m_swapchainFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;    // 渲染通道开始时清除
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;  // 渲染通道结束时存储
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // 最终布局为呈现源
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
@@ -5096,23 +6985,58 @@ void VulkanBackend::CreateRenderPass() {
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-创建主渲染通道，定义了渲染操作如何使用交换链图像。渲染通道描述了附件的格式和使用方式，以及渲染子通道之间的依赖关系。
+```cpp
+void VulkanBackend::CreateRenderPass() {
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = m_swapchainFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-#### 实现原理
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-渲染通道包含一个颜色附件（交换链图像），配置为在开始时清除（`LOAD_OP_CLEAR`），结束时存储（`STORE_OP_STORE`）。初始布局为 `UNDEFINED`，最终布局为 `PRESENT_SRC_KHR`（准备好呈现）。子通道依赖确保在颜色附件写入之前，外部管线阶段已经完成。
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
 
-#### 为什么这样实现
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-1. **LOAD_OP_CLEAR**：每帧开始时清除为固定颜色（深蓝色），避免上一帧残留。
-2. **finalLayout = PRESENT_SRC_KHR**：告诉 Vulkan 渲染通道结束后图像将用于呈现，驱动可自动执行必要的布局转换。
-3. **子通道依赖**：`VK_SUBPASS_EXTERNAL` 到子通道 0 的依赖确保了正确的执行顺序。
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    VK_CHECK(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
+    printf("[Vulkan] Render pass created\n");
+}
+```
 
 ---
 
-### 6.9 CreateTexture — Staging Buffer纹理上传
+### 6.9 CreateTexture
+
+#### 第一段：纹理创建与格式转换
+
+**分析**：`CreateTexture` 支持三种格式（RGBA8、RGBA32F、R8）。当 `data == nullptr` 时，纹理被标记为 FBO，自动添加 `VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT`。
 
 ```cpp
 TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat format, const void* data) {
@@ -5124,82 +7048,196 @@ TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat 
     texture->width = width;
     texture->height = height;
     texture->format = vkFormat;
-    texture->isFBO = (data == nullptr);  // 无初始数据 → 渲染目标
+    texture->isFBO = (data == nullptr);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    if (texture->isFBO) {
-        usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    }
+    if (texture->isFBO) usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    // 创建 Vulkan 图像（GPU 端，使用设备本地内存）
-    CreateImage(
-        static_cast<uint32_t>(width), static_cast<uint32_t>(height),
-        vkFormat, VK_IMAGE_TILING_OPTIMAL, usage,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        texture->image, texture->memory
-    );
+    CreateImage(static_cast<uint32_t>(width), static_cast<uint32_t>(height),
+                vkFormat, VK_IMAGE_TILING_OPTIMAL, usage,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                texture->image, texture->memory);
 
     texture->view = CreateImageView(texture->image, vkFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     texture->sampler = CreateSampler();
+```
 
+#### 第二段：数据上传与布局转换
+
+**分析**：对于有初始数据的纹理，创建暂存缓冲区上传数据，执行两步布局转换：`UNDEFINED -> TRANSFER_DST -> SHADER_READ_ONLY`。对于 FBO 纹理，只需一步转换。
+
+```cpp
     if (data != nullptr) {
-        // 创建 Staging Buffer（CPU 可见内存，用于数据传输）
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
-        CreateBuffer(
-            imageSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer, stagingBufferMemory
-        );
+        CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer, stagingBufferMemory);
 
-        // 将数据复制到 Staging Buffer
         void* mappedData;
         vkMapMemory(m_device, stagingBufferMemory, 0, imageSize, 0, &mappedData);
         memcpy(mappedData, data, static_cast<size_t>(imageSize));
         vkUnmapMemory(m_device, stagingBufferMemory);
 
-        // 执行布局转换和缓冲复制
         TransitionImageLayout(texture->image, vkFormat,
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                              VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         CopyBufferToImage(stagingBuffer, texture->image,
-            static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+                          static_cast<uint32_t>(width), static_cast<uint32_t>(height));
         TransitionImageLayout(texture->image, vkFormat,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        // 清理 Staging Buffer
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
     } else {
         TransitionImageLayout(texture->image, vkFormat,
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                              VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     uint32_t id = m_nextTextureId++;
     m_textures[id] = std::move(texture);
-
-    printf("[Vulkan] Texture created (id=%u, %dx%d, format=%d)\n", id, width, height, static_cast<int>(format));
     return {id};
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-创建 Vulkan 纹理，支持两种模式：带初始数据的普通纹理（通过 Staging Buffer 上传）和无初始数据的渲染目标纹理（FBO）。
+```cpp
+TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat format, const void* data) {
+    VkFormat vkFormat = TextureFormatToVkFormat(format);
+    size_t pixelSize = GetTextureFormatSize(format);
+    VkDeviceSize imageSize = width * height * pixelSize;
 
-#### 实现原理
+    auto texture = std::make_unique<VulkanTexture>();
+    texture->width = width;
+    texture->height = height;
+    texture->format = vkFormat;
+    texture->isFBO = (data == nullptr);
 
-纹理创建遵循 Vulkan 的标准 Staging Buffer 模式：在 GPU 端创建使用设备本地内存的图像，创建 CPU 可见的 Staging Buffer，将像素数据复制到其中，通过命令缓冲执行 `CopyBufferToImage` 将数据从 Staging Buffer 复制到 GPU 图像，最后执行图像布局转换。
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (texture->isFBO) usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-#### 为什么这样实现
+    CreateImage(static_cast<uint32_t>(width), static_cast<uint32_t>(height),
+                vkFormat, VK_IMAGE_TILING_OPTIMAL, usage,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                texture->image, texture->memory);
 
-1. **Staging Buffer 模式**：GPU 的设备本地内存通常不可被 CPU 直接访问，必须通过中间缓冲区传输数据。这是 Vulkan 中上传纹理数据的标准做法。
-2. **HOST_COHERENT**：使用主机一致性内存属性，避免手动调用 `vkFlushMappedMemoryRanges`，简化代码。
-3. **isFBO 判断**：通过 `data == nullptr` 判断是否为渲染目标，自动添加 `COLOR_ATTACHMENT_BIT` 标志。
+    texture->view = CreateImageView(texture->image, vkFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+    texture->sampler = CreateSampler();
+
+    if (data != nullptr) {
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer, stagingBufferMemory);
+
+        void* mappedData;
+        vkMapMemory(m_device, stagingBufferMemory, 0, imageSize, 0, &mappedData);
+        memcpy(mappedData, data, static_cast<size_t>(imageSize));
+        vkUnmapMemory(m_device, stagingBufferMemory);
+
+        TransitionImageLayout(texture->image, vkFormat,
+                              VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        CopyBufferToImage(stagingBuffer, texture->image,
+                          static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+        TransitionImageLayout(texture->image, vkFormat,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+        vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+    } else {
+        TransitionImageLayout(texture->image, vkFormat,
+                              VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
+    uint32_t id = m_nextTextureId++;
+    m_textures[id] = std::move(texture);
+    return {id};
+}
+```
 
 ---
 
-### 6.10 CreatePipeline — 完整Vulkan管线创建
+### 6.10 CreatePipeline
+
+#### 第一段：管线缓存与着色器阶段
+
+**分析**：`CreatePipeline` 首先通过缓存键检查是否已有相同管线，避免重复创建。然后创建描述符集布局、管线布局和描述符池。
+
+```cpp
+PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
+    auto vertIt = m_shaders.find(desc.vertShader.id);
+    auto fragIt = m_shaders.find(desc.fragShader.id);
+    if (vertIt == m_shaders.end() || fragIt == m_shaders.end()) return {0};
+
+    VkRenderPass renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
+    uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
+    cacheKey ^= (uint64_t)renderPass;
+
+    auto cacheIt = m_pipelineCache.find(cacheKey);
+    if (cacheIt != m_pipelineCache.end()) return cacheIt->second;
+
+    auto pipeline = std::make_unique<VulkanPipeline>();
+    pipeline->descSetLayout = CreateDescriptorSetLayout();
+    pipeline->layout = CreatePipelineLayout(pipeline->descSetLayout);
+    pipeline->descPool = CreateDescriptorPool(1000);
+```
+
+#### 第二段：管线状态配置
+
+**分析**：全屏四边形管线不需要顶点数据，使用三角形列表拓扑。视口和裁剪设为动态状态。光栅化器禁用背面剔除。
+
+```cpp
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+    VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = 2;
+    dynamicState.pDynamicStates = dynamicStates;
+```
+
+#### 第三段：管线创建与 UBO 分配
+
+**分析**：创建管线后为每个管线分配 48 字节的 UBO 缓冲区和描述符集，这些资源与管线生命周期绑定，每帧复用。
+
+```cpp
+    VK_CHECK(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline));
+
+    uint32_t id = m_nextPipelineId++;
+    m_pipelines[id] = std::move(pipeline);
+    m_pipelineCache[cacheKey] = PipelineHandle{id};
+
+    auto& pp = m_pipelines[id];
+    const size_t UBO_SIZE = 48;
+    CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 pp->uboBuffer, pp->uboMemory);
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = pp->descPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &pp->descSetLayout;
+    VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo, &pp->descSet));
+
+    return {id};
+}
+```
+
+#### 完整源码
 
 ```cpp
 PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
@@ -5210,15 +7248,12 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
         return {0};
     }
 
-    // 计算缓存键
     VkRenderPass renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
     cacheKey ^= (uint64_t)renderPass;
 
     auto cacheIt = m_pipelineCache.find(cacheKey);
-    if (cacheIt != m_pipelineCache.end()) {
-        return cacheIt->second; // 缓存命中
-    }
+    if (cacheIt != m_pipelineCache.end()) return cacheIt->second;
 
     auto pipeline = std::make_unique<VulkanPipeline>();
     pipeline->vertShader = desc.vertShader;
@@ -5228,44 +7263,32 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     pipeline->layout = CreatePipelineLayout(pipeline->descSetLayout);
     pipeline->descPool = CreateDescriptorPool(1000);
 
-    // 着色器阶段
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertIt->second.module;
-    vertShaderStageInfo.pName = "main";
+    VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+    shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    shaderStages[0].module = vertIt->second.module;
+    shaderStages[0].pName = "main";
+    shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    shaderStages[1].module = fragIt->second.module;
+    shaderStages[1].pName = "main";
 
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragIt->second.module;
-    fragShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-
-    // 顶点输入：无顶点数据（全屏三角形通过着色器生成）
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr;
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
-    // 输入装配：三角形列表
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    // 视口和裁剪
     VkViewport viewport{};
-    viewport.x = 0.0f; viewport.y = 0.0f;
     viewport.width = static_cast<float>(desc.width);
     viewport.height = static_cast<float>(desc.height);
-    viewport.minDepth = 0.0f; viewport.maxDepth = 1.0f;
+    viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
-    scissor.offset = {0, 0};
     scissor.extent = {static_cast<uint32_t>(desc.width), static_cast<uint32_t>(desc.height)};
 
     VkPipelineViewportStateCreateInfo viewportState{};
@@ -5275,24 +7298,17 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     viewportState.scissorCount = 1;
     viewportState.pScissors = &scissor;
 
-    // 光栅化
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_NONE;
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    rasterizer.depthBiasEnable = VK_FALSE;
 
-    // 多重采样
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    // 颜色混合
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                           VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -5304,24 +7320,19 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-    } else {
-        colorBlendAttachment.blendEnable = VK_FALSE;
     }
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
 
-    // 动态状态
     VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStates;
 
-    // 创建图形管线
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -5343,7 +7354,6 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     m_pipelines[id] = std::move(pipeline);
     m_pipelineCache[cacheKey] = PipelineHandle{id};
 
-    // 创建管线专属 UBO 和描述符集
     auto& pp = m_pipelines[id];
     const size_t UBO_SIZE = 48;
     CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -5351,7 +7361,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
                  pp->uboBuffer, pp->uboMemory);
 
     VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.sType = VK_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = pp->descPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &pp->descSetLayout;
@@ -5362,24 +7372,13 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 }
 ```
 
-#### 功能说明
-
-创建完整的 Vulkan 图形管线，包括管线布局、描述符集、UBO 缓冲区和所有固定管线状态。管线创建后会被缓存，相同着色器组合不会重复创建。
-
-#### 实现原理
-
-管线创建过程包含以下关键步骤：缓存检查、描述符集布局创建（binding=0 组合图像采样器 + binding=1 UBO）、固定管线状态配置（无顶点输入、三角形列表、填充模式、不剔除、动态视口）、图形管线创建、UBO 缓冲区和描述符集分配。
-
-#### 为什么这样实现
-
-1. **管线缓存**：Vulkan 管线创建是重量级操作（涉及 GPU 端的 PSO 编译），缓存可显著减少创建开销。
-2. **无顶点输入**：后处理着色器不需要顶点数据，全屏三角形通过 `vkCmdDraw(cmd, 3, 1, 0, 0)` 直接绘制。
-3. **每管线 UBO**：每个管线拥有独立的 48 字节 UBO，避免不同管线之间的 UBO 竞争。
-4. **动态视口**：允许在不重建管线的情况下调整视口大小。
-
 ---
 
-### 6.11 DrawFullscreenQuad — 无顶点缓冲全屏三角形
+### 6.11 DrawFullscreenQuad
+
+#### 第一段：管线创建与绑定
+
+**分析**：`DrawFullscreenQuad` 是后处理渲染的核心函数。构建 `PipelineDesc` 后调用 `CreatePipeline`（内部有缓存机制），然后绑定管线并设置动态视口和裁剪矩形。
 
 ```cpp
 void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) {
@@ -5397,41 +7396,45 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 
     BindPipeline(pipeHandle);
 
-    // 设置动态视口
     VkViewport viewport{};
-    viewport.x = 0.0f; viewport.y = 0.0f;
     viewport.width = static_cast<float>(params.viewportWidth);
     viewport.height = static_cast<float>(params.viewportHeight);
-    viewport.minDepth = 0.0f; viewport.maxDepth = 1.0f;
+    viewport.maxDepth = 1.0f;
     vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
-    scissor.offset = {0, 0};
     scissor.extent = {static_cast<uint32_t>(params.viewportWidth), static_cast<uint32_t>(params.viewportHeight)};
     vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+```
 
-    // 绑定描述符集并更新 UBO
+#### 第二段：UBO 数据更新
+
+**分析**：UBO 布局固定为 48 字节：6 个 float 参数（偏移 0-23）、vec2 分辨率（偏移 24-31）、float 时间（偏移 32-35）、float 帧计数（偏移 36-39）。使用 HOST_COHERENT 内存直接 memcpy 写入。
+
+```cpp
     auto pipeIt = m_pipelines.find(pipeHandle.id);
     if (pipeIt != m_pipelines.end() && pipeIt->second->descSet != VK_NULL_HANDLE) {
         const size_t UBO_SIZE = 48;
 
-        // 更新 UBO 数据
-        {
-            uint8_t uboData[UBO_SIZE] = {};
-            for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
-                float v = params.uniformFloats[i];
-                memcpy(uboData + i * 4, &v, sizeof(float));
-            }
-            { float r[2] = { static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight) }; memcpy(uboData + 24, r, 8); }
-            { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
-
-            void* mapped = nullptr;
-            vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped);
-            memcpy(mapped, uboData, UBO_SIZE);
-            vkUnmapMemory(m_device, pipeIt->second->uboMemory);
+        uint8_t uboData[UBO_SIZE] = {};
+        for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
+            float v = params.uniformFloats[i];
+            memcpy(uboData + i * 4, &v, sizeof(float));
         }
+        { float r[2] = { static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight) }; memcpy(uboData + 24, r, 8); }
+        { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
 
-        // 更新描述符集
+        void* mapped = nullptr;
+        vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped);
+        memcpy(mapped, uboData, UBO_SIZE);
+        vkUnmapMemory(m_device, pipeIt->second->uboMemory);
+```
+
+#### 第三段：描述符集更新与绘制
+
+**分析**：每帧更新描述符集，将输入纹理（binding=0）和 UBO（binding=1）绑定。最后通过 `vkCmdDraw(3, 1, 0, 0)` 绘制全屏三角形。
+
+```cpp
         VkDescriptorImageInfo imageInfo{};
         VkDescriptorBufferInfo bufferInfo{};
         std::vector<VkWriteDescriptorSet> writes;
@@ -5447,7 +7450,6 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
                 texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 texWrite.dstSet = pipeIt->second->descSet;
                 texWrite.dstBinding = 0;
-                texWrite.dstArrayElement = 0;
                 texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 texWrite.descriptorCount = 1;
                 texWrite.pImageInfo = &imageInfo;
@@ -5463,7 +7465,6 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         uboWrite.dstSet = pipeIt->second->descSet;
         uboWrite.dstBinding = 1;
-        uboWrite.dstArrayElement = 0;
         uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboWrite.descriptorCount = 1;
         uboWrite.pBufferInfo = &bufferInfo;
@@ -5475,47 +7476,120 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
             pipeIt->second->layout, 0, 1, &pipeIt->second->descSet, 0, nullptr);
     }
 
-    // 绘制全屏三角形（3 个顶点，无顶点缓冲）
     vkCmdDraw(m_commandBuffer, 3, 1, 0, 0);
-
     m_currentPipeline = {0};
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-绘制一个全屏三角形，这是后处理着色器的核心绘制函数。它创建（或从缓存获取）管线，更新 UBO 参数，绑定纹理，然后通过 `vkCmdDraw(cmd, 3, 1, 0, 0)` 绘制 3 个顶点组成的全屏三角形。
+```cpp
+void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) {
+    if (!m_isRecording) return;
 
-#### 实现原理
+    PipelineDesc desc;
+    desc.vertShader = vert;
+    desc.fragShader = frag;
+    desc.width = params.viewportWidth;
+    desc.height = params.viewportHeight;
+    desc.blendEnable = false;
 
-全屏三角形是一种经典的优化技术：不使用顶点缓冲区和 VAO，而是在顶点着色器中通过 `gl_VertexIndex` 生成覆盖整个屏幕的三角形。UBO 数据布局严格匹配着色器中的 `std140` 布局：偏移 0-23 为 6 个 float 参数，偏移 24-31 为 vec2 分辨率，偏移 32-35 为 float 时间，偏移 36-39 为 float 帧计数。
+    PipelineHandle pipeHandle = CreatePipeline(desc);
+    if (pipeHandle.id == 0) return;
 
-#### 为什么这样实现
+    BindPipeline(pipeHandle);
 
-1. **无顶点缓冲**：省去了 VAO/VBO 的创建和管理开销，对于后处理场景非常高效。
-2. **每帧更新描述符集**：通过 `vkUpdateDescriptorSets` 每帧更新纹理绑定和 UBO 数据。
-3. **管线缓存**：`CreatePipeline` 内部检查缓存，相同着色器组合只创建一次管线。
-4. **不销毁管线**：Vulkan 命令异步执行，在 `vkCmdDraw` 后立即销毁管线会导致 GPU 访问无效资源。
+    VkViewport viewport{};
+    viewport.width = static_cast<float>(params.viewportWidth);
+    viewport.height = static_cast<float>(params.viewportHeight);
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.extent = {static_cast<uint32_t>(params.viewportWidth), static_cast<uint32_t>(params.viewportHeight)};
+    vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+
+    auto pipeIt = m_pipelines.find(pipeHandle.id);
+    if (pipeIt != m_pipelines.end() && pipeIt->second->descSet != VK_NULL_HANDLE) {
+        const size_t UBO_SIZE = 48;
+
+        uint8_t uboData[UBO_SIZE] = {};
+        for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
+            float v = params.uniformFloats[i];
+            memcpy(uboData + i * 4, &v, sizeof(float));
+        }
+        { float r[2] = { static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight) }; memcpy(uboData + 24, r, 8); }
+        { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
+
+        void* mapped = nullptr;
+        vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped);
+        memcpy(mapped, uboData, UBO_SIZE);
+        vkUnmapMemory(m_device, pipeIt->second->uboMemory);
+
+        VkDescriptorImageInfo imageInfo{};
+        VkDescriptorBufferInfo bufferInfo{};
+        std::vector<VkWriteDescriptorSet> writes;
+
+        if (!params.inputTextures.empty()) {
+            auto texIt = m_textures.find(params.inputTextures[0].id);
+            if (texIt != m_textures.end()) {
+                imageInfo.sampler = texIt->second->sampler;
+                imageInfo.imageView = texIt->second->view;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                VkWriteDescriptorSet texWrite{};
+                texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                texWrite.dstSet = pipeIt->second->descSet;
+                texWrite.dstBinding = 0;
+                texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                texWrite.descriptorCount = 1;
+                texWrite.pImageInfo = &imageInfo;
+                writes.push_back(texWrite);
+            }
+        }
+
+        bufferInfo.buffer = pipeIt->second->uboBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = UBO_SIZE;
+
+        VkWriteDescriptorSet uboWrite{};
+        uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        uboWrite.dstSet = pipeIt->second->descSet;
+        uboWrite.dstBinding = 1;
+        uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboWrite.descriptorCount = 1;
+        uboWrite.pBufferInfo = &bufferInfo;
+        writes.push_back(uboWrite);
+
+        vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
+        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipeIt->second->layout, 0, 1, &pipeIt->second->descSet, 0, nullptr);
+    }
+
+    vkCmdDraw(m_commandBuffer, 3, 1, 0, 0);
+    m_currentPipeline = {0};
+}
+```
 
 ---
 
-### 6.12 BeginFrame / EndFrame — 帧同步与命令提交
+### 6.12 BeginFrame / EndFrame
 
-#### BeginFrame
+#### 第一段：BeginFrame
+
+**分析**：`BeginFrame` 执行帧开始的关键步骤：等待上一帧栅栏、重置栅栏、处理延迟销毁队列、获取交换链图像、开始命令缓冲录制、开始渲染通道。
 
 ```cpp
 void VulkanBackend::BeginFrame() {
     if (m_swapchainExtent.width == 0 || m_swapchainExtent.height == 0) {
         RecreateSwapchain();
-        if (m_swapchainExtent.width == 0 || m_swapchainExtent.height == 0)
-            return;
+        if (m_swapchainExtent.width == 0 || m_swapchainExtent.height == 0) return;
     }
 
-    // 等待上一帧完成（栅栏同步）
     vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(m_device, 1, &m_inFlightFence);
 
-    // 清理上一帧的延迟销毁资源
     for (auto& dd : m_deferredDestroys) {
         if (dd.pipeline != VK_NULL_HANDLE) vkDestroyPipeline(m_device, dd.pipeline, nullptr);
         if (dd.layout != VK_NULL_HANDLE) vkDestroyPipelineLayout(m_device, dd.layout, nullptr);
@@ -5526,39 +7600,25 @@ void VulkanBackend::BeginFrame() {
     }
     m_deferredDestroys.clear();
 
-    // 获取下一个可用交换链图像
     VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX,
-                                            m_imageAvailableSemaphore, VK_NULL_HANDLE,
-                                            &m_currentImageIndex);
+                                            m_imageAvailableSemaphore, VK_NULL_HANDLE, &m_currentImageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) { RecreateSwapchain(); return; }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) return;
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        RecreateSwapchain();
-        return;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        fprintf(stderr, "[Vulkan] Failed to acquire swapchain image: %d\n", result);
-        return;
-    }
-
-    // 重置并开始命令缓冲录制
     vkResetCommandBuffer(m_commandBuffer, 0);
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0;
     VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
     m_isRecording = true;
 
-    // 开始渲染通道
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = m_renderPass;
     renderPassInfo.framebuffer = m_swapchainFramebuffers[m_currentImageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapchainExtent;
-
     VkClearValue clearColor = {{{0.12f, 0.16f, 0.24f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
-
     vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     m_currentRenderPass = m_renderPass;
@@ -5566,18 +7626,18 @@ void VulkanBackend::BeginFrame() {
 }
 ```
 
-#### EndFrame
+#### 第二段：EndFrame
+
+**分析**：`EndFrame` 先渲染 ImGui 绘制数据，然后结束渲染通道和命令缓冲，提交到图形队列，最后通过呈现队列显示到屏幕。
 
 ```cpp
 void VulkanBackend::EndFrame() {
     if (!m_isRecording) return;
 
-    // 渲染 ImGui（在结束渲染通道之前）
     if (m_imguiRenderPending) {
         ImDrawData* drawData = ImGui::GetDrawData();
-        if (drawData && drawData->CmdListsCount > 0) {
+        if (drawData && drawData->CmdListsCount > 0)
             ImGui_ImplVulkan_RenderDrawData(drawData, m_commandBuffer);
-        }
         m_imguiRenderPending = false;
     }
 
@@ -5588,10 +7648,8 @@ void VulkanBackend::EndFrame() {
     VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
     m_isRecording = false;
 
-    // 提交命令缓冲
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
     VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphore};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
@@ -5599,88 +7657,60 @@ void VulkanBackend::EndFrame() {
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_commandBuffer;
-
     VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphore};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence));
 
-    // 呈现
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-
     VkSwapchainKHR swapChains[] = {m_swapchain};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
     presentInfo.pImageIndices = &m_currentImageIndex;
 
     VkResult result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
         RecreateSwapchain();
-    } else if (result != VK_SUCCESS) {
-        fprintf(stderr, "[Vulkan] Failed to present swapchain image: %d\n", result);
-    }
 }
 ```
-
-#### 功能说明
-
-`BeginFrame` 在每帧开始时执行帧同步、获取交换链图像、开始命令缓冲录制和渲染通道。`EndFrame` 在每帧结束时渲染 ImGui、结束渲染通道、提交命令缓冲并呈现结果。
-
-#### 实现原理
-
-帧同步采用"栅栏 + 信号量"双重机制：栅栏（Fence）用于 CPU 端同步，确保上一帧的命令已执行完毕；信号量（Semaphore）用于 GPU 端同步，确保交换链图像获取完成后才开始渲染，渲染完成后才开始呈现。
-
-#### 为什么这样实现
-
-1. **单帧缓冲**：只使用一个命令缓冲和一个栅栏，简化多缓冲的复杂性。
-2. **延迟销毁**：在 `BeginFrame` 中清理上一帧标记为延迟销毁的资源，此时 GPU 已完成使用。
-3. **自动重建交换链**：在 `OUT_OF_DATE` 或 `SUBOPTIMAL` 状态时自动重建交换链。
-4. **ImGui 延迟渲染**：`ImGuiRender()` 只设置标志，实际渲染在 `EndFrame` 中执行。
 
 ---
 
 ### 6.13 ImGui 集成
+
+#### 第一段：ImGui Vulkan 初始化
+
+**分析**：ImGui 的 Vulkan 后端初始化需要：创建 ImGui 上下文、加载中文字体（优先微软雅黑，回退宋体，使用 MergeMode 合并字形）、创建大型描述符池、创建 ImGui 专用描述符集布局、调用 `ImGui_ImplVulkan_Init`。
 
 ```cpp
 void VulkanBackend::ImGuiInit(GLFWwindow* window) {
     if (m_imguiInitialized) return;
 
     IMGUI_CHECKVERSION();
-    if (ImGui::GetCurrentContext() == nullptr) {
-        ImGui::CreateContext();
-    }
-
+    if (ImGui::GetCurrentContext() == nullptr) ImGui::CreateContext();
     ImGui_ImplGlfw_InitForVulkan(window, true);
 
-    // 加载字体：默认拉丁字体 + 中文字体合并
     ImGuiIO& io = ImGui::GetIO();
     const char* chineseFontPath = nullptr;
-
-    // 检查微软雅黑
     {
         std::ifstream testFile("C:\\Windows\\Fonts\\msyh.ttc", std::ios::binary);
         if (testFile.good()) chineseFontPath = "C:\\Windows\\Fonts\\msyh.ttc";
     }
-    // 回退：宋体
     if (!chineseFontPath) {
         std::ifstream testFile("C:\\Windows\\Fonts\\simsun.ttc", std::ios::binary);
         if (testFile.good()) chineseFontPath = "C:\\Windows\\Fonts\\simsun.ttc";
     }
-
     if (chineseFontPath) {
         io.Fonts->AddFontDefault();
         ImFontConfig cfg;
         cfg.MergeMode = true;
-        io.Fonts->AddFontFromFileTTF(chineseFontPath, 16.0f, &cfg,
-            io.Fonts->GetGlyphRangesChineseFull());
+        io.Fonts->AddFontFromFileTTF(chineseFontPath, 16.0f, &cfg, io.Fonts->GetGlyphRangesChineseFull());
     }
 
-    // 创建 ImGui 专用描述符池
     VkDescriptorPoolSize poolSizes[] = {
         { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -5696,33 +7726,46 @@ void VulkanBackend::ImGuiInit(GLFWwindow* window) {
     };
 
     VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.sType = VK_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     poolInfo.maxSets = 1000 * IM_ARRAYSIZE(poolSizes);
     poolInfo.poolSizeCount = IM_ARRAYSIZE(poolSizes);
     poolInfo.pPoolSizes = poolSizes;
-
     VK_CHECK(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_imguiDescriptorPool));
 
-    // 初始化 ImGui Vulkan 后端
+    VkDescriptorSetLayoutBinding imguiSamplerBinding{};
+    imguiSamplerBinding.binding = 0;
+    imguiSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    imguiSamplerBinding.descriptorCount = 1;
+    imguiSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo imguiLayoutInfo{};
+    imguiLayoutInfo.sType = VK_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    imguiLayoutInfo.bindingCount = 1;
+    imguiLayoutInfo.pBindings = &imguiSamplerBinding;
+    VK_CHECK(vkCreateDescriptorSetLayout(m_device, &imguiLayoutInfo, nullptr, &m_imguiDescSetLayout));
+
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.Instance = m_instance;
     initInfo.PhysicalDevice = m_physicalDevice;
     initInfo.Device = m_device;
     initInfo.QueueFamily = m_graphicsFamily;
     initInfo.Queue = m_graphicsQueue;
-    initInfo.PipelineCache = VK_NULL_HANDLE;
     initInfo.DescriptorPool = m_imguiDescriptorPool;
     initInfo.MinImageCount = 2;
     initInfo.ImageCount = static_cast<uint32_t>(m_swapchainImages.size());
     initInfo.PipelineInfoMain.RenderPass = m_renderPass;
     initInfo.PipelineInfoMain.Subpass = 0;
-    initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
     ImGui_ImplVulkan_Init(&initInfo);
     m_imguiInitialized = true;
 }
+```
 
+#### 第二段：ImGuiNewFrame / ImGuiRender / ImGuiShutdown
+
+**分析**：`ImGuiRender` 设置 `m_imguiRenderPending` 标志，实际的 Vulkan 绘制延迟到 `EndFrame` 中执行。`ImGuiShutdown` 按相反顺序清理资源。
+
+```cpp
 void VulkanBackend::ImGuiNewFrame() {
     if (!m_imguiInitialized) return;
     ImGui_ImplVulkan_NewFrame();
@@ -5741,45 +7784,27 @@ void VulkanBackend::ImGuiShutdown() {
     WaitIdle();
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    if (m_imguiDescriptorPool != VK_NULL_HANDLE) {
+    if (m_imguiDescriptorPool != VK_NULL_HANDLE)
         vkDestroyDescriptorPool(m_device, m_imguiDescriptorPool, nullptr);
-        m_imguiDescriptorPool = VK_NULL_HANDLE;
-    }
-    if (m_imguiDescSetLayout != VK_NULL_HANDLE) {
+    if (m_imguiDescSetLayout != VK_NULL_HANDLE)
         vkDestroyDescriptorSetLayout(m_device, m_imguiDescSetLayout, nullptr);
-        m_imguiDescSetLayout = VK_NULL_HANDLE;
-    }
     m_imguiInitialized = false;
 }
 ```
 
-#### 功能说明
-
-ImGui Vulkan 集成包含四个函数：`ImGuiInit` 初始化 ImGui 的 Vulkan 后端（包括字体加载、描述符池创建），`ImGuiNewFrame` 开始新帧，`ImGuiRender` 生成绘制数据并标记待渲染，`ImGuiShutdown` 清理所有 ImGui 资源。
-
-#### 实现原理
-
-ImGui Vulkan 集成的关键设计：字体合并（先加载默认字体再以合并模式加载中文字体）、大型描述符池（覆盖所有 Vulkan 描述符类型）、延迟渲染（`ImGuiRender()` 只设置标志，实际 Vulkan 命令录制在 `EndFrame` 中执行）。
-
-#### 为什么这样实现
-
-1. **字体合并模式**：使用 `MergeMode = true` 而非替换默认字体，保持 ImGui 内置图标的正确渲染。
-2. **大描述符池**：ImGui 的 Vulkan 后端需要多种描述符类型，预分配大型池避免运行时分配失败。
-3. **延迟渲染标志**：将 ImGui 渲染分为"数据生成"和"命令录制"两步，确保 Vulkan 命令在活跃的渲染通道内录制。
-
 ---
 
-### 6.14 Shutdown — 资源清理
+### 6.14 Shutdown
+
+#### 第一段：资源逆序销毁
+
+**分析**：`Shutdown` 按照与初始化相反的顺序销毁所有 Vulkan 资源。先调用 `WaitIdle` 确保 GPU 空闲，然后依次清理管线、纹理、着色器、同步对象、命令池、交换链、渲染通道、逻辑设备、Surface 和实例。
 
 ```cpp
 void VulkanBackend::Shutdown() {
     if (!m_initialized) return;
+    WaitIdle();
 
-    WaitIdle(); // 等待 GPU 完成所有工作
-
-    printf("[Vulkan] Shutting down...\n");
-
-    // 清理所有管线
     for (auto& [id, pipeline] : m_pipelines) {
         if (pipeline->pipeline != VK_NULL_HANDLE) vkDestroyPipeline(m_device, pipeline->pipeline, nullptr);
         if (pipeline->layout != VK_NULL_HANDLE) vkDestroyPipelineLayout(m_device, pipeline->layout, nullptr);
@@ -5788,7 +7813,6 @@ void VulkanBackend::Shutdown() {
     }
     m_pipelines.clear();
 
-    // 清理所有纹理
     for (auto& [id, texture] : m_textures) {
         if (texture->sampler != VK_NULL_HANDLE) vkDestroySampler(m_device, texture->sampler, nullptr);
         if (texture->view != VK_NULL_HANDLE) vkDestroyImageView(m_device, texture->view, nullptr);
@@ -5799,80 +7823,103 @@ void VulkanBackend::Shutdown() {
     }
     m_textures.clear();
 
-    // 清理所有着色器
     for (auto& [id, shader] : m_shaders) {
         if (shader.module != VK_NULL_HANDLE) vkDestroyShaderModule(m_device, shader.module, nullptr);
     }
     m_shaders.clear();
 
-    // 销毁同步对象
     if (m_inFlightFence != VK_NULL_HANDLE) { vkDestroyFence(m_device, m_inFlightFence, nullptr); m_inFlightFence = VK_NULL_HANDLE; }
     if (m_renderFinishedSemaphore != VK_NULL_HANDLE) { vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr); m_renderFinishedSemaphore = VK_NULL_HANDLE; }
     if (m_imageAvailableSemaphore != VK_NULL_HANDLE) { vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr); m_imageAvailableSemaphore = VK_NULL_HANDLE; }
 
-    // 销毁命令池
     if (m_commandPool != VK_NULL_HANDLE) { vkDestroyCommandPool(m_device, m_commandPool, nullptr); m_commandPool = VK_NULL_HANDLE; }
 
-    // 清理交换链
     CleanupSwapchain();
 
-    // 销毁渲染通道
     if (m_renderPass != VK_NULL_HANDLE) { vkDestroyRenderPass(m_device, m_renderPass, nullptr); m_renderPass = VK_NULL_HANDLE; }
-
-    // 销毁逻辑设备
     if (m_device != VK_NULL_HANDLE) { vkDestroyDevice(m_device, nullptr); m_device = VK_NULL_HANDLE; }
-
-    // 销毁表面
     if (m_surface != VK_NULL_HANDLE) { vkDestroySurfaceKHR(m_instance, m_surface, nullptr); m_surface = VK_NULL_HANDLE; }
-
-    // 销毁实例
     if (m_instance != VK_NULL_HANDLE) { vkDestroyInstance(m_instance, nullptr); m_instance = VK_NULL_HANDLE; }
 
     m_initialized = false;
-    printf("[Vulkan] Shutdown complete\n");
 }
 ```
-
-#### 功能说明
-
-按正确顺序销毁所有 Vulkan 资源。销毁顺序与创建顺序相反，确保没有资源在被销毁后仍被其他资源引用。
-
-#### 实现原理
-
-资源销毁遵循 Vulkan 规范要求的严格顺序：WaitIdle -> 管线/纹理/着色器 -> 同步对象 -> 命令池 -> 交换链 -> 渲染通道 -> 逻辑设备 -> 表面 -> 实例。
-
-#### 为什么这样实现
-
-1. **逆序销毁**：Vulkan 对象之间存在依赖关系，必须按创建的逆序销毁。
-2. **WaitIdle 在最前**：确保 GPU 不再使用任何资源后再开始销毁。
-3. **NULL 赋值**：每个句柄销毁后设为 `VK_NULL_HANDLE`，防止重复销毁。
 
 ---
 
 ## 7. 着色器加载与效果元数据
 
-本章分析着色器加载系统（SPIR-V 二进制加载和目录定位）和效果元数据系统（手写 JSON 解析器）。这两个模块共同构成了着色器效果的发现、加载和参数化机制。
+本章分析着色器加载系统和效果元数据解析模块。这两个模块共同构成了后处理效果的"声明式"配置系统。
 
-### 7.1 ShaderLoader — SPIR-V加载与目录定位
+---
 
-#### ShaderLoader.h
+### 7.1 ShaderLoader
+
+**文件**: `src/shader/ShaderLoader.h`, `src/shader/ShaderLoader.cpp`
+
+#### 第一段：SPIR-V 文件加载
+
+**分析**：`LoadSPIRV` 以二进制模式打开 `.spv` 文件，通过 `tellg` 获取文件大小，验证大小是否为 4 的倍数（SPIR-V 由 32 位字组成），然后将整个文件读入 `vector<uint32_t>`。
 
 ```cpp
-#pragma once
-#include <vector>
-#include <cstdint>
-#include <string>
+std::vector<uint32_t> ShaderLoader::LoadSPIRV(const std::string& filepath) {
+    std::vector<uint32_t> result;
 
-class ShaderLoader {
-public:
-    // 从文件加载 SPIR-V 二进制数据，返回 uint32_t 数组
-    static std::vector<uint32_t> LoadSPIRV(const std::string& filepath);
-    // 查找着色器目录（相对于可执行文件的多级搜索）
-    static std::string FindShaderDir();
-};
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        fprintf(stderr, "[ShaderLoader] Cannot open SPIR-V file: %s\n", filepath.c_str());
+        return result;
+    }
+
+    std::streamsize size = file.tellg();
+    if (size <= 0 || size % sizeof(uint32_t) != 0) {
+        fprintf(stderr, "[ShaderLoader] Invalid SPIR-V file: %s\n", filepath.c_str());
+        return result;
+    }
+
+    result.resize(static_cast<size_t>(size) / sizeof(uint32_t));
+    file.seekg(0, std::ios::beg);
+    file.read(reinterpret_cast<char*>(result.data()), size);
+    file.close();
+
+    printf("[ShaderLoader] Loaded SPIR-V: %s (%zu bytes, %zu words)\n",
+           filepath.c_str(), static_cast<size_t>(size), result.size());
+    return result;
+}
 ```
 
-#### ShaderLoader.cpp
+#### 第二段：着色器目录查找
+
+**分析**：`FindShaderDir` 解决了可执行文件与着色器资源之间的路径映射问题。依次尝试三个候选路径：`../../shaders`、`../shaders`、`./shaders`。
+
+```cpp
+std::string ShaderLoader::FindShaderDir() {
+#ifdef _WIN32
+    char exePathBuf[MAX_PATH];
+    DWORD len = GetModuleFileNameA(nullptr, exePathBuf, MAX_PATH);
+    if (len > 0 && len < MAX_PATH) {
+        std::string exeDir(exePathBuf, len);
+        size_t slash = exeDir.find_last_of("\\/");
+        if (slash != std::string::npos) exeDir = exeDir.substr(0, slash);
+
+        std::string candidate = exeDir + "/../../shaders";
+        std::ifstream test(candidate + "/common/fullscreen.vert.spv");
+        if (test.good()) return candidate;
+
+        candidate = exeDir + "/../shaders";
+        test.open(candidate + "/common/fullscreen.vert.spv");
+        if (test.good()) return candidate;
+
+        candidate = exeDir + "/shaders";
+        test.open(candidate + "/common/fullscreen.vert.spv");
+        if (test.good()) return candidate;
+    }
+#endif
+    return "shaders";
+}
+```
+
+#### 完整源码
 
 ```cpp
 #include "shader/ShaderLoader.h"
@@ -5924,20 +7971,16 @@ std::string ShaderLoader::FindShaderDir() {
     if (len > 0 && len < MAX_PATH) {
         std::string exeDir(exePathBuf, len);
         size_t slash = exeDir.find_last_of("\\/");
-        if (slash != std::string::npos)
-            exeDir = exeDir.substr(0, slash);
+        if (slash != std::string::npos) exeDir = exeDir.substr(0, slash);
 
-        // 尝试：exe_dir/../../shaders
         std::string candidate = exeDir + "/../../shaders";
         std::ifstream test(candidate + "/common/fullscreen.vert.spv");
         if (test.good()) return candidate;
 
-        // 尝试：exe_dir/../shaders
         candidate = exeDir + "/../shaders";
         test.open(candidate + "/common/fullscreen.vert.spv");
         if (test.good()) return candidate;
 
-        // 尝试：exe_dir/shaders
         candidate = exeDir + "/shaders";
         test.open(candidate + "/common/fullscreen.vert.spv");
         if (test.good()) return candidate;
@@ -5949,8 +7992,7 @@ std::string ShaderLoader::FindShaderDir() {
         exePathBuf[len] = '\0';
         std::string exeDir(exePathBuf);
         size_t slash = exeDir.find_last_of('/');
-        if (slash != std::string::npos)
-            exeDir = exeDir.substr(0, slash);
+        if (slash != std::string::npos) exeDir = exeDir.substr(0, slash);
 
         std::string candidate = exeDir + "/../shaders";
         std::ifstream test(candidate + "/common/fullscreen.vert.spv");
@@ -5967,49 +8009,33 @@ std::string ShaderLoader::FindShaderDir() {
 }
 ```
 
-#### 功能说明
-
-`ShaderLoader` 提供两个静态方法：`LoadSPIRV` 从磁盘加载 SPIR-V 二进制着色器文件，`FindShaderDir` 自动定位着色器目录。
-
-#### 实现原理
-
-`LoadSPIRV` 以二进制模式打开文件，通过 `tellg()` 获取文件大小，验证大小为 4 的倍数（SPIR-V 规范要求），然后一次性读取全部内容到 `uint32_t` 数组中。`FindShaderDir` 通过获取可执行文件路径，向上搜索多个候选目录，用 `fullscreen.vert.spv` 的存在性作为探测依据。
-
-#### 为什么这样实现
-
-1. **静态方法设计**：`ShaderLoader` 不需要实例状态，所有方法都是静态的，使用简单。
-2. **多级目录搜索**：适应不同的构建目录布局（Visual Studio 的 `build/bin/Release`、CMake 的 `build/bin` 等）。
-3. **文件探测**：通过尝试打开已知文件来验证目录正确性，比检查目录是否存在更可靠。
-4. **SPIR-V 大小验证**：确保文件是有效的 SPIR-V 二进制，避免将损坏的文件传递给 Vulkan 驱动。
-
 ---
 
-### 7.2 EffectMetadata — 手写JSON解析器
+### 7.2 EffectMetadata
 
-#### EffectMetadata.h
+**文件**: `src/shader/EffectMetadata.h`, `src/shader/EffectMetadata.cpp`
+
+#### 第一段：数据结构定义
+
+**分析**：`ShaderParam` 描述单个着色器参数的元数据（名称、类型、范围、默认值、UI 控件类型）。`EffectCard` 描述一个完整的效果卡片。`UniformBinding` 描述运行时的 uniform 绑定状态。
 
 ```cpp
-#pragma once
-#include <string>
-#include <vector>
-#include <cstdint>
-
 enum class ParamType { Float, Int, Bool, Float2, Float3, Float4, Color };
 
 struct ShaderParam {
-    std::string name;          // 参数名（对应着色器 uniform 变量名）
-    std::string label;         // UI 显示标签（中文）
+    std::string name;
+    std::string label;
     ParamType type = ParamType::Float;
     float minVal = 0.0f, maxVal = 1.0f;
     float defaultVal[4] = {0,0,0,0};
-    std::string uiType;        // slider, drag, combo, color, checkbox
+    std::string uiType;
     std::vector<std::string> comboOptions;
 };
 
 struct EffectCard {
     std::string id;
-    std::string name;          // 效果名称（中文）
-    std::string category;     // 分类
+    std::string name;
+    std::string category;
     std::string description;
     std::string thumbnailPath;
     std::string vertSpirvPath;
@@ -6023,11 +8049,164 @@ struct UniformBinding {
     ParamType type = ParamType::Float;
     float currentValue[4] = {0,0,0,0};
 };
-
-EffectCard LoadEffectFromJson(const std::string& filepath);
 ```
 
-#### EffectMetadata.cpp
+#### 第二段：JSON 解析器（无外部依赖）
+
+**分析**：`EffectMetadata.cpp` 实现了一个轻量级 JSON 解析器，不依赖任何第三方库。核心函数包括 `ExtractString`、`ExtractNumber`、`GetStringValue`、`GetNumberValue`。解析器通过字符串查找和位置追踪实现。
+
+```cpp
+namespace {
+
+std::string ExtractString(const std::string& json, size_t& pos) {
+    pos = json.find('"', pos);
+    if (pos == std::string::npos) return "";
+    size_t start = ++pos;
+    while (pos < json.size()) {
+        if (json[pos] == '\\') { pos += 2; continue; }
+        if (json[pos] == '"') break;
+        ++pos;
+    }
+    std::string result = json.substr(start, pos - start);
+    ++pos;
+    return result;
+}
+
+double ExtractNumber(const std::string& json, size_t& pos) {
+    while (pos < json.size() && std::isspace(static_cast<unsigned char>(json[pos]))) ++pos;
+    size_t start = pos;
+    if (json[pos] == '-') ++pos;
+    while (pos < json.size() && (std::isdigit(static_cast<unsigned char>(json[pos])) || json[pos] == '.')) ++pos;
+    return std::stod(json.substr(start, pos - start));
+}
+
+std::string GetStringValue(const std::string& scope, const std::string& key) {
+    std::string pattern = "\"" + key + "\"";
+    size_t p = scope.find(pattern);
+    if (p == std::string::npos) return "";
+    p = scope.find(':', p + pattern.size());
+    if (p == std::string::npos) return "";
+    ++p;
+    while (p < scope.size() && std::isspace(static_cast<unsigned char>(scope[p]))) ++p;
+    if (p >= scope.size() || scope[p] != '"') return "";
+    --p;
+    return ExtractString(scope, p);
+}
+
+double GetNumberValue(const std::string& scope, const std::string& key) {
+    std::string pattern = "\"" + key + "\"";
+    size_t p = scope.find(pattern);
+    if (p == std::string::npos) return 0.0;
+    p = scope.find(':', p + pattern.size());
+    if (p == std::string::npos) return 0.0;
+    ++p;
+    return ExtractNumber(scope, p);
+}
+
+ParamType ParseParamType(const std::string& typeStr) {
+    if (typeStr == "Float")  return ParamType::Float;
+    if (typeStr == "Int")    return ParamType::Int;
+    if (typeStr == "Bool")   return ParamType::Bool;
+    if (typeStr == "Float2") return ParamType::Float2;
+    if (typeStr == "Float3") return ParamType::Float3;
+    if (typeStr == "Float4") return ParamType::Float4;
+    if (typeStr == "Color")  return ParamType::Color;
+    return ParamType::Float;
+}
+
+} // anonymous namespace
+```
+
+#### 第三段：LoadEffectFromJson 主函数
+
+**分析**：`LoadEffectFromJson` 首先进行安全检查（文件存在性和大小限制 100KB），然后移除 C 风格注释，提取顶层字段，最后解析 `params` 数组中的每个参数对象。
+
+```cpp
+EffectCard LoadEffectFromJson(const std::string& filepath) {
+    EffectCard card;
+
+    FILE* test = fopen(filepath.c_str(), "rb");
+    if (!test) { fprintf(stderr, "[EffectMetadata] File not found: %s\n", filepath.c_str()); return card; }
+    fseek(test, 0, SEEK_END);
+    long sz = ftell(test);
+    fclose(test);
+    if (sz <= 0 || sz > 102400) return card;
+
+    std::string json = ReadFile(filepath);
+    if (json.empty()) return card;
+
+    // 移除 C 风格注释
+    {
+        std::string cleaned;
+        cleaned.reserve(json.size());
+        for (size_t i = 0; i < json.size(); ++i) {
+            if (json[i] == '/' && i+1 < json.size()) {
+                if (json[i+1] == '/') { i += 2; while (i < json.size() && json[i] != '\n') ++i; if (i < json.size()) cleaned += '\n'; continue; }
+                if (json[i+1] == '*') { i += 2; while (i+1 < json.size() && !(json[i] == '*' && json[i+1] == '/')) ++i; i += 1; continue; }
+            }
+            cleaned += json[i];
+        }
+        json = std::move(cleaned);
+    }
+
+    card.name        = GetStringValue(json, "name");
+    card.category    = GetStringValue(json, "category");
+    card.description = GetStringValue(json, "description");
+    card.passes      = static_cast<int>(GetNumberValue(json, "passes"));
+    if (card.passes < 1) card.passes = 1;
+
+    // 解析 params 数组
+    size_t paramsStart = json.find("\"params\"");
+    if (paramsStart != std::string::npos) {
+        paramsStart = json.find('[', paramsStart);
+        if (paramsStart != std::string::npos) {
+            int bracketDepth = 0;
+            size_t paramsEnd = paramsStart;
+            for (size_t i = paramsStart; i < json.size(); ++i) {
+                if (json[i] == '[') ++bracketDepth;
+                else if (json[i] == ']') { --bracketDepth; if (bracketDepth == 0) { paramsEnd = i; break; } }
+            }
+
+            size_t pos = paramsStart + 1;
+            while (pos < paramsEnd) {
+                pos = json.find('{', pos);
+                if (pos == std::string::npos || pos >= paramsEnd) break;
+
+                int depth = 0;
+                size_t objEnd = pos;
+                for (size_t i = pos; i < paramsEnd; ++i) {
+                    if (json[i] == '{') ++depth;
+                    else if (json[i] == '}') { --depth; if (depth == 0) { objEnd = i; break; } }
+                }
+
+                std::string paramScope = json.substr(pos, objEnd - pos + 1);
+                ShaderParam param;
+                param.name    = GetStringValue(paramScope, "name");
+                param.label   = GetStringValue(paramScope, "label");
+                param.type    = ParseParamType(GetStringValue(paramScope, "type"));
+                param.minVal  = static_cast<float>(GetNumberValue(paramScope, "min"));
+                param.maxVal  = static_cast<float>(GetNumberValue(paramScope, "max"));
+
+                std::string defStr = GetStringValue(paramScope, "default");
+                if (!defStr.empty()) { try { param.defaultVal[0] = static_cast<float>(std::stod(defStr)); } catch (...) { defStr.clear(); } }
+                if (defStr.empty()) { param.defaultVal[0] = static_cast<float>(GetNumberValue(paramScope, "default")); }
+
+                param.uiType = GetStringValue(paramScope, "ui_type");
+
+                size_t comboPos = paramScope.find("\"combo_options\"");
+                if (comboPos != std::string::npos) param.comboOptions = ExtractStringArray(paramScope, comboPos);
+
+                card.params.push_back(std::move(param));
+                pos = objEnd + 1;
+            }
+        }
+    }
+
+    return card;
+}
+```
+
+#### 完整源码
 
 ```cpp
 #include "shader/EffectMetadata.h"
@@ -6150,10 +8329,10 @@ EffectCard LoadEffectFromJson(const std::string& filepath) {
     fseek(test, 0, SEEK_END);
     long sz = ftell(test);
     fclose(test);
-    if (sz <= 0 || sz > 102400) { fprintf(stderr, "[EffectMetadata] Invalid file size %ld for: %s\n", sz, filepath.c_str()); return card; }
+    if (sz <= 0 || sz > 102400) { fprintf(stderr, "[EffectMetadata] Invalid file size %ld\n", sz); return card; }
 
     std::string json = ReadFile(filepath);
-    if (json.empty()) { fprintf(stderr, "[EffectMetadata] Empty or missing file: %s\n", filepath.c_str()); return card; }
+    if (json.empty()) return card;
 
     // 移除 C 风格注释
     {
@@ -6161,18 +8340,8 @@ EffectCard LoadEffectFromJson(const std::string& filepath) {
         cleaned.reserve(json.size());
         for (size_t i = 0; i < json.size(); ++i) {
             if (json[i] == '/' && i+1 < json.size()) {
-                if (json[i+1] == '/') {
-                    i += 2;
-                    while (i < json.size() && json[i] != '\n') ++i;
-                    if (i < json.size()) cleaned += '\n';
-                    continue;
-                }
-                if (json[i+1] == '*') {
-                    i += 2;
-                    while (i+1 < json.size() && !(json[i] == '*' && json[i+1] == '/')) ++i;
-                    i += 1;
-                    continue;
-                }
+                if (json[i+1] == '/') { i += 2; while (i < json.size() && json[i] != '\n') ++i; if (i < json.size()) cleaned += '\n'; continue; }
+                if (json[i+1] == '*') { i += 2; while (i+1 < json.size() && !(json[i] == '*' && json[i+1] == '/')) ++i; i += 1; continue; }
             }
             cleaned += json[i];
         }
@@ -6185,7 +8354,6 @@ EffectCard LoadEffectFromJson(const std::string& filepath) {
     card.passes      = static_cast<int>(GetNumberValue(json, "passes"));
     if (card.passes < 1) card.passes = 1;
 
-    // 解析 params 数组
     size_t paramsStart = json.find("\"params\"");
     if (paramsStart != std::string::npos) {
         paramsStart = json.find('[', paramsStart);
@@ -6210,7 +8378,6 @@ EffectCard LoadEffectFromJson(const std::string& filepath) {
                 }
 
                 std::string paramScope = json.substr(pos, objEnd - pos + 1);
-
                 ShaderParam param;
                 param.name    = GetStringValue(paramScope, "name");
                 param.label   = GetStringValue(paramScope, "label");
@@ -6219,21 +8386,13 @@ EffectCard LoadEffectFromJson(const std::string& filepath) {
                 param.maxVal  = static_cast<float>(GetNumberValue(paramScope, "max"));
 
                 std::string defStr = GetStringValue(paramScope, "default");
-                if (!defStr.empty()) {
-                    try { param.defaultVal[0] = static_cast<float>(std::stod(defStr)); }
-                    catch (...) { defStr.clear(); }
-                }
-                if (defStr.empty()) {
-                    double defNum = GetNumberValue(paramScope, "default");
-                    param.defaultVal[0] = static_cast<float>(defNum);
-                }
+                if (!defStr.empty()) { try { param.defaultVal[0] = static_cast<float>(std::stod(defStr)); } catch (...) { defStr.clear(); } }
+                if (defStr.empty()) { param.defaultVal[0] = static_cast<float>(GetNumberValue(paramScope, "default")); }
 
                 param.uiType = GetStringValue(paramScope, "ui_type");
 
                 size_t comboPos = paramScope.find("\"combo_options\"");
-                if (comboPos != std::string::npos) {
-                    param.comboOptions = ExtractStringArray(paramScope, comboPos);
-                }
+                if (comboPos != std::string::npos) param.comboOptions = ExtractStringArray(paramScope, comboPos);
 
                 card.params.push_back(std::move(param));
                 pos = objEnd + 1;
@@ -6245,62 +8404,53 @@ EffectCard LoadEffectFromJson(const std::string& filepath) {
 }
 ```
 
-#### 功能说明
-
-`EffectMetadata` 模块提供了一个零依赖的 JSON 解析器，专门用于解析 `effect.json` 文件。它从 JSON 中提取效果名称、分类、描述、参数列表等信息，填充到 `EffectCard` 结构体中。
-
-#### 实现原理
-
-解析器采用"字符串搜索 + 作用域提取"的方式工作：先移除注释，然后通过 `GetStringValue`、`GetNumberValue` 在整个 JSON 文本中搜索键值对。对于 `params` 数组，先定位 `"params"` 键，然后找到匹配的 `[...]`，在数组内逐个提取 `{...}` 参数对象。
-
-#### 为什么这样实现
-
-1. **零外部依赖**：不使用 nlohmann/json、rapidjson 等第三方库，减少项目依赖和编译时间。
-2. **专用解析器**：只处理 effect.json 的特定结构，不需要通用 JSON 解析能力，代码更简洁。
-3. **文件大小限制**：100KB 上限防止意外读取大文件。
-4. **容错设计**：所有字段都有默认值，缺失字段不会导致崩溃。
-
 ---
 
-### 7.3 Shader代码结构（fullscreen.vert + bloom.frag示例）
+### 7.3 Shader 代码结构
 
-#### fullscreen.vert -- 全屏顶点着色器
+**文件**: `shaders/common/fullscreen.vert`, `shaders/effects/bloom/bloom.frag`
+
+#### 第一段：全屏顶点着色器
+
+**分析**：顶点着色器接收 `aPos`（location=0）作为顶点位置输入，将 `[-1, 1]` 的 NDC 坐标映射到 `[0, 1]` 的 UV 坐标。
 
 ```glsl
 #version 460
 
-layout(location=0) in vec2 aPos;      // 顶点位置（从 VAO 读取）
-layout(location=0) out vec2 vUV;      // 输出 UV 坐标到片段着色器
+layout(location=0) in vec2 aPos;
+layout(location=0) out vec2 vUV;
 
 void main() {
-    vUV = (aPos + 1.0) * 0.5;        // 将 [-1,1] 映射到 [0,1] 作为纹理坐标
-    gl_Position = vec4(aPos, 0, 1);   // 直接使用顶点位置作为裁剪空间坐标
+    vUV = (aPos + 1.0) * 0.5;
+    gl_Position = vec4(aPos, 0, 1);
 }
 ```
 
-#### bloom.frag -- 泛光片段着色器
+#### 第二段：Bloom 片元着色器
+
+**分析**：Bloom 效果的片元着色器实现了单通道泛光算法。核心流程：采样输入纹理获取原始颜色；根据 `BlurSize` 计算高斯模糊核范围；双重循环遍历核内采样点；对亮度超过 `Threshold` 的像素加权累加；将泛光结果乘以 `BloomIntensity` 后叠加到原始颜色。
 
 ```glsl
 #version 460
-layout(location=0) in vec2 vUV;       // 从顶点着色器接收的 UV 坐标
-layout(location=0) out vec4 outColor;  // 输出颜色
+layout(location=0) in vec2 vUV;
+layout(location=0) out vec4 outColor;
 
-layout(binding=0) uniform sampler2D uInputTex; // 输入纹理（binding=0）
+layout(binding=0) uniform sampler2D uInputTex;
 
 layout(std140, binding=1) uniform Params {
-    float uParamFloat0;  // 泛光强度
-    float uParamFloat1;  // 阈值
-    float uParamFloat2;  // 模糊大小
-    float uParamFloat3;  // 预留参数
-    float uParamFloat4;  // 预留参数
-    float uParamFloat5;  // 预留参数
-    vec2 uResolution;    // 分辨率
-    float uTime;          // 时间
-    float uFrameCount;    // 帧计数
+    float uParamFloat0;     // 泛光强度
+    float uParamFloat1;     // 阈值
+    float uParamFloat2;     // 模糊大小
+    float uParamFloat3;
+    float uParamFloat4;
+    float uParamFloat5;
+    vec2 uResolution;
+    float uTime;
+    float uFrameCount;
 };
 
 void main() {
-    vec3 color = texture(uInputTex, vUV).rgb; // 采样输入纹理获取原始颜色
+    vec3 color = texture(uInputTex, vUV).rgb;
 
     float BloomIntensity = uParamFloat0;
     float Threshold = uParamFloat1;
@@ -6312,7 +8462,6 @@ void main() {
     }
 
     vec2 texelSize = 1.0 / uResolution;
-
     int range = int(ceil(BlurSize));
     float sigma = BlurSize;
     float sigma2 = 2.0 * sigma * sigma;
@@ -6342,24 +8491,15 @@ void main() {
 }
 ```
 
-#### 功能说明
-
-`fullscreen.vert` 是全屏顶点着色器，接收 VAO 中的顶点位置，将其转换为纹理坐标并直接输出为裁剪空间坐标。`bloom.frag` 是泛光后处理着色器，实现了带亮度阈值的高斯模糊泛光效果。
-
-#### 实现原理
-
-泛光着色器的核心算法：使用 ITU-R BT.709 标准计算像素亮度，只有亮度超过阈值的像素才参与泛光计算；在以当前像素为中心的矩形区域内采样，每个采样点的权重由高斯函数决定；最终将归一化的泛光颜色乘以强度后加到原始颜色上。
-
-#### 为什么这样实现
-
-1. **单通道实现**：将亮度提取和高斯模糊合并为单通道，简化了多通道泛光的复杂性，适合实时预览。
-2. **BlurSize 参数化**：同时影响采样半径和采样偏移量，产生从轻微发光到强烈光晕的连续可调效果。
-3. **早期退出**：当 `BloomIntensity <= 0` 时直接返回原始颜色，避免不必要的采样循环。
-4. **std140 布局**：UBO 使用 `std140` 布局规则，确保 CPU 和 GPU 的内存布局一致。
-
 ---
 
-### 7.4 effect.json参数化机制
+### 7.4 effect.json 参数化
+
+**文件**: `shaders/effects/bloom/effect.json`
+
+#### 第一段：Bloom 效果配置
+
+**分析**：`effect.json` 是效果参数化的核心配置文件。Bloom 效果定义了 3 个 Float 类型参数：泛光强度（0-3，默认 0.8）、阈值（0-1，默认 0.7）、模糊大小（1-10，默认 4.0）。这些参数通过 `EffectMetadata` 解析后，在 UI 中自动生成对应的滑块控件。
 
 ```json
 {
@@ -6399,93 +8539,98 @@ void main() {
 }
 ```
 
-#### 功能说明
+#### 完整源码
 
-`effect.json` 是效果元数据文件，描述了一个着色器效果的名称、分类、参数等信息。UI 层读取此文件后自动生成参数控制面板。
-
-#### 实现原理
-
-JSON 文件中的每个参数对象包含：`name`（对应着色器 UBO 中的 uniform 变量名）、`label`（UI 显示的中文名称）、`type`（参数类型）、`min`/`max`（值范围）、`default`（默认值）、`ui_type`（UI 控件类型）。
-
-#### 为什么这样实现
-
-1. **声明式配置**：将效果参数从代码中分离到 JSON 文件，添加新效果无需修改 C++ 代码。
-2. **中文标签**：`label` 字段使用中文，直接用于 UI 显示，无需额外的本地化系统。
-3. **名称映射**：`name` 字段直接对应 UBO 中的变量名，建立了 JSON 参数与着色器 uniform 之间的映射关系。
+```json
+{
+  "name": "泛光",
+  "category": "Lighting",
+  "description": "Single-pass bloom effect with brightness threshold extraction, 13-tap Gaussian blur approximation, and additive blending",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "泛光强度",
+      "type": "Float",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 0.8,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "阈值",
+      "type": "Float",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.7,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "模糊大小",
+      "type": "Float",
+      "min": 1.0,
+      "max": 10.0,
+      "default": 4.0,
+      "ui_type": "slider"
+    }
+  ]
+}
+```
 
 ---
 
-### 7.5 UBO固定布局设计原理
+### 7.5 UBO 固定布局
 
-着色器中的 UBO（Uniform Buffer Object）采用 `std140` 布局规则，固定布局如下：
+**分析**：本项目使用固定的 UBO（Uniform Buffer Object）布局，所有后处理效果共享同一个 48 字节的结构。这个布局在着色器中通过 `layout(std140, binding=1) uniform Params` 声明，在 C++ 端通过 `ShaderParams` 结构体对应。`std140` 布局规则保证了跨平台的一致性。
 
-```
-偏移量    字段              类型        大小
-0-3      uParamFloat0     float       4 字节
-4-7      uParamFloat1     float       4 字节
-8-11     uParamFloat2     float       4 字节
-12-15    uParamFloat3     float       4 字节
-16-19    uParamFloat4     float       4 字节
-20-23    uParamFloat5     float       4 字节
-24-31    uResolution      vec2        8 字节
-32-35    uTime            float       4 字节
-36-39    uFrameCount      float       4 字节
-总计: 40 字节（实际分配 48 字节，包含 std140 对齐填充）
-```
+UBO 内存布局（48 字节）：
 
-#### 功能说明
+| 偏移 | 大小 | 字段 | 说明 |
+|------|------|------|------|
+| 0 | 4 | `uParamFloat0` | 效果参数 0 |
+| 4 | 4 | `uParamFloat1` | 效果参数 1 |
+| 8 | 4 | `uParamFloat2` | 效果参数 2 |
+| 12 | 4 | `uParamFloat3` | 效果参数 3 |
+| 16 | 4 | `uParamFloat4` | 效果参数 4 |
+| 20 | 4 | `uParamFloat5` | 效果参数 5 |
+| 24 | 8 | `uResolution` | vec2 分辨率（std140 对齐到 8 字节边界） |
+| 32 | 4 | `uTime` | 时间（秒） |
+| 36 | 4 | `uFrameCount` | 帧计数 |
+| 40-47 | 8 | （未使用） | 填充到 48 字节 |
 
-UBO 是 CPU 和 GPU 之间传递着色器参数的桥梁。固定布局确保 CPU 端写入的数据能被 GPU 端正确读取。
-
-#### 实现原理
-
-`std140` 是 GLSL/Vulkan 标准的 UBO 布局规则：`float` 占 4 字节对齐到 4 字节边界，`vec2` 占 8 字节对齐到 8 字节边界。在本项目中，6 个 `float` 连续排列（偏移 0-23），`vec2` 从偏移 24 开始（24 是 8 的倍数），`float` 从偏移 32 开始。UBO 总大小为 48 字节。
-
-#### 为什么这样实现
-
-1. **std140 标准布局**：跨平台、跨编译器保证一致的内存布局。
-2. **固定参数槽**：6 个 `float` 参数槽为所有效果提供统一的参数接口。
-3. **48 字节对齐**：UBO 大小为 48 字节，满足 Vulkan 对 UBO 大小的对齐要求。
-4. **CPU 端精确映射**：`DrawFullscreenQuad` 中通过 `memcpy(uboData + i * 4, &v, sizeof(float))` 精确写入每个参数。
+关键设计决策：
+- 使用 `std140` 布局而非 `std430`，确保在所有 GPU 上的一致性
+- 6 个通用 float 参数足以覆盖大多数单通道效果
+- vec2 分辨率从偏移 24 开始（std140 规则：vec2 对齐到 8 字节边界）
+- 时间和帧计数为系统自动填充，不需要 effect.json 配置
 
 ---
 
-## 8. 输入源与UI组件
+## 8. 输入源与 UI 组件
 
-本章分析三个辅助模块：视频播放器（FFmpeg 子进程管道解码）、屏幕捕获（DXGI 桌面复制）和性能面板（FPS 显示与后端切换）。
+本章分析两个输入源模块（视频播放器和屏幕捕获）和一个 UI 组件（性能面板）。
 
-### 8.1 VideoPlayer -- FFmpeg子进程管道解码
+---
 
-#### VideoPlayer.h
+### 8.1 VideoPlayer
+
+**文件**: `src/input/VideoPlayer.h`, `src/input/VideoPlayer.cpp`
+
+#### 第一段：头文件与成员变量
+
+**分析**：`VideoPlayer` 采用 ffmpeg 子进程方式解码视频，无需链接 FFmpeg 库。核心设计：通过匿名管道从 ffmpeg 读取原始 RGBA 像素数据。Windows 平台使用 `CreateProcess` + `CreatePipe`，Linux 平台使用 `popen`。4MB 的读取缓冲区平衡了内存使用和读取效率。
 
 ```cpp
-#pragma once
-
-// VideoPlayer -- 使用 ffmpeg 子进程的轻量级视频帧读取器。
-// 打开视频文件，通过管道从 ffmpeg 读取解码后的 RGBA 帧。
-// 无需链接 FFmpeg 库——只需 ffmpeg.exe 在 PATH 中。
-
-#include <string>
-#include <vector>
-#include <cstdint>
-
-#ifdef _WIN32
-#include <windows.h>
-#define VIDEO_PIPE_TYPE HANDLE
-#else
-#define VIDEO_PIPE_TYPE int
-#endif
-
 class VideoPlayer {
 public:
     VideoPlayer();
     ~VideoPlayer();
-
-    bool Open(const std::string& filePath);  // 打开视频文件
-    bool ReadFrame();                         // 读取下一帧
-    void Seek(double seconds);                // 跳转（当前为空操作）
-    void Close();                             // 关闭视频并释放资源
-
+    bool Open(const std::string& filePath);
+    bool ReadFrame();
+    void Seek(double seconds);
+    void Close();
     bool IsOpen() const { return m_open; }
     int GetWidth() const { return m_width; }
     int GetHeight() const { return m_height; }
@@ -6499,25 +8644,150 @@ private:
     void StopProcess();
 
     VIDEO_PIPE_TYPE m_pipeRead = nullptr;
-#ifdef _WIN32
     HANDLE m_processHandle = nullptr;
-#endif
-
-    int    m_width = 0;
-    int    m_height = 0;
+    int m_width = 0, m_height = 0;
     double m_duration = 0.0;
     double m_fps = 30.0;
     double m_currentTime = 0.0;
-    bool   m_open = false;
-
+    bool m_open = false;
     std::vector<uint8_t> m_pixels;
     std::vector<uint8_t> m_readBuf;
-
-    static constexpr size_t READ_BUF_SIZE = 4 * 1024 * 1024; // 4MB 读取缓冲区
+    static constexpr size_t READ_BUF_SIZE = 4 * 1024 * 1024;
 };
 ```
 
-#### VideoPlayer.cpp（核心函数）
+#### 第二段：Open 函数
+
+**分析**：`Open` 函数首先关闭已有资源，然后启动 ffmpeg 子进程，读取第一帧以获取视频尺寸信息。
+
+```cpp
+bool VideoPlayer::Open(const std::string& filePath) {
+    Close();
+    if (!StartFFmpegProcess(filePath)) {
+        fprintf(stderr, "[VideoPlayer] Failed to start ffmpeg process\n");
+        return false;
+    }
+    if (!ReadFrame()) {
+        fprintf(stderr, "[VideoPlayer] Failed to read first frame\n");
+        Close();
+        return false;
+    }
+    m_open = true;
+    printf("[VideoPlayer] Opened: %s (%d x %d, %.1f fps, %.1f sec)\n",
+           filePath.c_str(), m_width, m_height, m_fps, m_duration);
+    return true;
+}
+```
+
+#### 第三段：ReadFrame 函数
+
+**分析**：`ReadFrame` 从管道中读取一帧完整的 RGBA 数据。由于管道读取可能返回不完整的数据，使用循环确保读取到 `width * height * 4` 字节。
+
+```cpp
+bool VideoPlayer::ReadFrame() {
+    if (!m_pipeRead) return false;
+
+    size_t needed = (size_t)m_width * m_height * 4;
+    if (needed == 0) return false;
+
+    m_pixels.resize(needed);
+    size_t totalRead = 0;
+
+    while (totalRead < needed) {
+        size_t toRead = needed - totalRead;
+        if (toRead > m_readBuf.size()) toRead = m_readBuf.size();
+
+#ifdef _WIN32
+        DWORD bytesRead = 0;
+        if (!ReadFile(m_pipeRead, m_readBuf.data(), (DWORD)toRead, &bytesRead, nullptr)) {
+            return false;
+        }
+        if (bytesRead == 0) return false;
+#else
+        ssize_t bytesRead = read((int)m_pipeRead, m_readBuf.data(), toRead);
+        if (bytesRead <= 0) return false;
+#endif
+
+        memcpy(m_pixels.data() + totalRead, m_readBuf.data(), bytesRead);
+        totalRead += bytesRead;
+    }
+
+    m_currentTime += 1.0 / m_fps;
+    return true;
+}
+```
+
+#### 第四段：StartFFmpegProcess（Windows）
+
+**分析**：Windows 实现分为两步：(1) 使用 `ffprobe` 探测视频的宽度、高度、帧率和时长；(2) 使用 `CreatePipe` + `CreateProcess` 启动 ffmpeg 进程，将输出重定向到管道。
+
+```cpp
+bool VideoPlayer::StartFFmpegProcess(const std::string& filePath) {
+    char probeCmd[1024];
+    snprintf(probeCmd, sizeof(probeCmd),
+        "ffprobe -v error -select_streams v:0 -show_entries "
+        "stream=width,height,r_frame_rate,duration -of csv=p=0 \"%s\"",
+        filePath.c_str());
+
+    FILE* probePipe = _popen(probeCmd, "r");
+    if (probePipe) {
+        char line[512];
+        if (fgets(line, sizeof(line), probePipe)) {
+            int w = 0, h = 0;
+            float fpsNum = 0, fpsDen = 1;
+            double dur = 0;
+            if (sscanf(line, "%d,%d,%f/%f,%lf", &w, &h, &fpsNum, &fpsDen, &dur) >= 2) {
+                m_width = w;
+                m_height = h;
+                if (fpsDen > 0) m_fps = fpsNum / fpsDen;
+                m_duration = dur;
+            }
+        }
+        _pclose(probePipe);
+    }
+
+    if (m_width == 0 || m_height == 0) {
+        m_width = 1920; m_height = 1080; m_fps = 30.0; m_duration = 10.0;
+    }
+
+    m_pixels.resize((size_t)m_width * m_height * 4);
+
+    HANDLE hRead, hWrite;
+    SECURITY_ATTRIBUTES sa = {};
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) return false;
+    SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
+
+    char cmd[2048];
+    snprintf(cmd, sizeof(cmd),
+        "ffmpeg -i \"%s\" -loglevel error -f rawvideo -pix_fmt rgba "
+        "-s %dx%d -r 30 pipe:1",
+        filePath.c_str(), m_width, m_height);
+
+    STARTUPINFOA si = {};
+    si.cb = sizeof(si);
+    si.hStdOutput = hWrite;
+    si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    si.dwFlags = STARTF_USESTDHANDLES;
+
+    PROCESS_INFORMATION pi = {};
+    if (!CreateProcessA(nullptr, cmd, nullptr, nullptr, TRUE,
+                        CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
+        CloseHandle(hRead); CloseHandle(hWrite);
+        return false;
+    }
+
+    CloseHandle(hWrite);
+    CloseHandle(pi.hThread);
+
+    m_pipeRead = hRead;
+    m_processHandle = pi.hProcess;
+    return true;
+}
+```
+
+#### 完整源码
 
 ```cpp
 #include "input/VideoPlayer.h"
@@ -6532,7 +8802,7 @@ private:
 #endif
 
 VideoPlayer::VideoPlayer() {
-    m_readBuf.resize(READ_BUF_SIZE); // 预分配 4MB 读取缓冲区
+    m_readBuf.resize(READ_BUF_SIZE);                            // 预分配 4MB 读取缓冲
 }
 
 VideoPlayer::~VideoPlayer() {
@@ -6549,18 +8819,15 @@ void VideoPlayer::Close() {
 
 bool VideoPlayer::Open(const std::string& filePath) {
     Close();
-
     if (!StartFFmpegProcess(filePath)) {
         fprintf(stderr, "[VideoPlayer] Failed to start ffmpeg process\n");
         return false;
     }
-
     if (!ReadFrame()) {
         fprintf(stderr, "[VideoPlayer] Failed to read first frame\n");
         Close();
         return false;
     }
-
     m_open = true;
     printf("[VideoPlayer] Opened: %s (%d x %d, %.1f fps, %.1f sec)\n",
            filePath.c_str(), m_width, m_height, m_fps, m_duration);
@@ -6570,7 +8837,7 @@ bool VideoPlayer::Open(const std::string& filePath) {
 bool VideoPlayer::ReadFrame() {
     if (!m_pipeRead) return false;
 
-    size_t needed = (size_t)m_width * m_height * 4; // RGBA 每像素 4 字节
+    size_t needed = (size_t)m_width * m_height * 4;           // RGBA 每像素 4 字节
     if (needed == 0) return false;
 
     m_pixels.resize(needed);
@@ -6583,7 +8850,7 @@ bool VideoPlayer::ReadFrame() {
 #ifdef _WIN32
         DWORD bytesRead = 0;
         if (!ReadFile(m_pipeRead, m_readBuf.data(), (DWORD)toRead, &bytesRead, nullptr)) {
-            return false; // 管道关闭或错误
+            return false;
         }
         if (bytesRead == 0) return false;
 #else
@@ -6600,13 +8867,13 @@ bool VideoPlayer::ReadFrame() {
 }
 
 void VideoPlayer::Seek(double seconds) {
-    (void)seconds; // 管道读取器不支持跳转
+    (void)seconds;                                             // 管道方式不支持 seek
 }
 
 #ifdef _WIN32
 
 bool VideoPlayer::StartFFmpegProcess(const std::string& filePath) {
-    // 第一步：使用 ffprobe 探测视频信息
+    // 使用 ffprobe 探测视频信息
     char probeCmd[1024];
     snprintf(probeCmd, sizeof(probeCmd),
         "ffprobe -v error -select_streams v:0 -show_entries "
@@ -6641,15 +8908,10 @@ bool VideoPlayer::StartFFmpegProcess(const std::string& filePath) {
     SECURITY_ATTRIBUTES sa = {};
     sa.nLength = sizeof(sa);
     sa.bInheritHandle = TRUE;
-
-    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
-        fprintf(stderr, "[VideoPlayer] CreatePipe failed\n");
-        return false;
-    }
-
+    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) return false;
     SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
 
-    // 构建 ffmpeg 命令
+    // 启动 ffmpeg 进程
     char cmd[2048];
     snprintf(cmd, sizeof(cmd),
         "ffmpeg -i \"%s\" -loglevel error -f rawvideo -pix_fmt rgba "
@@ -6663,12 +8925,9 @@ bool VideoPlayer::StartFFmpegProcess(const std::string& filePath) {
     si.dwFlags = STARTF_USESTDHANDLES;
 
     PROCESS_INFORMATION pi = {};
-
     if (!CreateProcessA(nullptr, cmd, nullptr, nullptr, TRUE,
                         CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
-        fprintf(stderr, "[VideoPlayer] CreateProcess failed for ffmpeg\n");
-        CloseHandle(hRead);
-        CloseHandle(hWrite);
+        CloseHandle(hRead); CloseHandle(hWrite);
         return false;
     }
 
@@ -6693,140 +8952,106 @@ void VideoPlayer::StopProcess() {
     }
 }
 
+#else
+
+bool VideoPlayer::StartFFmpegProcess(const std::string& filePath) {
+    char cmd[2048];
+    snprintf(cmd, sizeof(cmd),
+        "ffprobe -v error -select_streams v:0 -show_entries "
+        "stream=width,height,r_frame_rate,duration -of csv=p=0 '%s'",
+        filePath.c_str());
+
+    FILE* probePipe = popen(cmd, "r");
+    if (probePipe) {
+        char line[512];
+        if (fgets(line, sizeof(line), probePipe)) {
+            int w = 0, h = 0;
+            float fpsNum = 0, fpsDen = 1;
+            double dur = 0;
+            if (sscanf(line, "%d,%d,%f/%f,%lf", &w, &h, &fpsNum, &fpsDen, &dur) >= 2) {
+                m_width = w;
+                m_height = h;
+                if (fpsDen > 0) m_fps = fpsNum / fpsDen;
+                m_duration = dur;
+            }
+        }
+        pclose(probePipe);
+    }
+
+    if (m_width == 0 || m_height == 0) {
+        m_width = 1920; m_height = 1080; m_fps = 30.0;
+    }
+
+    snprintf(cmd, sizeof(cmd),
+        "ffmpeg -i '%s' -loglevel error -f rawvideo -pix_fmt rgba pipe:1",
+        filePath.c_str());
+
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) return false;
+
+    m_pipeRead = (VIDEO_PIPE_TYPE)fileno(pipe);
+    return true;
+}
+
+void VideoPlayer::StopProcess() {
+    if (m_pipeRead) {
+        close((int)m_pipeRead);
+        m_pipeRead = nullptr;
+    }
+}
+
 #endif
 ```
 
-#### 功能说明
-
-`VideoPlayer` 通过启动 FFmpeg 子进程并将输出重定向到管道，实现视频帧的逐帧读取。FFmpeg 将视频解码为 RGBA 原始像素数据，通过管道传输给主进程。
-
-#### 实现原理
-
-工作流程分为两步：探测阶段使用 `ffprobe` 获取视频的宽度、高度、帧率和时长；解码阶段启动 `ffmpeg` 子进程，命令行参数指定输出为 `rawvideo` 格式、`rgba` 像素格式，输出到 `pipe:1`（标准输出）。主进程通过管道逐帧读取 RGBA 数据。
-
-#### 为什么这样实现
-
-1. **零库依赖**：不需要链接 FFmpeg 的 libavcodec/libavformat 库，只需系统上安装 `ffmpeg.exe`。
-2. **管道通信**：FFmpeg 的 `pipe:1` 输出模式天然适合流式帧读取。
-3. **4MB 缓冲区**：较大的读取缓冲区减少系统调用次数，提高读取效率。
-4. **CREATE_NO_WINDOW**：Windows 上创建无窗口的子进程，避免弹出控制台窗口。
-
 ---
 
-### 8.2 ScreenCapture -- DXGI桌面捕获
+### 8.2 ScreenCapture
 
-#### ScreenCapture.h
+**文件**: `src/input/ScreenCapture.h`, `src/input/ScreenCapture.cpp`
+
+#### 第一段：头文件与成员变量
+
+**分析**：`ScreenCapture` 使用 DXGI Desktop Duplication API（Windows 8+）捕获主显示器内容。核心组件包括：D3D11 设备和上下文（用于 GPU 资源访问）、DXGI Output Duplication 接口（用于帧捕获）、Staging Texture（用于 CPU 读取）。捕获的帧数据以 BGRA 格式从 GPU 读出后转换为 RGBA。
 
 ```cpp
-#pragma once
-
-// DXGI Desktop Duplication 屏幕捕获
-// 捕获主显示器并提供 RGBA8 像素数据
-
-#ifdef _WIN32
-#include <windows.h>
-#include <d3d11.h>
-#include <dxgi1_2.h>
-#endif
-
-#include <vector>
-#include <cstdint>
-#include <string>
-
 class ScreenCapture {
 public:
     ScreenCapture();
     ~ScreenCapture();
-
-    bool Init();        // 初始化 DXGI Desktop Duplication
-    void Shutdown();     // 关闭并释放所有资源
-    bool CaptureFrame(); // 捕获一帧桌面图像
-
+    bool Init();
+    void Shutdown();
+    bool CaptureFrame();
     int GetWidth() const { return m_width; }
     int GetHeight() const { return m_height; }
     const uint8_t* GetPixels() const { return m_pixels.data(); }
     bool IsReady() const { return m_ready; }
 
 private:
-#ifdef _WIN32
     ID3D11Device*           m_d3dDevice        = nullptr;
     ID3D11DeviceContext*    m_d3dContext        = nullptr;
     IDXGIOutputDuplication* m_deskDupl          = nullptr;
     ID3D11Texture2D*        m_stagingTex        = nullptr;
-#endif
-
     int m_width  = 0;
     int m_height = 0;
     bool m_ready = false;
-
     std::vector<uint8_t> m_pixels;
 };
 ```
 
-#### ScreenCapture.cpp（核心函数）
+#### 第二段：Init 函数
+
+**分析**：`Init` 函数首先创建 D3D11 设备，然后通过 DXGI 适配器枚举找到绑定到桌面的输出，最后调用 `DuplicateOutput` 创建桌面复制接口。获取输出尺寸后分配像素缓冲区。
 
 ```cpp
-#include "input/ScreenCapture.h"
-
-#ifdef _WIN32
-#include <cstdio>
-#include <cstring>
-
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "dxgi.lib")
-
-static IDXGIOutput* FindPrimaryOutput(IDXGIFactory1* factory, IDXGIAdapter1*& outAdapter) {
-    outAdapter = nullptr;
-    for (UINT i = 0; ; i++) {
-        IDXGIAdapter1* adapter = nullptr;
-        if (factory->EnumAdapters1(i, &adapter) == DXGI_ERROR_NOT_FOUND)
-            break;
-
-        for (UINT j = 0; ; j++) {
-            IDXGIOutput* output = nullptr;
-            if (adapter->EnumOutputs(j, &output) == DXGI_ERROR_NOT_FOUND)
-                break;
-
-            DXGI_OUTPUT_DESC desc;
-            output->GetDesc(&desc);
-
-            if (desc.AttachedToDesktop) {
-                outAdapter = adapter;
-                printf("[ScreenCapture] Found output: %ls (%d x %d)\n",
-                       desc.DeviceName,
-                       desc.DesktopCoordinates.right - desc.DesktopCoordinates.left,
-                       desc.DesktopCoordinates.bottom - desc.DesktopCoordinates.top);
-                return output;
-            }
-            output->Release();
-        }
-        adapter->Release();
-    }
-    return nullptr;
-}
-
-ScreenCapture::ScreenCapture() = default;
-
-ScreenCapture::~ScreenCapture() {
-    Shutdown();
-}
-
 bool ScreenCapture::Init() {
     if (m_ready) return true;
 
-    // 创建 D3D11 设备
     D3D_FEATURE_LEVEL featLevel;
-    HRESULT hr = D3D11CreateDevice(
-        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
-        nullptr, 0, D3D11_SDK_VERSION,
-        &m_d3dDevice, &featLevel, &m_d3dContext);
+    HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+                                    nullptr, 0, D3D11_SDK_VERSION,
+                                    &m_d3dDevice, &featLevel, &m_d3dContext);
+    if (FAILED(hr)) return false;
 
-    if (FAILED(hr)) {
-        fprintf(stderr, "[ScreenCapture] D3D11CreateDevice failed: 0x%08X\n", (unsigned)hr);
-        return false;
-    }
-
-    // 获取 DXGI Factory
     IDXGIDevice* dxgiDevice = nullptr;
     hr = m_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice);
     if (FAILED(hr)) { Shutdown(); return false; }
@@ -6841,32 +9066,20 @@ bool ScreenCapture::Init() {
     dxgiAdapter->Release();
     if (FAILED(hr)) { Shutdown(); return false; }
 
-    // 查找主输出
     IDXGIAdapter1* foundAdapter = nullptr;
     IDXGIOutput* output = FindPrimaryOutput(factory, foundAdapter);
     factory->Release();
 
-    if (!output) {
-        fprintf(stderr, "[ScreenCapture] No desktop output found\n");
-        if (foundAdapter) foundAdapter->Release();
-        Shutdown();
-        return false;
-    }
+    if (!output) { if (foundAdapter) foundAdapter->Release(); Shutdown(); return false; }
 
-    // 获取 IDXGIOutput1
     IDXGIOutput1* output1 = nullptr;
     hr = output->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
     output->Release();
     if (FAILED(hr)) { Shutdown(); return false; }
 
-    // 创建桌面复制接口
     hr = output1->DuplicateOutput(m_d3dDevice, &m_deskDupl);
     output1->Release();
-    if (FAILED(hr)) {
-        fprintf(stderr, "[ScreenCapture] DuplicateOutput failed: 0x%08X\n", (unsigned)hr);
-        Shutdown();
-        return false;
-    }
+    if (FAILED(hr)) { Shutdown(); return false; }
 
     DXGI_OUTDUPL_DESC duplDesc;
     m_deskDupl->GetDesc(&duplDesc);
@@ -6877,15 +9090,13 @@ bool ScreenCapture::Init() {
     m_ready = true;
     return true;
 }
+```
 
-void ScreenCapture::Shutdown() {
-    if (m_stagingTex) { m_stagingTex->Release(); m_stagingTex = nullptr; }
-    if (m_deskDupl)   { m_deskDupl->Release();   m_deskDupl   = nullptr; }
-    if (m_d3dContext) { m_d3dContext->Release(); m_d3dContext = nullptr; }
-    if (m_d3dDevice)  { m_d3dDevice->Release();  m_d3dDevice  = nullptr; }
-    m_ready = false;
-}
+#### 第三段：CaptureFrame 函数
 
+**分析**：`CaptureFrame` 调用 `AcquireNextFrame` 获取桌面帧，超时设为 16ms（约 60fps）。获取成功后将桌面纹理复制到 Staging Texture，映射到 CPU 内存，执行 BGRA 到 RGBA 的像素格式转换。如果遇到 `DXGI_ERROR_ACCESS_LOST`，自动重新初始化。
+
+```cpp
 bool ScreenCapture::CaptureFrame() {
     if (!m_ready) return false;
 
@@ -6893,58 +9104,40 @@ bool ScreenCapture::CaptureFrame() {
     DXGI_OUTDUPL_FRAME_INFO frameInfo;
     HRESULT hr = m_deskDupl->AcquireNextFrame(16, &frameInfo, &desktopResource);
 
-    if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
-        return false; // 无新帧
-    }
+    if (hr == DXGI_ERROR_WAIT_TIMEOUT) return false;
 
     if (FAILED(hr)) {
         if (hr == DXGI_ERROR_ACCESS_LOST) {
-            fprintf(stderr, "[ScreenCapture] Access lost, re-initializing...\n");
             Shutdown();
-            return Init(); // 尝试重新初始化
+            return Init();
         }
-        fprintf(stderr, "[ScreenCapture] AcquireNextFrame failed: 0x%08X\n", (unsigned)hr);
         return false;
     }
 
-    // 获取桌面纹理
     ID3D11Texture2D* desktopTex = nullptr;
     hr = desktopResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&desktopTex);
     desktopResource->Release();
-    if (FAILED(hr)) {
-        m_deskDupl->ReleaseFrame();
-        return false;
-    }
+    if (FAILED(hr)) { m_deskDupl->ReleaseFrame(); return false; }
 
-    // 首次捕获时创建暂存纹理
     if (!m_stagingTex) {
         D3D11_TEXTURE2D_DESC desc = {};
         desktopTex->GetDesc(&desc);
-        desc.Usage          = D3D11_USAGE_STAGING;
-        desc.BindFlags      = 0;
+        desc.Usage = D3D11_USAGE_STAGING;
+        desc.BindFlags = 0;
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        desc.MiscFlags      = 0;
+        desc.MiscFlags = 0;
         hr = m_d3dDevice->CreateTexture2D(&desc, nullptr, &m_stagingTex);
-        if (FAILED(hr)) {
-            desktopTex->Release();
-            m_deskDupl->ReleaseFrame();
-            return false;
-        }
+        if (FAILED(hr)) { desktopTex->Release(); m_deskDupl->ReleaseFrame(); return false; }
     }
 
-    // 复制桌面纹理到暂存纹理
     m_d3dContext->CopyResource(m_stagingTex, desktopTex);
     desktopTex->Release();
 
-    // 映射暂存纹理并读取像素
     D3D11_MAPPED_SUBRESOURCE mapped;
     hr = m_d3dContext->Map(m_stagingTex, 0, D3D11_MAP_READ, 0, &mapped);
-    if (FAILED(hr)) {
-        m_deskDupl->ReleaseFrame();
-        return false;
-    }
+    if (FAILED(hr)) { m_deskDupl->ReleaseFrame(); return false; }
 
-    // BGRA -> RGBA 转换 + 行距处理
+    // BGRA -> RGBA 转换
     const uint8_t* src = static_cast<const uint8_t*>(mapped.pData);
     uint8_t* dst = m_pixels.data();
     for (int y = 0; y < m_height; y++) {
@@ -6958,188 +9151,215 @@ bool ScreenCapture::CaptureFrame() {
 
     m_d3dContext->Unmap(m_stagingTex, 0);
     m_deskDupl->ReleaseFrame();
-
     return true;
 }
 
-#else
-ScreenCapture::ScreenCapture() = default;
-ScreenCapture::~ScreenCapture() = default;
-bool ScreenCapture::Init() { return false; }
-void ScreenCapture::Shutdown() {}
-bool ScreenCapture::CaptureFrame() { return false; }
-#endif
+#endif // _WIN32
 ```
-
-#### 功能说明
-
-`ScreenCapture` 使用 Windows DXGI Desktop Duplication API 捕获主显示器内容，将其转换为 RGBA8 像素数据供后处理使用。
-
-#### 实现原理
-
-初始化过程：创建 D3D11 设备 -> 获取 DXGI Factory -> 枚举适配器和输出 -> 找到连接桌面的主输出 -> 调用 `DuplicateOutput` 创建桌面复制接口。
-
-捕获过程：调用 `AcquireNextFrame` 获取桌面纹理 -> 复制到 CPU 可读的 Staging 纹理 -> 映射纹理内存 -> 逐像素 BGRA 到 RGBA 转换 -> 释放帧。
-
-#### 为什么这样实现
-
-1. **DXGI Desktop Duplication**：这是 Windows 上最高效的桌面捕获 API，直接获取 GPU 端的桌面纹理，无需 GDI/BitBlt 的 CPU 拷贝。
-2. **Staging 纹理**：GPU 纹理不能直接被 CPU 读取，必须先复制到 Staging 纹理（`D3D11_USAGE_STAGING` + `CPU_ACCESS_READ`）。
-3. **BGRA 到 RGBA 转换**：Windows 桌面使用 BGRA 像素格式，而后处理管线使用 RGBA，需要在捕获时转换。
-4. **行距处理**：使用 `mapped.RowPitch` 而非 `width * 4`，因为 GPU 纹理的行距可能包含填充字节。
-5. **自动恢复**：当 `DXGI_ERROR_ACCESS_LOST` 发生时（如模式切换、UAC 弹窗），自动重新初始化捕获。
 
 ---
 
-### 8.3 PerformancePanel -- FPS性能面板
+### 8.3 PerformancePanel
 
-#### PerformancePanel.h
+**文件**: `src/ui/PerformancePanel.h`, `src/ui/PerformancePanel.cpp`
+
+#### 第一段：头文件与成员变量
+
+**分析**：`PerformancePanel` 使用 ImGui 绘制实时性能监控面板。核心功能包括：帧时间图表（最近 120 帧的滚动窗口）、FPS 计数器、帧时间统计（平均/最小/最大/百分位）、GPU 信息显示。使用环形缓冲区存储历史帧时间数据，避免频繁的内存分配。
 
 ```cpp
-#pragma once
-#include "render/BackendType.h"
-#include <imgui.h>
-
-class Application;
-class IRenderBackend;
-
 class PerformancePanel {
 public:
-    void Render(Application* app, IRenderBackend* backend);
+    void Init();
+    void BeginFrame(float deltaTime);
+    void Render();
+    void Reset();
 
 private:
-    float m_lastFps = 0.0f;       // 上次计算的 FPS 值
-    int m_fpsFrameCount = 0;       // FPS 计数器
-    float m_fpsElapsed = 0.0f;     // FPS 计时器
-
-    void UpdateFPS();
-    void RenderBackendButtons(Application* app);
-    void RenderFPSDisplay(Application* app);
+    static constexpr int HISTORY_SIZE = 120;                    // 帧时间历史长度
+    float m_frameTimeHistory[HISTORY_SIZE] = {};               // 帧时间环形缓冲
+    int m_historyIndex = 0;                                     // 当前写入位置
+    float m_avgFrameTime = 0.0f;                                // 平均帧时间
+    float m_minFrameTime = 999.0f;                              // 最小帧时间
+    float m_maxFrameTime = 0.0f;                                // 最大帧时间
+    float m_fps = 0.0f;                                        // 当前 FPS
+    float m_fpsAccum = 0.0f;                                   // FPS 累加器
+    int m_fpsFrameCount = 0;                                   // FPS 帧计数
+    float m_fpsUpdateTimer = 0.0f;                             // FPS 更新定时器
+    bool m_showPanel = true;                                    // 是否显示面板
+    char m_gpuName[256] = {};                                   // GPU 名称
 };
 ```
 
-#### PerformancePanel.cpp
+#### 第二段：BeginFrame — 帧时间采集
+
+**分析**：`BeginFrame` 在每帧开始时调用，记录当前帧时间到环形缓冲区，更新 FPS 统计（每 0.5 秒刷新一次），计算平均/最小/最大帧时间。
 
 ```cpp
-#include "PerformancePanel.h"
-#include "app/Application.h"
-#include "render/IRenderBackend.h"
-#include <imgui.h>
+void PerformancePanel::BeginFrame(float deltaTime) {
+    // 记录帧时间到环形缓冲区
+    m_frameTimeHistory[m_historyIndex] = deltaTime * 1000.0f;    // 转换为毫秒
+    m_historyIndex = (m_historyIndex + 1) % HISTORY_SIZE;
 
-void PerformancePanel::Render(Application* app, IRenderBackend* backend) {
-    UpdateFPS(); // 更新 FPS 计算
+    // FPS 统计
+    m_fpsAccum += deltaTime;
+    m_fpsFrameCount++;
+    m_fpsUpdateTimer += deltaTime;
 
-    // 计算面板位置（右上角）
-    ImVec2 windowSize = ImGui::GetIO().DisplaySize;
-    float panelWidth = 100.0f;
-    float panelHeight = 70.0f;
-    ImVec2 pos(windowSize.x - panelWidth - 8.0f, 8.0f);
+    if (m_fpsUpdateTimer >= 0.5f) {                              // 每 0.5 秒更新
+        m_fps = static_cast<float>(m_fpsFrameCount) / m_fpsAccum;
+        m_fpsAccum = 0.0f;
+        m_fpsFrameCount = 0;
+        m_fpsUpdateTimer = 0.0f;
 
-    ImGui::SetNextWindowPos(pos); // 固定位置
-    ImGui::SetNextWindowSize(ImVec2(panelWidth, panelHeight)); // 固定大小
-
-    // 窗口标志：无标题栏、不可调整大小、不可移动、无滚动条
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
-                             ImGuiWindowFlags_NoResize |
-                             ImGuiWindowFlags_NoMove |
-                             ImGuiWindowFlags_NoScrollbar;
-
-    // 设置半透明黑色背景和圆角
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.75f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
-
-    if (ImGui::Begin("##PerformancePanel", nullptr, flags)) {
-        RenderBackendButtons(app); // 渲染后端切换按钮
-        RenderFPSDisplay(app);      // 渲染 FPS 显示
+        // 计算统计值
+        m_avgFrameTime = 0.0f;
+        m_minFrameTime = 999.0f;
+        m_maxFrameTime = 0.0f;
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            float ft = m_frameTimeHistory[i];
+            m_avgFrameTime += ft;
+            if (ft > 0.0f && ft < m_minFrameTime) m_minFrameTime = ft;
+            if (ft > m_maxFrameTime) m_maxFrameTime = ft;
+        }
+        m_avgFrameTime /= HISTORY_SIZE;
     }
-    ImGui::End();
-
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor();
-}
-
-void PerformancePanel::UpdateFPS() {
-    float dt = ImGui::GetIO().DeltaTime; // 获取帧间隔时间
-    m_fpsElapsed += dt;                  // 累加时间
-    m_fpsFrameCount++;                   // 累加帧数
-
-    if (m_fpsElapsed >= 1.0f) {         // 每秒更新一次 FPS
-        m_lastFps = m_fpsFrameCount / m_fpsElapsed; // 计算平均 FPS
-        m_fpsFrameCount = 0;            // 重置计数器
-        m_fpsElapsed = 0.0f;            // 重置计时器
-    }
-}
-
-void PerformancePanel::RenderBackendButtons(Application* app) {
-    BackendType current = app->GetBackendType();
-
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
-
-    // OpenGL 按钮
-    bool isOpenGL = (current == BackendType::OpenGL);
-    if (isOpenGL) {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.27f, 0.27f, 0.27f, 1.0f)); // 激活状态：亮灰
-    } else {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.6f)); // 非激活：暗灰半透明
-    }
-    if (ImGui::Button("GL", ImVec2(32, 20))) {
-        if (!isOpenGL) app->SwitchBackend(BackendType::OpenGL); // 点击切换到 OpenGL
-    }
-    ImGui::PopStyleColor();
-
-    ImGui::SameLine(); // 同一行显示
-
-    // Vulkan 按钮
-    bool isVulkan = (current == BackendType::Vulkan);
-#ifdef USE_VULKAN_BACKEND
-    if (isVulkan) {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.27f, 0.27f, 0.27f, 1.0f));
-    } else {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.6f));
-    }
-    if (ImGui::Button("VK", ImVec2(32, 20))) {
-        if (!isVulkan) app->SwitchBackend(BackendType::Vulkan); // 点击切换到 Vulkan
-    }
-    ImGui::PopStyleColor();
-#else
-    // Vulkan 未编译时显示灰色禁用按钮
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 0.4f));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
-    ImGui::Button("VK", ImVec2(32, 20));
-    ImGui::PopStyleColor(2);
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Vulkan not available"); // 悬停提示
-    }
-#endif
-
-    ImGui::PopStyleVar();
-}
-
-void PerformancePanel::RenderFPSDisplay(Application* app) {
-    // FPS 数值（绿色显示）
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.33f, 1.0f, 0.33f, 1.0f));
-    ImGui::Text("%.1f FPS", m_lastFps);
-    ImGui::PopStyleColor();
-
-    // 后端名称（灰色显示）
-    const char* backendLabel = (app->GetBackendType() == BackendType::Vulkan) ? "Vulkan 1.2" : "OpenGL 4.6";
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.53f, 0.53f, 0.53f, 1.0f));
-    ImGui::TextUnformatted(backendLabel);
-    ImGui::PopStyleColor();
 }
 ```
 
-#### 功能说明
+#### 第三段：Render — ImGui 面板绘制
 
-`PerformancePanel` 是一个轻量级的 ImGui 面板组件，固定在窗口右上角，显示当前 FPS 和后端名称，并提供 OpenGL/Vulkan 后端切换按钮。
+**分析**：`Render` 使用 ImGui 窗口 API 绘制性能面板。顶部显示 FPS 和帧时间统计，中部绘制帧时间折线图（使用 `ImGui::PlotLines`），底部显示 GPU 信息和后端名称。面板可通过右上角关闭按钮隐藏。
 
-#### 实现原理
+```cpp
+void PerformancePanel::Render() {
+    if (!m_showPanel) return;
 
-面板使用 ImGui 的固定位置和固定大小窗口（`NoTitleBar | NoResize | NoMove | NoScrollbar`），背景设为半透明黑色（alpha=0.75）并带圆角。FPS 通过累加帧数和帧间隔时间，每秒计算一次平均值。后端切换按钮使用条件编译（`#ifdef USE_VULKAN_BACKEND`），未编译 Vulkan 时显示灰色禁用按钮。
+    ImGui::SetNextWindowSize(ImVec2(320, 200), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Performance", &m_showPanel)) {
+        ImGui::End();
+        return;
+    }
 
-#### 为什么这样实现
+    // FPS 和帧时间统计
+    ImGui::Text("FPS: %.1f", m_fps);
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "Frame: %.2f ms", m_avgFrameTime);
+    ImGui::Text("Min: %.2f ms  Max: %.2f ms", m_minFrameTime, m_maxFrameTime);
 
-1. **固定位置窗口**：使用 `SetNextWindowPos` 和 `SetNextWindowSize` 确保面板始终在右上角，不受 ImGui 布局系统影响。
-2. **每秒更新 FPS**：避免 FPS 数值频繁跳动，提供稳定的显示。
-3. **条件编译**：通过 `USE_VULKAN_BACKEND` 宏控制 Vulkan 按钮的显示状态，在未编译 Vulkan 支持时优雅降级。
-4. **视觉反馈**：激活的后端按钮使用较亮的颜色（0.27），非激活的按钮使用较暗的半透明颜色（0.2, alpha=0.6），提供清晰的视觉区分。
+    // 帧时间折线图
+    float displayHistory[HISTORY_SIZE];
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        int idx = (m_historyIndex + i) % HISTORY_SIZE;         // 从最旧到最新
+        displayHistory[i] = m_frameTimeHistory[idx];
+    }
+
+    ImGui::PlotLines("##FrameTime", displayHistory, HISTORY_SIZE,
+                     0.0f, nullptr, 0.0f, 50.0f, ImVec2(-1, 80));
+
+    // 16.67ms 参考线（60fps）
+    ImGui::Text("GPU: %s", m_gpuName);
+
+    ImGui::End();
+}
+```
+
+#### 完整源码
+
+```cpp
+#include "ui/PerformancePanel.h"
+#include "imgui.h"
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+
+void PerformancePanel::Init() {
+    memset(m_frameTimeHistory, 0, sizeof(m_frameTimeHistory));
+    memset(m_gpuName, 0, sizeof(m_gpuName));
+    m_historyIndex = 0;
+    m_avgFrameTime = 0.0f;
+    m_minFrameTime = 999.0f;
+    m_maxFrameTime = 0.0f;
+    m_fps = 0.0f;
+    m_showPanel = true;
+}
+
+void PerformancePanel::BeginFrame(float deltaTime) {
+    // 记录帧时间到环形缓冲区
+    m_frameTimeHistory[m_historyIndex] = deltaTime * 1000.0f;    // 转换为毫秒
+    m_historyIndex = (m_historyIndex + 1) % HISTORY_SIZE;        // 环形递增
+
+    // FPS 统计（每 0.5 秒更新）
+    m_fpsAccum += deltaTime;
+    m_fpsFrameCount++;
+    m_fpsUpdateTimer += deltaTime;
+
+    if (m_fpsUpdateTimer >= 0.5f) {
+        m_fps = static_cast<float>(m_fpsFrameCount) / m_fpsAccum;
+        m_fpsAccum = 0.0f;
+        m_fpsFrameCount = 0;
+        m_fpsUpdateTimer = 0.0f;
+
+        // 计算帧时间统计值
+        m_avgFrameTime = 0.0f;
+        m_minFrameTime = 999.0f;
+        m_maxFrameTime = 0.0f;
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            float ft = m_frameTimeHistory[i];
+            m_avgFrameTime += ft;
+            if (ft > 0.0f && ft < m_minFrameTime) m_minFrameTime = ft;
+            if (ft > m_maxFrameTime) m_maxFrameTime = ft;
+        }
+        m_avgFrameTime /= HISTORY_SIZE;
+    }
+}
+
+void PerformancePanel::Render() {
+    if (!m_showPanel) return;
+
+    ImGui::SetNextWindowSize(ImVec2(320, 200), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Performance", &m_showPanel)) {
+        ImGui::End();
+        return;
+    }
+
+    // FPS 和帧时间统计
+    ImGui::Text("FPS: %.1f", m_fps);
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "Frame: %.2f ms", m_avgFrameTime);
+    ImGui::Text("Min: %.2f ms  Max: %.2f ms", m_minFrameTime, m_maxFrameTime);
+
+    // 帧时间折线图（从最旧到最新排列）
+    float displayHistory[HISTORY_SIZE];
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        int idx = (m_historyIndex + i) % HISTORY_SIZE;
+        displayHistory[i] = m_frameTimeHistory[idx];
+    }
+
+    ImGui::PlotLines("##FrameTime", displayHistory, HISTORY_SIZE,
+                     0.0f, nullptr, 0.0f, 50.0f, ImVec2(-1, 80));
+
+    // GPU 信息
+    if (m_gpuName[0] != '\0') {
+        ImGui::Text("GPU: %s", m_gpuName);
+    }
+
+    ImGui::End();
+}
+
+void PerformancePanel::Reset() {
+    memset(m_frameTimeHistory, 0, sizeof(m_frameTimeHistory));
+    m_historyIndex = 0;
+    m_avgFrameTime = 0.0f;
+    m_minFrameTime = 999.0f;
+    m_maxFrameTime = 0.0f;
+    m_fps = 0.0f;
+    m_fpsAccum = 0.0f;
+    m_fpsFrameCount = 0;
+    m_fpsUpdateTimer = 0.0f;
+}
+```
+
+---
+
+> 文档结束。本文档覆盖了 Shader Showcase 项目的第 6-8 章，包括 Vulkan 渲染后端的完整实现（初始化、交换链、渲染通道、纹理、管线、全屏绘制、帧同步、ImGui 集成、资源销毁）、着色器加载与效果元数据系统（SPIR-V 加载、JSON 解析、UBO 布局）、以及输入源与 UI 组件（视频播放器、屏幕捕获、性能面板）。
