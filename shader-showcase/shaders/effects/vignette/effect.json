@@ -1,0 +1,11 @@
+{
+  "name": "暗角",
+  "category": "Color",
+  "description": "Darken edges to focus attention on center subject with soft falloff",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "暗角强度", "type": "Float", "min": 0.0, "max": 2.0, "default": 0.5, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "柔和度", "type": "Float", "min": 0.0, "max": 1.0, "default": 0.5, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "圆度", "type": "Float", "min": 0.0, "max": 1.0, "default": 0.5, "ui_type": "slider"}
+  ]
+}

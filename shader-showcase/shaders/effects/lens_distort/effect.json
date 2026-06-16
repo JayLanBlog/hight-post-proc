@@ -1,0 +1,10 @@
+{
+  "name": "镜头畸变",
+  "category": "Distort",
+  "description": "Barrel and pincushion lens distortion simulation with zoom control",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "畸变强度", "type": "Float", "min": -0.5, "max": 0.5, "default": 0.1, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "缩放", "type": "Float", "min": 0.5, "max": 2.0, "default": 1.0, "ui_type": "slider"}
+  ]
+}

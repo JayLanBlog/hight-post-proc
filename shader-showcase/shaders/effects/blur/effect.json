@@ -1,0 +1,26 @@
+{
+  "name": "高斯模糊",
+  "category": "Blur",
+  "description": "Single-pass Gaussian blur with 9-tap kernel approximation, adjustable radius and strength",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊半径",
+      "type": "Float",
+      "min": 1.0,
+      "max": 20.0,
+      "default": 5.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "模糊强度",
+      "type": "Float",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 1.0,
+      "ui_type": "slider"
+    }
+  ]
+}

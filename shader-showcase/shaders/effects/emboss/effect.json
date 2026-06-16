@@ -1,0 +1,10 @@
+{
+  "name": "浮雕效果",
+  "category": "Stylize",
+  "description": "Directional emboss relief texture with adjustable angle and strength",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "强度", "type": "Float", "min": 0.0, "max": 10.0, "default": 4.0, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "角度", "type": "Float", "min": 0.0, "max": 360.0, "default": 135.0, "ui_type": "slider"}
+  ]
+}

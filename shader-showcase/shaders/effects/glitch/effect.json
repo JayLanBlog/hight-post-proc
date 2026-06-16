@@ -1,0 +1,11 @@
+{
+  "name": "故障艺术",
+  "category": "Stylize",
+  "description": "Digital glitch with scanline tearing, RGB split and random block artifacts",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "故障强度", "type": "Float", "min": 0.0, "max": 1.0, "default": 0.5, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "速度", "type": "Float", "min": 0.0, "max": 10.0, "default": 3.0, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "块大小", "type": "Float", "min": 1.0, "max": 50.0, "default": 10.0, "ui_type": "slider"}
+  ]
+}

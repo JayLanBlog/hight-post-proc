@@ -1,0 +1,26 @@
+{
+  "name": "边缘检测",
+  "category": "Stylize",
+  "description": "Sobel edge detection with adjustable strength, supports grayscale and color edge output modes",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "边缘强度",
+      "type": "Float",
+      "min": 0.0,
+      "max": 5.0,
+      "default": 1.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "显示颜色",
+      "type": "Float",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "ui_type": "slider"
+    }
+  ]
+}

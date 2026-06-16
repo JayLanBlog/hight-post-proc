@@ -1,0 +1,11 @@
+{
+  "name": "万花筒",
+  "category": "Distort",
+  "description": "Radial symmetry kaleidoscope with adjustable segments, rotation and zoom",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "对称段数", "type": "Float", "min": 2.0, "max": 12.0, "default": 6.0, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "旋转速度", "type": "Float", "min": 0.0, "max": 2.0, "default": 0.3, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "缩放", "type": "Float", "min": 0.5, "max": 3.0, "default": 1.0, "ui_type": "slider"}
+  ]
+}

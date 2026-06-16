@@ -1,0 +1,12 @@
+{
+  "name": "VHS复古",
+  "category": "Retro",
+  "description": "VHS tape retro effect with scanlines, noise, color drift and tracking distortion",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "扫描线强度", "type": "Float", "min": 0.0, "max": 1.0, "default": 0.3, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "噪声量", "type": "Float", "min": 0.0, "max": 0.5, "default": 0.1, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "色彩漂移", "type": "Float", "min": 0.0, "max": 0.02, "default": 0.005, "ui_type": "slider"},
+    {"name": "uParamFloat3", "label": "跟踪失真", "type": "Float", "min": 0.0, "max": 0.1, "default": 0.02, "ui_type": "slider"}
+  ]
+}

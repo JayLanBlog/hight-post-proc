@@ -1,0 +1,13 @@
+{
+  "name": "调色",
+  "category": "Color",
+  "description": "Cinematic color grading with exposure, contrast, saturation, color temperature and tint",
+  "passes": 1,
+  "params": [
+    {"name": "uParamFloat0", "label": "曝光", "type": "Float", "min": -3.0, "max": 3.0, "default": 0.0, "ui_type": "slider"},
+    {"name": "uParamFloat1", "label": "对比度", "type": "Float", "min": -1.0, "max": 1.0, "default": 0.0, "ui_type": "slider"},
+    {"name": "uParamFloat2", "label": "饱和度", "type": "Float", "min": -1.0, "max": 1.0, "default": 0.0, "ui_type": "slider"},
+    {"name": "uParamFloat3", "label": "色温", "type": "Float", "min": 1000.0, "max": 40000.0, "default": 6500.0, "ui_type": "slider"},
+    {"name": "uParamFloat4", "label": "色调", "type": "Float", "min": -1.0, "max": 1.0, "default": 0.0, "ui_type": "slider"}
+  ]
+}

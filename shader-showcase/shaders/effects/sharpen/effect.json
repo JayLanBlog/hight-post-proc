@@ -1,0 +1,26 @@
+{
+  "name": "锐化",
+  "category": "Enhancement",
+  "description": "Unsharp mask based sharpening with adjustable amount and sampling radius",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "强度",
+      "type": "Float",
+      "min": 0.0,
+      "max": 3.0,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "半径",
+      "type": "Float",
+      "min": 0.5,
+      "max": 3.0,
+      "default": 1.0,
+      "ui_type": "slider"
+    }
+  ]
+}
