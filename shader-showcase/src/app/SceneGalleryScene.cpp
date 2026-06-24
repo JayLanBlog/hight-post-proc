@@ -6,66 +6,98 @@
 #include "stb_image.h"
 
 #include <cstdio>
-#include <vector>
-#include <string>
+#include <cmath>
+
+// ===== life =====
 
 void SceneGalleryScene::OnEnter() {
     m_activeCategory = "全部";
     m_pendingEnter.clear();
-    m_heroIndex = 0;
-    m_thumbsLoaded = false;
+    m_hoverCard = -1;
+    m_heroIdx   = 0;
+    m_thumbsOk  = false;
 }
 
-void SceneGalleryScene::OnExit() {
-    ReleaseThumbnails();
-}
+void SceneGalleryScene::OnExit()  { FreeThumbs(); }
+void SceneGalleryScene::OnRender(IRenderBackend* be) { m_be = be; }
 
-void SceneGalleryScene::OnRender(IRenderBackend* backend) {
-    m_backend = backend;
-}
+// ===== anim update =====
 
-void SceneGalleryScene::OnUpdate(float /*dt*/) {}
+void SceneGalleryScene::OnUpdate(float dt) {
+    const auto& scenes = (m_activeCategory == "全部")
+        ? SceneRegistry::Instance().All()
+        : SceneRegistry::Instance().ByCategory(m_activeCategory);
 
-// ---- thumbnails ----
+    // Resize anim array on category switch
+    if (m_anim.size() != scenes.size()) {
+        m_anim.assign(scenes.size(), CardAnim{});
+    }
 
-void SceneGalleryScene::LoadThumbnails() {
-    if (m_thumbsLoaded || !m_backend) return;
-    const auto& scenes = SceneRegistry::Instance().All();
-    m_thumbTextures.resize(scenes.size());
-    for (size_t i = 0; i < scenes.size(); i++) {
-        if (scenes[i].thumbPath.empty()) continue;
-        int tw, th, comp;
-        stbi_uc* data = stbi_load(scenes[i].thumbPath.c_str(), &tw, &th, &comp, 4);
-        if (data) {
-            m_thumbTextures[i] = m_backend->CreateTexture(tw, th, TextureFormat::RGBA8, data);
-            stbi_image_free(data);
+    float d = std::min(dt, 0.1f);
+    for (size_t i = 0; i < m_anim.size(); i++) {
+        auto& a = m_anim[i];
+
+        // hover lerp (200ms)
+        float ht = (m_hoverCard == (int)i) ? 1.0f : 0.0f;
+        a.hoverT += (ht - a.hoverT) * std::min(1.0f, d * 12.0f);
+
+        // entry stagger: start at i*80ms delay, 400ms duration
+        if (a.entryT < 0.0f) a.entryT = 0.0f;
+        if (a.entryT < 1.0f) {
+            a.entryT += d / 0.4f;
+            if (a.entryT > 1.0f) a.entryT = 1.0f;
+        }
+
+        // click spring
+        a.clickVel += (1.0f - a.clickScale) * 25.0f * d;
+        a.clickVel *= std::exp(-14.0f * d);
+        a.clickScale += a.clickVel * d;
+        if (std::fabs(a.clickScale - 1.0f) < 0.001f && std::fabs(a.clickVel) < 0.02f) {
+            a.clickScale = 1.0f; a.clickVel = 0.0f;
         }
     }
-    m_thumbsLoaded = true;
 }
 
-void SceneGalleryScene::ReleaseThumbnails() {
-    if (!m_backend) { m_thumbTextures.clear(); m_thumbsLoaded = false; return; }
-    for (auto& tex : m_thumbTextures) {
-        if (tex.id != INVALID_TEXTURE.id) m_backend->DestroyTexture(tex);
+// ===== thumbnails =====
+
+void SceneGalleryScene::LoadThumbs() {
+    if (m_thumbsOk || !m_be) return;
+    const auto& all = SceneRegistry::Instance().All();
+    m_thumbs.resize(all.size());
+    for (size_t i = 0; i < all.size(); i++) {
+        if (all[i].thumbPath.empty()) continue;
+        int w, h, c;
+        stbi_uc* d = stbi_load(all[i].thumbPath.c_str(), &w, &h, &c, 4);
+        if (d) {
+            m_thumbs[i] = m_be->CreateTexture(w, h, TextureFormat::RGBA8, d);
+            stbi_image_free(d);
+        }
     }
-    m_thumbTextures.clear();
-    m_thumbsLoaded = false;
+    m_thumbsOk = true;
 }
 
-// ---- main draw ----
+void SceneGalleryScene::FreeThumbs() {
+    if (!m_be) { m_thumbs.clear(); m_thumbsOk = false; return; }
+    for (auto& t : m_thumbs) {
+        if (t.id != INVALID_TEXTURE.id) m_be->DestroyTexture(t);
+    }
+    m_thumbs.clear();
+    m_thumbsOk = false;
+}
+
+// ===== main draw =====
 
 void SceneGalleryScene::OnImGui() {
     ImGuiIO& io = ImGui::GetIO();
     float W = io.DisplaySize.x, H = io.DisplaySize.y;
     if (W <= 0 || H <= 0) return;
 
-    if (!m_thumbsLoaded) LoadThumbnails();
+    if (!m_thumbsOk) LoadThumbs();
 
-    // ================ Full-screen dark background ================
+    // Full-screen window
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(W, H));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(10, 11, 16, 255));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.04f, 0.04f, 0.06f, 1));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("##Gallery", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
@@ -73,192 +105,192 @@ void SceneGalleryScene::OnImGui() {
         ImGuiWindowFlags_NoSavedSettings);
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    const float pad = W * 0.04f;  // proportional padding
+    float M = W * 0.04f;
 
-    // ---- Ambient glow ----
-    dl->AddRectFilled(ImVec2(W * 0.15f, 0), ImVec2(W * 0.55f, H * 0.35f),
+    // Ambient
+    dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), kDeep);
+    dl->AddRectFilled(ImVec2(W * 0.1f, 0), ImVec2(W * 0.55f, H * 0.33f),
                       IM_COL32(74, 91, 207, 5));
 
-    // =============================================
-    // 1. TITLE
-    // =============================================
-    float curY = H * 0.015f;
-    dl->AddText(ImGui::GetFont(), H * 0.033f,
-                ImVec2(pad, curY), IM_COL32(240, 245, 255, 255),
-                "Scene Gallery");
-    curY += H * 0.042f;
-    dl->AddText(ImGui::GetFont(), H * 0.014f,
-                ImVec2(pad, curY), IM_COL32(160, 170, 200, 220),
-                "GPU Real-Time Effects Showcase");
-    curY += H * 0.024f;
+    float y = H * 0.012f;
 
-    // =============================================
-    // 2. HERO CARD
-    // =============================================
-    const auto& allScenes = SceneRegistry::Instance().All();
-    if (!allScenes.empty()) {
-        const auto& scene = allScenes[m_heroIndex % allScenes.size()];
-        float hx = pad, hy = curY + H * 0.008f;
-        float hh = H * 0.22f, hw = W - pad * 2.0f;
+    // ---- 1. TOP BAR ----
+    dl->AddText(ImGui::GetFont(), H * 0.033f, ImVec2(M, y), kText1, "Scene Gallery");
+    y += H * 0.042f;
+    dl->AddText(ImGui::GetFont(), H * 0.014f, ImVec2(M, y), kText2, "GPU Real-Time Effects Showcase");
+    y += H * 0.026f;
 
-        dl->AddRectFilled(ImVec2(hx, hy), ImVec2(hx + hw, hy + hh),
-                          IM_COL32(26, 28, 48, 230), 8.0f);
-        dl->AddRect(ImVec2(hx, hy), ImVec2(hx + hw, hy + hh),
-                    IM_COL32(74, 91, 207, 35), 8.0f);
+    // ---- 2. HERO ----
+    const auto& all = SceneRegistry::Instance().All();
+    if (!all.empty()) {
+        int hi = m_heroIdx % (int)all.size();
+        const auto& s = all[hi];
+        float hh = H * 0.20f, hw = W - M * 2.0f;
+        float hx = M, hy = y;
 
-        // thumb
-        float th = hh - 14.0f, tw = th * 1.78f;
-        float tX = hx + 10.0f, tY = hy + 7.0f;
-        if (m_heroIndex < (int)m_thumbTextures.size() &&
-            m_thumbTextures[m_heroIndex].id != INVALID_TEXTURE.id) {
-            dl->AddImage((ImTextureID)(uintptr_t)m_thumbTextures[m_heroIndex].id,
-                         ImVec2(tX, tY), ImVec2(tX + tw, tY + th));
+        dl->AddRectFilled(ImVec2(hx, hy), ImVec2(hx + hw, hy + hh), kHeroBg, 8.0f);
+        dl->AddRect(ImVec2(hx, hy), ImVec2(hx + hw, hy + hh), kAccentDim, 8.0f);
+
+        // thumb (use GetImTextureID properly)
+        float th = hh - 12.0f, tw = th * 1.78f;
+        float tx = hx + 8.0f, ty = hy + 6.0f;
+        if (hi < (int)m_thumbs.size() && m_thumbs[hi].id != INVALID_TEXTURE.id && m_be) {
+            void* texId = m_be->GetImTextureID(m_thumbs[hi]);
+            if (texId) {
+                dl->AddImage(texId, ImVec2(tx, ty), ImVec2(tx + tw, ty + th));
+            } else {
+                dl->AddRectFilled(ImVec2(tx, ty), ImVec2(tx + tw, ty + th),
+                                  IM_COL32(20, 22, 38, 255), 4.0f);
+            }
         } else {
-            dl->AddRectFilled(ImVec2(tX, tY), ImVec2(tX + tw, tY + th),
+            dl->AddRectFilled(ImVec2(tx, ty), ImVec2(tx + tw, ty + th),
                               IM_COL32(20, 22, 38, 255), 4.0f);
-            dl->AddRect(ImVec2(tX, tY), ImVec2(tX + tw, tY + th),
-                        IM_COL32(74, 91, 207, 35), 4.0f);
+            dl->AddRect(ImVec2(tx, ty), ImVec2(tx + tw, ty + th), kAccentDim, 4.0f);
         }
 
-        // name
-        float lx = tX + tw + 18.0f;
-        dl->AddText(ImGui::GetFont(), H * 0.026f,
-                    ImVec2(lx, hy + 12.0f),
-                    IM_COL32(240, 245, 255, 255), scene.name.c_str());
-
-        // category badge
-        float bw = ImGui::CalcTextSize(scene.category.c_str()).x + 18.0f;
-        dl->AddRectFilled(ImVec2(lx, hy + 12.0f + H * 0.034f),
-                          ImVec2(lx + bw, hy + 12.0f + H * 0.034f + H * 0.022f),
+        // name + badge + desc
+        float lx = tx + tw + 18.0f;
+        dl->AddText(ImGui::GetFont(), H * 0.026f, ImVec2(lx, hy + 10.0f), kText1, s.name.c_str());
+        float bw = ImGui::CalcTextSize(s.category.c_str()).x + 18.0f;
+        dl->AddRectFilled(ImVec2(lx, hy + 10 + H * 0.034f),
+                          ImVec2(lx + bw, hy + 10 + H * 0.034f + H * 0.022f),
                           IM_COL32(74, 91, 207, 70), 3.0f);
         dl->AddText(ImGui::GetFont(), H * 0.013f,
-                    ImVec2(lx + 9.0f, hy + 12.0f + H * 0.036f),
-                    IM_COL32(160, 175, 240, 255), scene.category.c_str());
-
-        // desc
+                    ImVec2(lx + 9.0f, hy + 10 + H * 0.036f),
+                    IM_COL32(160, 175, 240, 255), s.category.c_str());
         dl->AddText(ImGui::GetFont(), H * 0.015f,
-                    ImVec2(lx, hy + 12.0f + H * 0.062f),
-                    IM_COL32(140, 150, 175, 200), scene.description.c_str());
+                    ImVec2(lx, hy + 10 + H * 0.062f), kText2, s.description.c_str());
 
-        // enter button
-        float btnW = H * 0.10f, btnH = H * 0.040f;
-        float bX = hx + hw - btnW - 14.0f, bY = hy + hh - btnH - 10.0f;
+        // Enter button
+        float bW = H * 0.10f, bH = H * 0.038f;
+        float bX = hx + hw - bW - 12.0f, bY = hy + hh - bH - 8.0f;
         ImGui::SetCursorScreenPos(ImVec2(bX, bY));
-        bool entering = ImGui::Button("Enter", ImVec2(btnW, btnH));
-        if (entering && scene.available) m_pendingEnter = scene.id;
-
-        curY = hy + hh;
+        if (ImGui::Button(s.available ? "Enter" : "...", ImVec2(bW, bH))) {
+            if (s.available) m_pendingEnter = s.id;
+        }
+        y = hy + hh;
     }
 
-    // =============================================
-    // 3. CATEGORY TABS
-    // =============================================
-    curY += H * 0.016f;
+    // ---- 3. CATEGORY TABS ----
+    y += H * 0.016f;
     auto cats = SceneRegistry::Instance().Categories();
-    std::vector<std::string> tabs; tabs.push_back("全部");
+    std::vector<std::string> tabs = {"全部"};
     for (auto& c : cats) tabs.push_back(c);
 
-    float tabX = pad, tabH = H * 0.032f;
+    float tX = M, tH = H * 0.032f;
     for (size_t i = 0; i < tabs.size(); i++) {
-        float tw = ImGui::CalcTextSize(tabs[i].c_str()).x + 28.0f;
+        float tW = ImGui::CalcTextSize(tabs[i].c_str()).x + 28.0f;
         bool sel = (tabs[i] == m_activeCategory);
-
         ImU32 bg = sel ? IM_COL32(74, 91, 207, 70) : IM_COL32(30, 33, 50, 140);
-        dl->AddRectFilled(ImVec2(tabX, curY), ImVec2(tabX + tw, curY + tabH), bg, 4.0f);
-        if (sel) dl->AddRect(ImVec2(tabX, curY), ImVec2(tabX + tw, curY + tabH),
-                             IM_COL32(74, 91, 207, 130), 4.0f);
+        dl->AddRectFilled(ImVec2(tX, y), ImVec2(tX + tW, y + tH), bg, 4.0f);
+        if (sel) dl->AddRect(ImVec2(tX, y), ImVec2(tX + tW, y + tH),
+                             IM_COL32(107,124,232,140), 4.0f);
 
-        ImU32 tc = sel ? IM_COL32(200, 210, 255, 255) : IM_COL32(150, 160, 190, 200);
         ImVec2 ts = ImGui::CalcTextSize(tabs[i].c_str());
+        ImU32 tc = sel ? IM_COL32(200,210,255,255) : IM_COL32(150,160,190,200);
         dl->AddText(ImGui::GetFont(), H * 0.015f,
-                    ImVec2(tabX + tw * 0.5f - ts.x * 0.5f, curY + (tabH - ts.y) * 0.5f),
+                    ImVec2(tX + (tW - ts.x) * 0.5f, y + (tH - ts.y) * 0.5f),
                     tc, tabs[i].c_str());
-
-        ImGui::SetCursorScreenPos(ImVec2(tabX, curY));
-        ImGui::InvisibleButton(("##tab" + std::to_string(i)).c_str(), ImVec2(tw, tabH));
+        ImGui::SetCursorScreenPos(ImVec2(tX, y));
+        ImGui::InvisibleButton(("##tab" + std::to_string(i)).c_str(), ImVec2(tW, tH));
         if (ImGui::IsItemClicked()) m_activeCategory = tabs[i];
-
-        tabX += tw + 8.0f;
+        tX += tW + 8.0f;
     }
-    curY += tabH + 10.0f;
+    y += tH + 10.0f;
+    dl->AddLine(ImVec2(M, y), ImVec2(W - M, y), IM_COL32(74, 91, 207, 18), 1.0f);
+    y += 8.0f;
 
-    // separator
-    dl->AddLine(ImVec2(pad, curY), ImVec2(W - pad, curY),
-                IM_COL32(74, 91, 207, 18), 1.0f);
-    curY += 8.0f;
-
-    // =============================================
-    // 4. CARD GRID
-    // =============================================
-
+    // ---- 4. CARD GRID with ANIMATIONS ----
     const auto& scenes = (m_activeCategory == "全部")
         ? SceneRegistry::Instance().All()
         : SceneRegistry::Instance().ByCategory(m_activeCategory);
 
-    if (scenes.empty()) {
-        dl->AddText(ImGui::GetFont(), H * 0.025f,
-                    ImVec2(pad, curY + H * 0.1f),
-                    IM_COL32(100, 110, 130, 180), "No scenes in this category");
-    } else {
-        int COLS = 3;
-        float gapX = 14.0f, gapY = 14.0f;
-        float cardW = (W - pad * 2.0f - gapX * (COLS - 1)) / (float)COLS;
-        float cardH = cardW * 0.72f;
+    if (!scenes.empty()) {
+        const int COLS = 3;
+        float gX = 14.0f, gY = 14.0f;
+        float cW = (W - M * 2.0f - gX * (COLS - 1)) / (float)COLS;
+        float cH = cW * 0.72f;
 
         for (size_t i = 0; i < scenes.size(); i++) {
             int col = (int)i % COLS, row = (int)i / COLS;
-            float cX = pad + col * (cardW + gapX);
-            float cY = curY + row * (cardH + gapY);
+            float cx = M + col * (cW + gX);
+            float cy = y + row * (cH + gY);
+            if (cy + cH < 0 || cy > H) continue;
 
-            // skip off-screen
-            if (cY + cardH < 0 || cY > H) continue;
+            // Animation state
+            auto& a = (i < m_anim.size()) ? m_anim[i] : CardAnim{};
+            float entryT = (i < m_anim.size()) ? a.entryT : 1.0f;
+            float hoverT = (i < m_anim.size()) ? a.hoverT : 0.0f;
+            float clkS   = (i < m_anim.size()) ? a.clickScale : 1.0f;
+            if (entryT < 0.0f) continue;
 
-            bool hover = m_hoverCard == (int)i;
-            ImU32 cardBg = hover ? IM_COL32(35, 40, 62, 240)
-                                 : IM_COL32(22, 25, 38, 200);
-            dl->AddRectFilled(ImVec2(cX, cY), ImVec2(cX + cardW, cY + cardH),
-                              cardBg, 6.0f);
-            if (hover) {
-                dl->AddRect(ImVec2(cX, cY), ImVec2(cX + cardW, cY + cardH),
-                            IM_COL32(74, 91, 207, 80), 6.0f);
+            // entry: slide up + fade
+            float sY = (1.0f - std::min(entryT, 1.0f)) * 24.0f;
+            float alpha = std::min(entryT, 1.0f);
+
+            // scale: hover 1.02x + click spring
+            float sc = (1.0f + hoverT * 0.02f) * clkS;
+            float ccX = cx + cW * 0.5f, ccY = cy + cH * 0.5f;
+            float dW = cW * sc, dH = cH * sc;
+            float dX = ccX - dW * 0.5f, dY = ccY - dH * 0.5f + sY;
+
+            // card bg
+            int br = 22 + (int)(hoverT * 15);
+            int bg = 25 + (int)(hoverT * 17);
+            int bb = 38 + (int)(hoverT * 24);
+            int ba = (int)(200 * alpha + hoverT * 55);
+            dl->AddRectFilled(ImVec2(dX, dY), ImVec2(dX + dW, dY + dH),
+                              IM_COL32(br, bg, bb, ba), 6.0f);
+
+            // hover border
+            if (hoverT > 0.02f) {
+                int bo = (int)(hoverT * 65.0f);
+                dl->AddRect(ImVec2(dX, dY), ImVec2(dX + dW, dY + dH),
+                            IM_COL32(74, 91, 207, bo), 6.0f);
+                // glow
+                dl->AddRectFilled(ImVec2(dX - 2, dY - 2), ImVec2(dX + dW + 2, dY + dH + 2),
+                                  IM_COL32(74, 91, 207, (int)(hoverT * 12)), 8.0f);
             }
 
             // thumb
             float tp = 5.0f;
-            float thH = cardH * 0.55f, thW = cardW - tp * 2.0f;
-            float thX = cX + tp, thY = cY + tp;
-
-            if (i < m_thumbTextures.size() &&
-                m_thumbTextures[i].id != INVALID_TEXTURE.id) {
-                dl->AddImage((ImTextureID)(uintptr_t)m_thumbTextures[i].id,
-                             ImVec2(thX, thY), ImVec2(thX + thW, thY + thH));
+            float thH = dH * 0.55f, thW = dW - tp * 2.0f;
+            float thX = dX + tp, thY = dY + tp;
+            if (i < m_thumbs.size() && m_thumbs[i].id != INVALID_TEXTURE.id && m_be) {
+                void* tid = m_be->GetImTextureID(m_thumbs[i]);
+                if (tid) dl->AddImage(tid, ImVec2(thX, thY), ImVec2(thX + thW, thY + thH));
+                else dl->AddRectFilled(ImVec2(thX, thY), ImVec2(thX + thW, thY + thH),
+                                       IM_COL32(18, 20, 32, 255), 3.0f);
             } else {
+                // Deformed placeholder
                 dl->AddRectFilled(ImVec2(thX, thY), ImVec2(thX + thW, thY + thH),
                                   IM_COL32(18, 20, 32, 255), 3.0f);
-                float cx = thX + thW * 0.5f, cy = thY + thH * 0.5f;
-                dl->AddLine(ImVec2(cx - 8, cy), ImVec2(cx + 8, cy),
-                            IM_COL32(74, 91, 207, 30));
-                dl->AddLine(ImVec2(cx, cy - 4), ImVec2(cx, cy + 4),
-                            IM_COL32(74, 91, 207, 30));
+                float pcx = thX + thW * 0.5f, pcy = thY + thH * 0.5f;
+                dl->AddLine(ImVec2(pcx - 9, pcy), ImVec2(pcx + 9, pcy), kAccentDim);
+                dl->AddLine(ImVec2(pcx, pcy - 5), ImVec2(pcx, pcy + 5), kAccentDim);
             }
 
-            // name
-            dl->AddText(ImGui::GetFont(), H * 0.016f,
-                        ImVec2(cX + 6.0f, thY + thH + 3.0f),
-                        IM_COL32(230, 238, 255, 255), scenes[i].name.c_str());
+            // text
+            float lx2 = dX + tp, ly2 = thY + thH + 3.0f;
+            int ta = (int)(alpha * 255.0f);
+            dl->AddText(ImGui::GetFont(), H * 0.016f, ImVec2(lx2, ly2),
+                        IM_COL32(230,238,255, ta), scenes[i].name.c_str());
+            float tagW = ImGui::CalcTextSize(scenes[i].category.c_str()).x + 8.0f;
+            dl->AddText(ImGui::GetFont(), H * 0.012f, ImVec2(lx2, ly2 + H * 0.021f),
+                        IM_COL32(140,150,180, ta), scenes[i].category.c_str());
+            if (scenes[i].available) {
+                dl->AddCircleFilled(ImVec2(lx2 + tagW + 12.0f, ly2 + H * 0.021f + 5.0f),
+                                    3.0f, IM_COL32(100,220,120, ta));
+            }
 
-            // tag
-            dl->AddText(ImGui::GetFont(), H * 0.012f,
-                        ImVec2(cX + 6.0f, thY + thH + 3.0f + H * 0.021f),
-                        IM_COL32(140, 150, 180, 180), scenes[i].category.c_str());
-
-            // click
-            ImGui::SetCursorScreenPos(ImVec2(cX, cY));
-            ImGui::InvisibleButton(("##card" + std::to_string(i)).c_str(),
-                                   ImVec2(cardW, cardH));
-            if (ImGui::IsItemHovered()) { m_hoverCard = (int)i; m_heroIndex = (int)i; }
-            if (ImGui::IsItemClicked() && scenes[i].available)
+            // click / hover interactive
+            ImGui::SetCursorScreenPos(ImVec2(dX, dY));
+            ImGui::InvisibleButton(("##gc" + std::to_string(i)).c_str(), ImVec2(dW, dH));
+            if (ImGui::IsItemHovered()) { m_hoverCard = (int)i; m_heroIdx = (int)i; }
+            if (ImGui::IsItemClicked() && scenes[i].available) {
                 m_pendingEnter = scenes[i].id;
+                if (i < m_anim.size()) { a.clickScale = 0.95f; a.clickVel = 0.0f; }
+            }
         }
     }
 
@@ -267,13 +299,11 @@ void SceneGalleryScene::OnImGui() {
     ImGui::PopStyleColor();
 }
 
-// ---- scene transition ----
+// ===== transition =====
 
 std::unique_ptr<Scene> SceneGalleryScene::GetNextScene() {
     if (m_pendingEnter.empty()) return nullptr;
-    const auto& all = SceneRegistry::Instance().All();
-    for (auto& e : all) {
-        if (e.id == m_pendingEnter && e.factory) return e.factory();
-    }
+    const auto& a = SceneRegistry::Instance().All();
+    for (auto& e : a) if (e.id == m_pendingEnter && e.factory) return e.factory();
     return nullptr;
 }
