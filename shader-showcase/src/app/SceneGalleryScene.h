@@ -5,15 +5,14 @@
 #include "imgui.h"
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 class Application;
 
 struct CardAnimState {
-    float hoverT      = 0.0f;   // hover transition 0→1 (ease 200ms)
-    float entryT      = -1.0f;  // entry anim: -1=not started, 0→1=active
-    float clickScale  = 1.0f;   // click press scale (1.0→0.97 spring)
-    float clickVel    = 0.0f;   // click spring velocity
+    float hoverT      = 0.0f;
+    float entryT      = -1.0f;
+    float clickScale  = 1.0f;
+    float clickVel    = 0.0f;
 };
 
 class SceneGalleryScene : public Scene {
@@ -31,13 +30,6 @@ private:
     void LoadThumbnails();
     void ReleaseThumbnails();
 
-    void DrawBackground(float w, float h);
-    void DrawTopBar(float w, float h);
-    void DrawHero(float w, float h);
-    void DrawCategoryTabs(float w, float h);
-    void DrawCardGrid(float w, float h);
-
-    // Color constants
     static constexpr ImU32 kBgDeep      = IM_COL32(10, 11, 16, 255);
     static constexpr ImU32 kBgSurface   = IM_COL32(20, 21, 32, 255);
     static constexpr ImU32 kBgElevated  = IM_COL32(26, 28, 48, 255);
@@ -49,10 +41,10 @@ private:
 
     std::string m_activeCategory = "全部";
     std::string m_pendingEnter;
-    int         m_hoverCard    = -1;
-    int         m_heroIndex    = 0;       // which scene is featured in Hero
-    Application* m_app         = nullptr;
-    IRenderBackend* m_backend  = nullptr;
+    int         m_hoverCard   = -1;
+    int         m_heroIndex   = 0;
+    Application*    m_app     = nullptr;
+    IRenderBackend* m_backend = nullptr;
 
     std::vector<CardAnimState> m_cardAnims;
     std::vector<TextureHandle> m_thumbTextures;
