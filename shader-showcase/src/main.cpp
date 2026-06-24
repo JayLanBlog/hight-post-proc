@@ -3,6 +3,7 @@
 
 #include "app/Application.h"
 #include "app/CoverFlowScene.h"
+#include "app/PageManager.h"
 #include "render/IRenderBackend.h"
 #include "render/OpenGLBackend.h"
 #include "stb_image.h"
@@ -207,8 +208,11 @@ int main(int argc, char* argv[]) {
             coverFlow->EnableAutoTest(80); // auto-cycle every card, hold 80 frames each
         }
 
-        app.SetScene(std::move(coverFlow));
-        printf("[main] CoverFlowScene started (autoTest=%d)\n", autoTest);
+        auto pm = std::make_unique<PageManager>();
+        pm->AddPage("后处理", std::move(coverFlow));
+        // Future: pm->AddPage("粒子", std::make_unique<ParticleScene>());
+        app.SetScene(std::move(pm));
+        printf("[main] PageManager started with 1 page (autoTest=%d)\n", autoTest);
     });
 
     return app.Run(argc, argv);

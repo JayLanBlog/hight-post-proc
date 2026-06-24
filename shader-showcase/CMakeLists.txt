@@ -157,6 +157,8 @@ set(SRC_FILES
     src/app/LanguageManager.cpp
     src/app/LanguageManager.h
     src/app/Scene.h
+    src/app/PageManager.cpp
+    src/app/PageManager.h
     src/render/BackendType.h
     src/render/FullscreenQuad.cpp
     src/render/FullscreenQuad.h
