@@ -3,7 +3,8 @@
 
 #include "app/Application.h"
 #include "app/CoverFlowScene.h"
-#include "app/PageManager.h"
+#include "app/SceneRegistry.h"
+#include "app/SceneGalleryScene.h"
 #include "render/IRenderBackend.h"
 #include "render/OpenGLBackend.h"
 #include "stb_image.h"
@@ -208,11 +209,23 @@ int main(int argc, char* argv[]) {
             coverFlow->EnableAutoTest(80); // auto-cycle every card, hold 80 frames each
         }
 
-        auto pm = std::make_unique<PageManager>();
-        pm->AddPage("后处理", std::move(coverFlow));
-        // Future: pm->AddPage("粒子", std::make_unique<ParticleScene>());
-        app.SetScene(std::move(pm));
-        printf("[main] PageManager started with 1 page (autoTest=%d)\n", autoTest);
+        std::unique_ptr<CoverFlowScene> cf = std::move(coverFlow);
+        auto cfShared = std::make_shared<std::unique_ptr<CoverFlowScene>>(std::move(cf));
+
+        SceneRegistry::Instance().Register({
+            "post-processing",
+            "后处理特效",
+            "后处理",
+            "18 种 GPU 实时后处理效果：模糊、辉光、故障、CRT…",
+            "assets/images/00_grayscale_landscape.jpg",
+            [cfShared]() { return std::move(*cfShared); },
+            true
+        });
+
+        auto gallery = std::make_unique<SceneGalleryScene>();
+        gallery->SetApplication(&app);
+        app.SetScene(std::move(gallery));
+        printf("[main] SceneGalleryScene started (autoTest=%d)\n", autoTest);
     });
 
     return app.Run(argc, argv);

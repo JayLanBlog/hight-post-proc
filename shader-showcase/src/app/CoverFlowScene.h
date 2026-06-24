@@ -31,6 +31,7 @@ public:
     void OnRender(IRenderBackend* backend) override;
     void OnImGui() override;
     bool WantsExit() const override { return m_wantsExit; }
+    bool WantsReturn() const override { return m_wantsReturn; }
 
     std::unique_ptr<Scene> GetNextScene() override;
     void SetInputTexture(TextureHandle tex) { m_inputTex = tex; }
@@ -78,6 +79,7 @@ private:
     IRenderBackend* m_backend = nullptr;
     Application* m_app = nullptr;
     bool m_wantsExit = false;
+    bool m_wantsReturn = false;
     std::unique_ptr<Scene> m_nextScene;
 
     // Auto-test mode

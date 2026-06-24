@@ -159,6 +159,10 @@ set(SRC_FILES
     src/app/Scene.h
     src/app/PageManager.cpp
     src/app/PageManager.h
+    src/app/SceneRegistry.cpp
+    src/app/SceneRegistry.h
+    src/app/SceneGalleryScene.cpp
+    src/app/SceneGalleryScene.h
     src/render/BackendType.h
     src/render/FullscreenQuad.cpp
     src/render/FullscreenQuad.h

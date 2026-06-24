@@ -13,5 +13,6 @@ public:
     virtual void OnRender(IRenderBackend* backend) = 0;
     virtual void OnImGui() {}
     virtual bool WantsExit() const { return false; }
+    virtual bool WantsReturn() const { return false; }
     virtual std::unique_ptr<Scene> GetNextScene() { return nullptr; }
 };

@@ -1,6 +1,7 @@
 #include "app/Application.h"
 #include "app/Scene.h"
 #include "app/LanguageManager.h"
+#include "app/SceneGalleryScene.h"
 #include "ui/PerformancePanel.h"
 #include <exception>
 
@@ -268,26 +269,38 @@ void Application::MainLoop()
         // --- Scene-driven update ---
         if (m_currentScene)
         {
-            m_currentScene->OnUpdate(dt);
-            m_currentScene->OnRender(m_backend.get());
-
-            m_currentScene->OnImGui();
-
-            // Check for scene transition - DEFER to next frame's BeginFrame
-            // This ensures GPU has finished with old scene's resources before they're destroyed
-            if (m_currentScene->WantsExit())
+            // Check if current scene wants to return to gallery (ESC)
+            if (m_currentScene->WantsReturn()) {
+                printf("[Application] Scene requested return to gallery\n");
+                m_currentScene->OnExit();
+                auto gallery = std::make_unique<SceneGalleryScene>();
+                gallery->SetApplication(this);
+                m_currentScene = std::move(gallery);
+                m_currentScene->OnEnter();
+            }
+            else
             {
-                auto nextScene = m_currentScene->GetNextScene();
-                if (nextScene)
+                m_currentScene->OnUpdate(dt);
+                m_currentScene->OnRender(m_backend.get());
+
+                m_currentScene->OnImGui();
+
+                // Check for scene transition - DEFER to next frame's BeginFrame
+                // This ensures GPU has finished with old scene's resources before they're destroyed
+                if (m_currentScene->WantsExit())
                 {
-                    printf("[Application] Deferring scene transition to next frame\n");
-                    m_pendingNextScene = std::move(nextScene);
-                }
-                else
-                {
-                    // No next scene — exit application
-                    printf("[Application] Scene requested exit with no replacement; shutting down\n");
-                    m_running = false;
+                    auto nextScene = m_currentScene->GetNextScene();
+                    if (nextScene)
+                    {
+                        printf("[Application] Deferring scene transition to next frame\n");
+                        m_pendingNextScene = std::move(nextScene);
+                    }
+                    else
+                    {
+                        // No next scene — exit application
+                        printf("[Application] Scene requested exit with no replacement; shutting down\n");
+                        m_running = false;
+                    }
                 }
             }
         }

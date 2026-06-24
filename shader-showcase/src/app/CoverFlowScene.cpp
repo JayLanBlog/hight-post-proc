@@ -262,8 +262,8 @@ void CoverFlowScene::OnUpdate(float dt)
     if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter))
         OpenSelectedEffect();
     if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-        printf("[CoverFlowScene] ESC detected, exiting\n");
-        m_wantsExit = true;
+        printf("[CoverFlowScene] ESC detected, returning to gallery\n");
+        m_wantsReturn = true;
     }
 
     // ---- F1-F8: Quick effect selection ----
