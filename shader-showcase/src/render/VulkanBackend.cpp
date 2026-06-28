@@ -1160,28 +1160,27 @@ void* VulkanBackend::GetImTextureID(TextureHandle handle) {
 // Pipeline Helpers
 // ============================================================================
 VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
-    // binding=0: combined image sampler for input texture
-    VkDescriptorSetLayoutBinding samplerBinding{};
-    samplerBinding.binding = 0;
-    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerBinding.descriptorCount = 1;
-    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    samplerBinding.pImmutableSamplers = nullptr;
-
-    // binding=1: uniform buffer for Params block (matches shader UBO layout)
-    VkDescriptorSetLayoutBinding uboBinding{};
-    uboBinding.binding = 1;
-    uboBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboBinding.descriptorCount = 1;
-    uboBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutBinding bindings[] = { samplerBinding, uboBinding };
+    VkDescriptorSetLayoutBinding bindings[3] = {};
+    // binding=0: combined image sampler
+    bindings[0].binding = 0;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[0].descriptorCount = 1;
+    bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    // binding=1: uniform buffer
+    bindings[1].binding = 1;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bindings[1].descriptorCount = 1;
+    bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    // binding=2: SSBO for vertex data (used by mesh3d.vert)
+    bindings[2].binding = 2;
+    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    bindings[2].descriptorCount = 1;
+    bindings[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 2;
+    layoutInfo.bindingCount = 3;
     layoutInfo.pBindings = bindings;
-
     VkDescriptorSetLayout descriptorSetLayout;
     VK_CHECK(vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &descriptorSetLayout));
     return descriptorSetLayout;
@@ -1190,7 +1189,8 @@ VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
 VkDescriptorPool VulkanBackend::CreateDescriptorPool(uint32_t maxSets) {
     VkDescriptorPoolSize poolSizes[] = {
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxSets },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets }
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxSets }
     };
 
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -1620,6 +1620,21 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         uboWrite.pBufferInfo = &bufferInfo;
         writes.push_back(uboWrite);
 
+        // SSBO (binding=2): vertex data
+        VkDescriptorBufferInfo ssboInfo{};
+        ssboInfo.buffer = vb;
+        ssboInfo.offset = 0;
+        ssboInfo.range = vbSize;
+        VkWriteDescriptorSet ssboWrite{};
+        ssboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        ssboWrite.dstSet = pipeIt->second->descSet;
+        ssboWrite.dstBinding = 2;
+        ssboWrite.dstArrayElement = 0;
+        ssboWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        ssboWrite.descriptorCount = 1;
+        ssboWrite.pBufferInfo = &ssboInfo;
+        writes.push_back(ssboWrite);
+
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1656,7 +1671,7 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
     desc.width = params.viewportWidth;
     desc.height = params.viewportHeight;
     desc.blendEnable = false;
-    desc.useVertexInput = true;
+    desc.useVertexInput = false;  // SSBO mode
 
     PipelineHandle pipeHandle = CreatePipeline(desc);
     if (pipeHandle.id == 0) return;
@@ -1687,7 +1702,7 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         VkBufferCreateInfo ci{};
         ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         ci.size = vbSize;
-        ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VK_CHECK(vkCreateBuffer(m_device, &ci, nullptr, &vb));
 
@@ -1737,9 +1752,7 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         vkUnmapMemory(m_device, ibMem);
     }
 
-    // --- Bind vertex and index buffers ---
-    VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vb, offsets);
+    // --- Bind index buffer (vertices via SSBO) ---
     vkCmdBindIndexBuffer(m_commandBuffer, ib, 0, VK_INDEX_TYPE_UINT32);
 
     // --- Update UBO (224 bytes) and bind descriptor set ---

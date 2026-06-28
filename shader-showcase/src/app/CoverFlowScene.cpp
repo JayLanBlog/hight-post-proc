@@ -881,9 +881,10 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
         const uint32_t* idxData = (m_meshType[m_selectedIndex] == 0) ? m_sphereIndices.data() : m_cubeIndices.data();
         size_t idxCount = (m_meshType[m_selectedIndex] == 0) ? m_sphereIndices.size() : m_cubeIndices.size();
 
-        // HACK: render 3D directly to swapchain (FBO render pass incompatible with some effects)
-        // TODO: fix render-to-texture for 3D pipelines
+        // 3D effects render directly to swapchain; don't use FBO
         backend->DrawMesh(m_mesh3dVertShader, state.fragShader, params3d, vertData, vertCount, 32, idxData, idxCount);
+        // Don't draw FBO background — let swapchain content show through
+        m_immersiveImTexID = nullptr;
     } else {
         // ---- Existing 2D fullscreen rendering (unchanged) ----
         backend->BeginRenderToTexture(m_immersiveTex);
