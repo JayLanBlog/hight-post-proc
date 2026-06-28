@@ -16,6 +16,7 @@
 
 // Card screenshot state
 static int g_cardScreenshotIndex = 0;
+static int g_cardScreenshotEndIndex = 153;   // exclusive, env override
 static int g_cardScreenshotFrame = 0;
 static bool g_cardScreenshotNeedsShot = false;
 
@@ -1158,6 +1159,15 @@ void CoverFlowScene::OnImGui()
     }
 
     if (getenv("AUTO_TEST_CARDS") && !getenv("AUTO_TEST_UI") && !getenv("AUTO_TEST_DETAILS")) {
+        // Support AUTO_TEST_START / AUTO_TEST_END env vars
+        static bool initDone = false;
+        if (!initDone && getenv("AUTO_TEST_START")) {
+            g_cardScreenshotIndex = atoi(getenv("AUTO_TEST_START"));
+        }
+        if (!initDone && getenv("AUTO_TEST_END"))
+            g_cardScreenshotEndIndex = atoi(getenv("AUTO_TEST_END"));
+        initDone = true;
+        
         g_cardScreenshotFrame++;
         if (g_cardScreenshotNeedsShot && g_cardScreenshotFrame >= 5) {
             char path[256];
@@ -1167,7 +1177,7 @@ void CoverFlowScene::OnImGui()
         }
         if (g_cardScreenshotFrame >= 30) {
             g_cardScreenshotFrame = 0;
-            if (g_cardScreenshotIndex < (int)m_cards.size()) {
+            if (g_cardScreenshotIndex < (int)m_cards.size() && g_cardScreenshotIndex < g_cardScreenshotEndIndex) {
                 SelectCard(g_cardScreenshotIndex);
                 printf("[CardScreenshot] Selected card %d: %s\n", g_cardScreenshotIndex, m_cards[g_cardScreenshotIndex].name.c_str());
                 g_cardScreenshotIndex++;

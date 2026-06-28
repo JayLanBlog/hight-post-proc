@@ -1454,7 +1454,12 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     pipelineInfo.renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
     pipelineInfo.subpass = 0;
 
-    VK_CHECK(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline));
+    VkResult pipeResult = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline);
+    if (pipeResult != VK_SUCCESS) {
+        fprintf(stderr, "[Vulkan] vkCreateGraphicsPipelines failed: %d\n", pipeResult);
+        m_pipelineCache[cacheKey] = PipelineHandle{0}; // cache failure
+        return PipelineHandle{0};
+    }
 
     uint32_t id = m_nextPipelineId++;
     m_pipelines[id] = std::move(pipeline);
