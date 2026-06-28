@@ -1,0 +1,1111 @@
+[main] Working directory set to: E:\AI\graph\hight-post-proc\shader-showcase
+[Application] AUTO_TEST_CARDS: forcing Vulkan backend
+[Vulkan] Instance created
+[Vulkan] Surface created (Win32 native)
+[Vulkan] Physical device: NVIDIA GeForce RTX 3060 Laptop GPU
+[Vulkan] Logical device created (graphics queue: 0, present queue: 0)
+[Vulkan] Swapchain created (1920x1200, 3 images)
+[Vulkan] Render pass created
+[Vulkan] Framebuffers created (3)
+[Vulkan] Command pool created
+[Vulkan] Command buffer allocated
+[Vulkan] Sync objects created
+[Vulkan] Initialized successfully (1920x1200)
+[Vulkan] Initializing ImGui Vulkan backend...
+[Vulkan] ImGui Vulkan backend initialized successfully
+[Application] Backend initialized: Vulkan 1.2 (SPIR-V)
+[main] Loaded image: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/test.jpg (1920 x 1280)
+[Vulkan] Texture created (id=1, 1920x1280, format=0)
+[main] Test images directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/
+[main] Loaded test image for effect 0: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/00_grayscale_landscape.jpg (800 x 533)
+[Vulkan] Texture created (id=2, 800x533, format=0)
+[main] Loaded test image for effect 1: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/01_bloom_citynight.jpg (800 x 486)
+[Vulkan] Texture created (id=3, 800x486, format=0)
+[main] Loaded test image for effect 2: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/02_blur_brickwall.jpg (800 x 1200)
+[Vulkan] Texture created (id=4, 800x1200, format=0)
+[main] Loaded test image for effect 3: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/03_sharpen_architecture.jpg (800 x 533)
+[Vulkan] Texture created (id=5, 800x533, format=0)
+[main] Loaded test image for effect 4: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/04_edge_building.jpg (800 x 533)
+[Vulkan] Texture created (id=6, 800x533, format=0)
+[main] Loaded test image for effect 5: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/05_emboss_metal.jpg (800 x 533)
+[Vulkan] Texture created (id=7, 800x533, format=0)
+[main] Loaded test image for effect 6: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/06_pixelate_portrait.jpg (800 x 1000)
+[Vulkan] Texture created (id=8, 800x1000, format=0)
+[main] Loaded test image for effect 7: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/07_vignette_flower.jpg (800 x 532)
+[Vulkan] Texture created (id=9, 800x532, format=0)
+[main] Loaded test image for effect 8: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/08_chromatic_leaves.jpg (800 x 1422)
+[Vulkan] Texture created (id=10, 800x1422, format=0)
+[main] Loaded test image for effect 9: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/09_colorgrading_food.jpg (800 x 533)
+[Vulkan] Texture created (id=11, 800x533, format=0)
+[main] Loaded test image for effect 10: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/10_noise_sky.jpg (800 x 1030)
+[Vulkan] Texture created (id=12, 800x1030, format=0)
+[main] Loaded test image for effect 11: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/11_kaleidoscope_mandala.jpg (800 x 533)
+[Vulkan] Texture created (id=13, 800x533, format=0)
+[main] Loaded test image for effect 12: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/12_glitch_tech.jpg (800 x 533)
+[Vulkan] Texture created (id=14, 800x533, format=0)
+[main] Loaded test image for effect 13: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/13_toon_cartoon.jpg (800 x 1135)
+[Vulkan] Texture created (id=15, 800x1135, format=0)
+[main] Loaded test image for effect 14: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/14_vhs_retro.jpg (800 x 533)
+[Vulkan] Texture created (id=16, 800x533, format=0)
+[main] Loaded test image for effect 15: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/15_crt_screen.jpg (800 x 533)
+[Vulkan] Texture created (id=17, 800x533, format=0)
+[main] Loaded test image for effect 16: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/16_water_lake.jpg (800 x 601)
+[Vulkan] Texture created (id=18, 800x601, format=0)
+[main] Loaded test image for effect 17: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/17_lens_wideangle.jpg (800 x 534)
+[Vulkan] Texture created (id=19, 800x534, format=0)
+[main] All 18 input textures cached
+[main] Test videos directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/videos/
+[main] AUTO_TEST_CARDS mode: launching CoverFlowScene directly
+[CoverFlowScene] Total cards registered: 153
+[CoverFlowScene] Loaded effect.json params for 153/153 cards
+[CoverFlowScene] Dynamic: 79, Static: 74 effects
+[CoverFlowScene] Added image to pool: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/test.jpg (total 1)
+[Application] SetScene: entering new scene
+[CoverFlowScene] Entered with 153 cards, selected=35
+[CoverFlowScene] Sphere mesh: 2145 vertices, 12288 indices
+[CoverFlowScene] Cube mesh: 24 vertices, 36 indices
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/common/mesh3d.vert.spv (3024 bytes, 756 words)
+[Vulkan] Vertex shader created (id=1)
+[CoverFlowScene] 3D geometry setup complete. Sphere V=2145 I=12288, Cube V=24 I=36
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/common/fullscreen_vk.vert.spv (1340 bytes, 335 words)
+[Vulkan] Vertex shader created (id=2)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/simple_test/simple_test.frag.spv (1644 bytes, 411 words)
+[Vulkan] Fragment shader created (id=3)
+[Vulkan] Texture created (id=20, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/bloom/bloom.frag.spv (4624 bytes, 1156 words)
+[Vulkan] Fragment shader created (id=4)
+[Vulkan] Texture created (id=21, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/blur/blur.frag.spv (3908 bytes, 977 words)
+[Vulkan] Fragment shader created (id=5)
+[Vulkan] Texture created (id=22, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/sharpen/sharpen.frag.spv (4160 bytes, 1040 words)
+[Vulkan] Fragment shader created (id=6)
+[Vulkan] Texture created (id=23, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/edge_detect/edge_detect.frag.spv (5204 bytes, 1301 words)
+[Vulkan] Fragment shader created (id=7)
+[Vulkan] Texture created (id=24, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/emboss/emboss.frag.spv (2352 bytes, 588 words)
+[Vulkan] Fragment shader created (id=8)
+[Vulkan] Texture created (id=25, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/pixelate/pixelate.frag.spv (1840 bytes, 460 words)
+[Vulkan] Fragment shader created (id=9)
+[Vulkan] Texture created (id=26, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/vignette/vignette.frag.spv (2460 bytes, 615 words)
+[Vulkan] Fragment shader created (id=10)
+[Vulkan] Texture created (id=27, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/chromatic/chromatic.frag.spv (2868 bytes, 717 words)
+[Vulkan] Fragment shader created (id=11)
+[Vulkan] Texture created (id=28, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/color_grade/color_grade.frag.spv (4452 bytes, 1113 words)
+[Vulkan] Fragment shader created (id=12)
+[Vulkan] Texture created (id=29, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/noise/noise.frag.spv (4924 bytes, 1231 words)
+[Vulkan] Fragment shader created (id=13)
+[Vulkan] Texture created (id=30, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/kaleidoscope/kaleidoscope.frag.spv (2824 bytes, 706 words)
+[Vulkan] Fragment shader created (id=14)
+[Vulkan] Texture created (id=31, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/glitch/glitch.frag.spv (4616 bytes, 1154 words)
+[Vulkan] Fragment shader created (id=15)
+[Vulkan] Texture created (id=32, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/toon/toon.frag.spv (4208 bytes, 1052 words)
+[Vulkan] Fragment shader created (id=16)
+[Vulkan] Texture created (id=33, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/vhs/vhs.frag.spv (4556 bytes, 1139 words)
+[Vulkan] Fragment shader created (id=17)
+[Vulkan] Texture created (id=34, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/crt/crt.frag.spv (5308 bytes, 1327 words)
+[Vulkan] Fragment shader created (id=18)
+[Vulkan] Texture created (id=35, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/water_ripple/water_ripple.frag.spv (5604 bytes, 1401 words)
+[Vulkan] Fragment shader created (id=19)
+[Vulkan] Texture created (id=36, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/lens_distort/lens_distort.frag.spv (2408 bytes, 602 words)
+[Vulkan] Fragment shader created (id=20)
+[Vulkan] Texture created (id=37, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_screen_jump/xpl_glitch_screen_jump.frag.spv (2296 bytes, 574 words)
+[Vulkan] Fragment shader created (id=21)
+[Vulkan] Texture created (id=38, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_screen_shake/xpl_glitch_screen_shake.frag.spv (2316 bytes, 579 words)
+[Vulkan] Fragment shader created (id=22)
+[Vulkan] Texture created (id=39, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_scan_line_jitter/xpl_glitch_scan_line_jitter.frag.spv (2676 bytes, 669 words)
+[Vulkan] Fragment shader created (id=23)
+[Vulkan] Texture created (id=40, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v4/xpl_glitch_rgb_split_v4.frag.spv (2576 bytes, 644 words)
+[Vulkan] Fragment shader created (id=24)
+[Vulkan] Texture created (id=41, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v2/xpl_glitch_rgb_split_v2.frag.spv (2924 bytes, 731 words)
+[Vulkan] Fragment shader created (id=25)
+[Vulkan] Texture created (id=42, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_analog_noise/xpl_glitch_analog_noise.frag.spv (4372 bytes, 1093 words)
+[Vulkan] Fragment shader created (id=26)
+[Vulkan] Texture created (id=43, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v3/xpl_glitch_image_block_v3.frag.spv (3112 bytes, 778 words)
+[Vulkan] Fragment shader created (id=27)
+[Vulkan] Texture created (id=44, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v4/xpl_glitch_image_block_v4.frag.spv (3508 bytes, 877 words)
+[Vulkan] Fragment shader created (id=28)
+[Vulkan] Texture created (id=45, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_tile_jitter/xpl_glitch_tile_jitter.frag.spv (2348 bytes, 587 words)
+[Vulkan] Fragment shader created (id=29)
+[Vulkan] Texture created (id=46, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v3/xpl_glitch_rgb_split_v3.frag.spv (5820 bytes, 1455 words)
+[Vulkan] Fragment shader created (id=30)
+[Vulkan] Texture created (id=47, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_digital_stripe/xpl_glitch_digital_stripe.frag.spv (3992 bytes, 998 words)
+[Vulkan] Fragment shader created (id=31)
+[Vulkan] Texture created (id=48, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v2/xpl_glitch_image_block_v2.frag.spv (3624 bytes, 906 words)
+[Vulkan] Fragment shader created (id=32)
+[Vulkan] Texture created (id=49, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v1/xpl_glitch_image_block_v1.frag.spv (4088 bytes, 1022 words)
+[Vulkan] Fragment shader created (id=33)
+[Vulkan] Texture created (id=50, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v1/xpl_glitch_rgb_split_v1.frag.spv (5404 bytes, 1351 words)
+[Vulkan] Fragment shader created (id=34)
+[Vulkan] Texture created (id=51, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v5/xpl_glitch_rgb_split_v5.frag.spv (4068 bytes, 1017 words)
+[Vulkan] Fragment shader created (id=35)
+[Vulkan] Texture created (id=52, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_line_block/xpl_glitch_line_block.frag.spv (7336 bytes, 1834 words)
+[Vulkan] Fragment shader created (id=36)
+[Vulkan] Texture created (id=53, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_wave_jitter/xpl_glitch_wave_jitter.frag.spv (8140 bytes, 2035 words)
+[Vulkan] Fragment shader created (id=37)
+[Vulkan] Texture created (id=54, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_bokeh/xpl_blur_bokeh.frag.spv (3648 bytes, 912 words)
+[Vulkan] Fragment shader created (id=38)
+[Vulkan] Texture created (id=55, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_box/xpl_blur_box.frag.spv (2800 bytes, 700 words)
+[Vulkan] Fragment shader created (id=39)
+[Vulkan] Texture created (id=56, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_directional/xpl_blur_directional.frag.spv (3128 bytes, 782 words)
+[Vulkan] Fragment shader created (id=40)
+[Vulkan] Texture created (id=57, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_box/xpl_blur_dual_box.frag.spv (2800 bytes, 700 words)
+[Vulkan] Fragment shader created (id=41)
+[Vulkan] Texture created (id=58, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_gaussian/xpl_blur_dual_gaussian.frag.spv (3052 bytes, 763 words)
+[Vulkan] Fragment shader created (id=42)
+[Vulkan] Texture created (id=59, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_kawase/xpl_blur_dual_kawase.frag.spv (2800 bytes, 700 words)
+[Vulkan] Fragment shader created (id=43)
+[Vulkan] Texture created (id=60, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_tent/xpl_blur_dual_tent.frag.spv (3844 bytes, 961 words)
+[Vulkan] Fragment shader created (id=44)
+[Vulkan] Texture created (id=61, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_gaussian/xpl_blur_gaussian.frag.spv (3052 bytes, 763 words)
+[Vulkan] Fragment shader created (id=45)
+[Vulkan] Texture created (id=62, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_grainy/xpl_blur_grainy.frag.spv (3456 bytes, 864 words)
+[Vulkan] Fragment shader created (id=46)
+[Vulkan] Texture created (id=63, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_iris/xpl_blur_iris.frag.spv (3068 bytes, 767 words)
+[Vulkan] Fragment shader created (id=47)
+[Vulkan] Texture created (id=64, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_iris_v2/xpl_blur_iris_v2.frag.spv (3412 bytes, 853 words)
+[Vulkan] Fragment shader created (id=48)
+[Vulkan] Texture created (id=65, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_kawase/xpl_blur_kawase.frag.spv (2800 bytes, 700 words)
+[Vulkan] Fragment shader created (id=49)
+[Vulkan] Texture created (id=66, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_radial/xpl_blur_radial.frag.spv (3048 bytes, 762 words)
+[Vulkan] Fragment shader created (id=50)
+[Vulkan] Texture created (id=67, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_radial_v2/xpl_blur_radial_v2.frag.spv (2920 bytes, 730 words)
+[Vulkan] Fragment shader created (id=51)
+[Vulkan] Texture created (id=68, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_tent/xpl_blur_tent.frag.spv (3844 bytes, 961 words)
+[Vulkan] Fragment shader created (id=52)
+[Vulkan] Texture created (id=69, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_tilt_shift/xpl_blur_tilt_shift.frag.spv (3052 bytes, 763 words)
+[Vulkan] Fragment shader created (id=53)
+[Vulkan] Texture created (id=70, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_tilt_shift_v2/xpl_blur_tilt_shift_v2.frag.spv (2776 bytes, 694 words)
+[Vulkan] Fragment shader created (id=54)
+[Vulkan] Texture created (id=71, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_bleach_bypass/xpl_color_bleach_bypass.frag.spv (2560 bytes, 640 words)
+[Vulkan] Fragment shader created (id=55)
+[Vulkan] Texture created (id=72, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_brightness/xpl_color_brightness.frag.spv (1516 bytes, 379 words)
+[Vulkan] Fragment shader created (id=56)
+[Vulkan] Texture created (id=73, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_contrast/xpl_color_contrast.frag.spv (1692 bytes, 423 words)
+[Vulkan] Fragment shader created (id=57)
+[Vulkan] Texture created (id=74, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_contrast_v2/xpl_color_contrast_v2.frag.spv (1728 bytes, 432 words)
+[Vulkan] Fragment shader created (id=58)
+[Vulkan] Texture created (id=75, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_contrast_v3/xpl_color_contrast_v3.frag.spv (1916 bytes, 479 words)
+[Vulkan] Fragment shader created (id=59)
+[Vulkan] Texture created (id=76, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_hue/xpl_color_hue.frag.spv (3284 bytes, 821 words)
+[Vulkan] Fragment shader created (id=60)
+[Vulkan] Texture created (id=77, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_lens_filter/xpl_color_lens_filter.frag.spv (2172 bytes, 543 words)
+[Vulkan] Fragment shader created (id=61)
+[Vulkan] Texture created (id=78, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_saturation/xpl_color_saturation.frag.spv (1772 bytes, 443 words)
+[Vulkan] Fragment shader created (id=62)
+[Vulkan] Texture created (id=79, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_technicolor/xpl_color_technicolor.frag.spv (2660 bytes, 665 words)
+[Vulkan] Fragment shader created (id=63)
+[Vulkan] Texture created (id=80, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_tint/xpl_color_tint.frag.spv (1876 bytes, 469 words)
+[Vulkan] Fragment shader created (id=64)
+[Vulkan] Texture created (id=81, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_white_balance/xpl_color_white_balance.frag.spv (2604 bytes, 651 words)
+[Vulkan] Fragment shader created (id=65)
+[Vulkan] Texture created (id=82, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_replace/xpl_color_replace.frag.spv (2316 bytes, 579 words)
+[Vulkan] Fragment shader created (id=66)
+[Vulkan] Texture created (id=83, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_replace_v2/xpl_color_replace_v2.frag.spv (2388 bytes, 597 words)
+[Vulkan] Fragment shader created (id=67)
+[Vulkan] Texture created (id=84, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_roberts/xpl_edge_roberts.frag.spv (4876 bytes, 1219 words)
+[Vulkan] Fragment shader created (id=68)
+[Vulkan] Texture created (id=85, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_roberts_neon/xpl_edge_roberts_neon.frag.spv (3980 bytes, 995 words)
+[Vulkan] Fragment shader created (id=69)
+[Vulkan] Texture created (id=86, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_roberts_neon_v2/xpl_edge_roberts_neon_v2.frag.spv (3932 bytes, 983 words)
+[Vulkan] Fragment shader created (id=70)
+[Vulkan] Texture created (id=87, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_scharr/xpl_edge_scharr.frag.spv (5188 bytes, 1297 words)
+[Vulkan] Fragment shader created (id=71)
+[Vulkan] Texture created (id=88, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_scharr_neon/xpl_edge_scharr_neon.frag.spv (5620 bytes, 1405 words)
+[Vulkan] Fragment shader created (id=72)
+[Vulkan] Texture created (id=89, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_scharr_neon_v2/xpl_edge_scharr_neon_v2.frag.spv (5460 bytes, 1365 words)
+[Vulkan] Fragment shader created (id=73)
+[Vulkan] Texture created (id=90, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_sobel/xpl_edge_sobel.frag.spv (5208 bytes, 1302 words)
+[Vulkan] Fragment shader created (id=74)
+[Vulkan] Texture created (id=91, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_sobel_neon/xpl_edge_sobel_neon.frag.spv (5460 bytes, 1365 words)
+[Vulkan] Fragment shader created (id=75)
+[Vulkan] Texture created (id=92, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_sobel_neon_v2/xpl_edge_sobel_neon_v2.frag.spv (5300 bytes, 1325 words)
+[Vulkan] Fragment shader created (id=76)
+[Vulkan] Texture created (id=93, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_circle/xpl_pixel_circle.frag.spv (2960 bytes, 740 words)
+[Vulkan] Fragment shader created (id=77)
+[Vulkan] Texture created (id=94, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_diamond/xpl_pixel_diamond.frag.spv (2352 bytes, 588 words)
+[Vulkan] Fragment shader created (id=78)
+[Vulkan] Texture created (id=95, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_hexagon/xpl_pixel_hexagon.frag.spv (3768 bytes, 942 words)
+[Vulkan] Fragment shader created (id=79)
+[Vulkan] Texture created (id=96, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_hexagon_grid/xpl_pixel_hexagon_grid.frag.spv (3688 bytes, 922 words)
+[Vulkan] Fragment shader created (id=80)
+[Vulkan] Texture created (id=97, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_leaf/xpl_pixel_leaf.frag.spv (3012 bytes, 753 words)
+[Vulkan] Fragment shader created (id=81)
+[Vulkan] Texture created (id=98, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_led/xpl_pixel_led.frag.spv (2588 bytes, 647 words)
+[Vulkan] Fragment shader created (id=82)
+[Vulkan] Texture created (id=99, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_quad/xpl_pixel_quad.frag.spv (1604 bytes, 401 words)
+[Vulkan] Fragment shader created (id=83)
+[Vulkan] Texture created (id=100, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_sector/xpl_pixel_sector.frag.spv (3592 bytes, 898 words)
+[Vulkan] Fragment shader created (id=84)
+[Vulkan] Texture created (id=101, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_triangle/xpl_pixel_triangle.frag.spv (2224 bytes, 556 words)
+[Vulkan] Fragment shader created (id=85)
+[Vulkan] Texture created (id=102, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_aurora/xpl_vignette_aurora.frag.spv (2604 bytes, 651 words)
+[Vulkan] Fragment shader created (id=86)
+[Vulkan] Texture created (id=103, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_old_tv/xpl_vignette_old_tv.frag.spv (2848 bytes, 712 words)
+[Vulkan] Fragment shader created (id=87)
+[Vulkan] Texture created (id=104, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_old_tv_v2/xpl_vignette_old_tv_v2.frag.spv (2948 bytes, 737 words)
+[Vulkan] Fragment shader created (id=88)
+[Vulkan] Texture created (id=105, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_rapid/xpl_vignette_rapid.frag.spv (2048 bytes, 512 words)
+[Vulkan] Fragment shader created (id=89)
+[Vulkan] Texture created (id=106, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_rapid_v2/xpl_vignette_rapid_v2.frag.spv (2428 bytes, 607 words)
+[Vulkan] Fragment shader created (id=90)
+[Vulkan] Texture created (id=107, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_sharpen_v1/xpl_sharpen_v1.frag.spv (3352 bytes, 838 words)
+[Vulkan] Fragment shader created (id=91)
+[Vulkan] Texture created (id=108, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_sharpen_v2/xpl_sharpen_v2.frag.spv (2532 bytes, 633 words)
+[Vulkan] Fragment shader created (id=92)
+[Vulkan] Texture created (id=109, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_sharpen_v3/xpl_sharpen_v3.frag.spv (2976 bytes, 744 words)
+[Vulkan] Fragment shader created (id=93)
+[Vulkan] Texture created (id=110, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v08_motion_blur/aus_v08_motion_blur.frag.spv (2768 bytes, 692 words)
+[Vulkan] Fragment shader created (id=94)
+[Vulkan] Texture created (id=111, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v09_water_drop/aus_v09_water_drop.frag.spv (3184 bytes, 796 words)
+[Vulkan] Fragment shader created (id=95)
+[Vulkan] Texture created (id=112, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v10_oil_paint/aus_v10_oil_paint.frag.spv (4180 bytes, 1045 words)
+[Vulkan] Fragment shader created (id=96)
+[Vulkan] Texture created (id=113, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v15_gaussian_blur/aus_v15_gaussian_blur.frag.spv (3316 bytes, 829 words)
+[Vulkan] Fragment shader created (id=97)
+[Vulkan] Texture created (id=114, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v01_rim_bump/aus_v01_rim_bump.frag.spv (3172 bytes, 793 words)
+[Vulkan] Fragment shader created (id=98)
+[Vulkan] Texture created (id=115, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_solid_color/aus_v02_solid_color.frag.spv (1996 bytes, 499 words)
+[Vulkan] Fragment shader created (id=99)
+[Vulkan] Texture created (id=116, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_color_light/aus_v02_color_light.frag.spv (2592 bytes, 648 words)
+[Vulkan] Fragment shader created (id=100)
+[Vulkan] Texture created (id=117, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_lambert/aus_v02_lambert.frag.spv (2696 bytes, 674 words)
+[Vulkan] Fragment shader created (id=101)
+[Vulkan] Texture created (id=118, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_light_beta/aus_v02_light_beta.frag.spv (3308 bytes, 827 words)
+[Vulkan] Fragment shader created (id=102)
+[Vulkan] Texture created (id=119, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_texture_load/aus_v02_texture_load.frag.spv (2496 bytes, 624 words)
+[Vulkan] Fragment shader created (id=103)
+[Vulkan] Texture created (id=120, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_light_full/aus_v02_light_full.frag.spv (3508 bytes, 877 words)
+[Vulkan] Fragment shader created (id=104)
+[Vulkan] Texture created (id=121, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v02_shader_frame/aus_v02_shader_frame.frag.spv (2412 bytes, 603 words)
+[Vulkan] Fragment shader created (id=105)
+[Vulkan] Texture created (id=122, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v03_alpha_blend/aus_v03_alpha_blend.frag.spv (2636 bytes, 659 words)
+[Vulkan] Fragment shader created (id=106)
+[Vulkan] Texture created (id=123, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v03_alpha_emissive/aus_v03_alpha_emissive.frag.spv (2516 bytes, 629 words)
+[Vulkan] Fragment shader created (id=107)
+[Vulkan] Texture created (id=124, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v03_alpha_tint/aus_v03_alpha_tint.frag.spv (2524 bytes, 631 words)
+[Vulkan] Fragment shader created (id=108)
+[Vulkan] Texture created (id=125, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v03_vertex_alpha/aus_v03_vertex_alpha.frag.spv (2604 bytes, 651 words)
+[Vulkan] Fragment shader created (id=109)
+[Vulkan] Texture created (id=126, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v03_vertex_emiss/aus_v03_vertex_emiss.frag.spv (2832 bytes, 708 words)
+[Vulkan] Fragment shader created (id=110)
+[Vulkan] Texture created (id=127, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v04_cull_back/aus_v04_cull_back.frag.spv (2396 bytes, 599 words)
+[Vulkan] Fragment shader created (id=111)
+[Vulkan] Texture created (id=128, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v04_cull_back_v2/aus_v04_cull_back_v2.frag.spv (2664 bytes, 666 words)
+[Vulkan] Fragment shader created (id=112)
+[Vulkan] Texture created (id=129, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v04_cull_glass/aus_v04_cull_glass.frag.spv (2736 bytes, 684 words)
+[Vulkan] Fragment shader created (id=113)
+[Vulkan] Texture created (id=130, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v04_alpha_test/aus_v04_alpha_test.frag.spv (2708 bytes, 677 words)
+[Vulkan] Fragment shader created (id=114)
+[Vulkan] Texture created (id=131, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v04_transparent/aus_v04_transparent.frag.spv (2684 bytes, 671 words)
+[Vulkan] Fragment shader created (id=115)
+[Vulkan] Texture created (id=132, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v04_vegetation/aus_v04_vegetation.frag.spv (3152 bytes, 788 words)
+[Vulkan] Fragment shader created (id=116)
+[Vulkan] Texture created (id=133, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_fixed_func/aus_v05_fixed_func.frag.spv (2160 bytes, 540 words)
+[Vulkan] Fragment shader created (id=117)
+[Vulkan] Texture created (id=134, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_surface/aus_v05_surface.frag.spv (2584 bytes, 646 words)
+[Vulkan] Fragment shader created (id=118)
+[Vulkan] Texture created (id=135, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_programmable/aus_v05_programmable.frag.spv (2592 bytes, 648 words)
+[Vulkan] Fragment shader created (id=119)
+[Vulkan] Texture created (id=136, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_tex_load/aus_v05_tex_load.frag.spv (1888 bytes, 472 words)
+[Vulkan] Fragment shader created (id=120)
+[Vulkan] Texture created (id=137, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_blend/aus_v05_blend.frag.spv (2604 bytes, 651 words)
+[Vulkan] Fragment shader created (id=121)
+[Vulkan] Texture created (id=138, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_blend_color/aus_v05_blend_color.frag.spv (2684 bytes, 671 words)
+[Vulkan] Fragment shader created (id=122)
+[Vulkan] Texture created (id=139, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_blend_vertex/aus_v05_blend_vertex.frag.spv (2548 bytes, 637 words)
+[Vulkan] Fragment shader created (id=123)
+[Vulkan] Texture created (id=140, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_glass_v2/aus_v05_glass_v2.frag.spv (2956 bytes, 739 words)
+[Vulkan] Fragment shader created (id=124)
+[Vulkan] Texture created (id=141, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v05_glass_v3/aus_v05_glass_v3.frag.spv (3028 bytes, 757 words)
+[Vulkan] Fragment shader created (id=125)
+[Vulkan] Texture created (id=142, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_basic_surf/aus_v06_basic_surf.frag.spv (2320 bytes, 580 words)
+[Vulkan] Fragment shader created (id=126)
+[Vulkan] Texture created (id=143, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_color_adj/aus_v06_color_adj.frag.spv (2592 bytes, 648 words)
+[Vulkan] Fragment shader created (id=127)
+[Vulkan] Texture created (id=144, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_tex_load/aus_v06_tex_load.frag.spv (2496 bytes, 624 words)
+[Vulkan] Fragment shader created (id=128)
+[Vulkan] Texture created (id=145, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_bump/aus_v06_bump.frag.spv (2964 bytes, 741 words)
+[Vulkan] Fragment shader created (id=129)
+[Vulkan] Texture created (id=146, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_tex_color/aus_v06_tex_color.frag.spv (2772 bytes, 693 words)
+[Vulkan] Fragment shader created (id=130)
+[Vulkan] Texture created (id=147, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_bump_rim/aus_v06_bump_rim.frag.spv (3312 bytes, 828 words)
+[Vulkan] Fragment shader created (id=131)
+[Vulkan] Texture created (id=148, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_bump_rim_col/aus_v06_bump_rim_col.frag.spv (3728 bytes, 932 words)
+[Vulkan] Fragment shader created (id=132)
+[Vulkan] Texture created (id=149, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_detail/aus_v06_detail.frag.spv (2784 bytes, 696 words)
+[Vulkan] Fragment shader created (id=133)
+[Vulkan] Texture created (id=150, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v06_full/aus_v06_full.frag.spv (3860 bytes, 965 words)
+[Vulkan] Fragment shader created (id=134)
+[Vulkan] Texture created (id=151, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v07_diffuse/aus_v07_diffuse.frag.spv (2496 bytes, 624 words)
+[Vulkan] Fragment shader created (id=135)
+[Vulkan] Texture created (id=152, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v07_specular/aus_v07_specular.frag.spv (2916 bytes, 729 words)
+[Vulkan] Fragment shader created (id=136)
+[Vulkan] Texture created (id=153, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v07_lambert/aus_v07_lambert.frag.spv (2408 bytes, 602 words)
+[Vulkan] Fragment shader created (id=137)
+[Vulkan] Texture created (id=154, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v07_half_lambert/aus_v07_half_lambert.frag.spv (2420 bytes, 605 words)
+[Vulkan] Fragment shader created (id=138)
+[Vulkan] Texture created (id=155, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v07_toon/aus_v07_toon.frag.spv (2776 bytes, 694 words)
+[Vulkan] Fragment shader created (id=139)
+[Vulkan] Texture created (id=156, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v07_toon_v2/aus_v07_toon_v2.frag.spv (3592 bytes, 898 words)
+[Vulkan] Fragment shader created (id=140)
+[Vulkan] Texture created (id=157, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_simple/aus_v12_simple.frag.spv (1996 bytes, 499 words)
+[Vulkan] Fragment shader created (id=141)
+[Vulkan] Texture created (id=158, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_color_change/aus_v12_color_change.frag.spv (2152 bytes, 538 words)
+[Vulkan] Fragment shader created (id=142)
+[Vulkan] Texture created (id=159, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_rgb_cube/aus_v12_rgb_cube.frag.spv (1964 bytes, 491 words)
+[Vulkan] Fragment shader created (id=143)
+[Vulkan] Texture created (id=160, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_rgb_cube_adj/aus_v12_rgb_cube_adj.frag.spv (2268 bytes, 567 words)
+[Vulkan] Fragment shader created (id=144)
+[Vulkan] Texture created (id=161, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_rgb_cube_3/aus_v12_rgb_cube_3.frag.spv (2396 bytes, 599 words)
+[Vulkan] Fragment shader created (id=145)
+[Vulkan] Texture created (id=162, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_diffuse/aus_v12_diffuse.frag.spv (2592 bytes, 648 words)
+[Vulkan] Fragment shader created (id=146)
+[Vulkan] Texture created (id=163, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v12_diffuse_tex/aus_v12_diffuse_tex.frag.spv (2844 bytes, 711 words)
+[Vulkan] Fragment shader created (id=147)
+[Vulkan] Texture created (id=164, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v13_alpha/aus_v13_alpha.frag.spv (2032 bytes, 508 words)
+[Vulkan] Fragment shader created (id=148)
+[Vulkan] Texture created (id=165, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v13_alpha_color/aus_v13_alpha_color.frag.spv (2576 bytes, 644 words)
+[Vulkan] Fragment shader created (id=149)
+[Vulkan] Texture created (id=166, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v13_two_side/aus_v13_two_side.frag.spv (2852 bytes, 713 words)
+[Vulkan] Fragment shader created (id=150)
+[Vulkan] Texture created (id=167, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v13_specular/aus_v13_specular.frag.spv (2996 bytes, 749 words)
+[Vulkan] Fragment shader created (id=151)
+[Vulkan] Texture created (id=168, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v13_specular_tex/aus_v13_specular_tex.frag.spv (3160 bytes, 790 words)
+[Vulkan] Fragment shader created (id=152)
+[Vulkan] Texture created (id=169, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v14_rim/aus_v14_rim.frag.spv (3132 bytes, 783 words)
+[Vulkan] Fragment shader created (id=153)
+[Vulkan] Texture created (id=170, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v14_rim_surf/aus_v14_rim_surf.frag.spv (3208 bytes, 802 words)
+[Vulkan] Fragment shader created (id=154)
+[Vulkan] Texture created (id=171, 256x144, format=0)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/aus_v16_carpaint/aus_v16_carpaint.frag.spv (3448 bytes, 862 words)
+[Vulkan] Fragment shader created (id=155)
+[Vulkan] Texture created (id=172, 256x144, format=0)
+[CoverFlowScene] Thumbnails initialized: 153 cards, 256x144
+[Application] SetScene: new scene entered OK
+[main] SceneGalleryScene started (autoTest=0)
+[Vulkan] Pipeline created (id=1)
+[Vulkan] Pipeline created (id=2)
+[Vulkan] Pipeline created (id=3)
+[Vulkan] Pipeline created (id=4)
+[Vulkan] Pipeline created (id=5)
+[Vulkan] Pipeline created (id=6)
+[Vulkan] Pipeline created (id=7)
+[Vulkan] Texture created (id=173, 1920x1200, format=0)
+[Vulkan] Pipeline created (id=8)
+[CoverFlowScene] Selected card 0: Grayscale Test
+[CardScreenshot] Selected card 0: Grayscale Test
+[Vulkan] Pipeline created (id=9)
+[Vulkan] Pipeline created (id=10)
+[Vulkan] Pipeline created (id=11)
+[Vulkan] Pipeline created (id=12)
+[Vulkan] Pipeline created (id=13)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_00.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 1: Bloom
+[CardScreenshot] Selected card 1: Bloom
+[Vulkan] Pipeline created (id=14)
+[Vulkan] Pipeline created (id=15)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_01.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 2: Gaussian Blur
+[CardScreenshot] Selected card 2: Gaussian Blur
+[Vulkan] Pipeline created (id=16)
+[Vulkan] Pipeline created (id=17)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_02.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 3: Sharpen
+[CardScreenshot] Selected card 3: Sharpen
+[Vulkan] Pipeline created (id=18)
+[Vulkan] Pipeline created (id=19)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_03.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 4: Edge Detection
+[CardScreenshot] Selected card 4: Edge Detection
+[Vulkan] Pipeline created (id=20)
+[Vulkan] Pipeline created (id=21)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_04.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 5: Emboss
+[CardScreenshot] Selected card 5: Emboss
+[Vulkan] Pipeline created (id=22)
+[Vulkan] Pipeline created (id=23)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_05.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 6: Pixelate
+[CardScreenshot] Selected card 6: Pixelate
+[Vulkan] Pipeline created (id=24)
+[Vulkan] Pipeline created (id=25)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_06.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 7: Vignette
+[CardScreenshot] Selected card 7: Vignette
+[Vulkan] Pipeline created (id=26)
+[Vulkan] Pipeline created (id=27)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_07.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 8: Chromatic Aberration
+[CardScreenshot] Selected card 8: Chromatic Aberration
+[Vulkan] Pipeline created (id=28)
+[Vulkan] Pipeline created (id=29)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_08.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 9: Color Grading
+[CardScreenshot] Selected card 9: Color Grading
+[Vulkan] Pipeline created (id=30)
+[Vulkan] Pipeline created (id=31)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_09.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 10: Noise Generator
+[CardScreenshot] Selected card 10: Noise Generator
+[Vulkan] Pipeline created (id=32)
+[Vulkan] Pipeline created (id=33)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_10.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 11: Kaleidoscope
+[CardScreenshot] Selected card 11: Kaleidoscope
+[Vulkan] Pipeline created (id=34)
+[Vulkan] Pipeline created (id=35)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_11.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 12: Glitch Art
+[CardScreenshot] Selected card 12: Glitch Art
+[Vulkan] Pipeline created (id=36)
+[Vulkan] Pipeline created (id=37)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_12.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 13: Toon Shading
+[CardScreenshot] Selected card 13: Toon Shading
+[Vulkan] Pipeline created (id=38)
+[Vulkan] Pipeline created (id=39)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_13.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 14: VHS Retro
+[CardScreenshot] Selected card 14: VHS Retro
+[Vulkan] Pipeline created (id=40)
+[Vulkan] Pipeline created (id=41)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_14.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 15: CRT Monitor
+[CardScreenshot] Selected card 15: CRT Monitor
+[Vulkan] Pipeline created (id=42)
+[Vulkan] Pipeline created (id=43)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_15.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 16: Water Ripple
+[CardScreenshot] Selected card 16: Water Ripple
+[Vulkan] Pipeline created (id=44)
+[Vulkan] Pipeline created (id=45)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_16.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 17: Lens Distortion
+[CardScreenshot] Selected card 17: Lens Distortion
+[Vulkan] Pipeline created (id=46)
+[Vulkan] Pipeline created (id=47)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_17.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 18: 屏幕跳跃
+[CardScreenshot] Selected card 18: 屏幕跳跃
+[Vulkan] Pipeline created (id=48)
+[Vulkan] Pipeline created (id=49)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_18.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 19: 屏幕震动
+[CardScreenshot] Selected card 19: 屏幕震动
+[Vulkan] Pipeline created (id=50)
+[Vulkan] Pipeline created (id=51)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_19.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 20: 扫描线抖动
+[CardScreenshot] Selected card 20: 扫描线抖动
+[Vulkan] Pipeline created (id=52)
+[Vulkan] Pipeline created (id=53)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_20.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 21: RGB分离 V4
+[CardScreenshot] Selected card 21: RGB分离 V4
+[Vulkan] Pipeline created (id=54)
+[Vulkan] Pipeline created (id=55)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_21.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 22: RGB分离 V2
+[CardScreenshot] Selected card 22: RGB分离 V2
+[Vulkan] Pipeline created (id=56)
+[Vulkan] Pipeline created (id=57)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_22.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 23: 模拟信号噪声
+[CardScreenshot] Selected card 23: 模拟信号噪声
+[Vulkan] Pipeline created (id=58)
+[Vulkan] Pipeline created (id=59)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_23.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 24: 画面块错位 V3
+[CardScreenshot] Selected card 24: 画面块错位 V3
+[Vulkan] Pipeline created (id=60)
+[Vulkan] Pipeline created (id=61)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_24.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 25: 画面块错位 V4
+[CardScreenshot] Selected card 25: 画面块错位 V4
+[Vulkan] Pipeline created (id=62)
+[Vulkan] Pipeline created (id=63)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_25.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 26: 瓦片抖动
+[CardScreenshot] Selected card 26: 瓦片抖动
+[Vulkan] Pipeline created (id=64)
+[Vulkan] Pipeline created (id=65)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_26.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 27: RGB分离 V3
+[CardScreenshot] Selected card 27: RGB分离 V3
+[Vulkan] Pipeline created (id=66)
+[Vulkan] Pipeline created (id=67)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_27.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 28: 数字条纹
+[CardScreenshot] Selected card 28: 数字条纹
+[Vulkan] Pipeline created (id=68)
+[Vulkan] Pipeline created (id=69)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_28.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 29: 画面块错位 V2
+[CardScreenshot] Selected card 29: 画面块错位 V2
+[Vulkan] Pipeline created (id=70)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_29.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 30: 画面块错位 V1
+[CardScreenshot] Selected card 30: 画面块错位 V1
+[Vulkan] Pipeline created (id=71)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_30.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 31: RGB分离 V1
+[CardScreenshot] Selected card 31: RGB分离 V1
+[Vulkan] Pipeline created (id=72)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_31.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 32: RGB分离 V5
+[CardScreenshot] Selected card 32: RGB分离 V5
+[Vulkan] Pipeline created (id=73)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_32.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 33: 行块错位
+[CardScreenshot] Selected card 33: 行块错位
+[Vulkan] Pipeline created (id=74)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_33.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 34: 波浪抖动
+[CardScreenshot] Selected card 34: 波浪抖动
+[Vulkan] Pipeline created (id=75)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_34.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 35: 散景模糊
+[CardScreenshot] Selected card 35: 散景模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_35.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 36: 方框模糊
+[CardScreenshot] Selected card 36: 方框模糊
+[Vulkan] Pipeline created (id=76)
+[Vulkan] Pipeline created (id=77)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_36.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 37: 定向模糊
+[CardScreenshot] Selected card 37: 定向模糊
+[Vulkan] Pipeline created (id=78)
+[Vulkan] Pipeline created (id=79)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_37.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 38: 双重方框模糊
+[CardScreenshot] Selected card 38: 双重方框模糊
+[Vulkan] Pipeline created (id=80)
+[Vulkan] Pipeline created (id=81)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_38.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 39: 双重高斯模糊
+[CardScreenshot] Selected card 39: 双重高斯模糊
+[Vulkan] Pipeline created (id=82)
+[Vulkan] Pipeline created (id=83)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_39.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 40: 双重Kawase模糊
+[CardScreenshot] Selected card 40: 双重Kawase模糊
+[Vulkan] Pipeline created (id=84)
+[Vulkan] Pipeline created (id=85)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_40.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 41: 双重帐篷模糊
+[CardScreenshot] Selected card 41: 双重帐篷模糊
+[Vulkan] Pipeline created (id=86)
+[Vulkan] Pipeline created (id=87)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_41.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 42: 高斯模糊
+[CardScreenshot] Selected card 42: 高斯模糊
+[Vulkan] Pipeline created (id=88)
+[Vulkan] Pipeline created (id=89)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_42.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 43: 颗粒模糊
+[CardScreenshot] Selected card 43: 颗粒模糊
+[Vulkan] Pipeline created (id=90)
+[Vulkan] Pipeline created (id=91)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_43.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 44: 光圈模糊
+[CardScreenshot] Selected card 44: 光圈模糊
+[Vulkan] Pipeline created (id=92)
+[Vulkan] Pipeline created (id=93)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_44.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 45: 光圈模糊 V2
+[CardScreenshot] Selected card 45: 光圈模糊 V2
+[Vulkan] Pipeline created (id=94)
+[Vulkan] Pipeline created (id=95)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_45.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 46: Kawase 模糊
+[CardScreenshot] Selected card 46: Kawase 模糊
+[Vulkan] Pipeline created (id=96)
+[Vulkan] Pipeline created (id=97)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_46.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 47: 径向模糊
+[CardScreenshot] Selected card 47: 径向模糊
+[Vulkan] Pipeline created (id=98)
+[Vulkan] Pipeline created (id=99)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_47.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 48: 径向模糊 V2
+[CardScreenshot] Selected card 48: 径向模糊 V2
+[Vulkan] Pipeline created (id=100)
+[Vulkan] Pipeline created (id=101)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_48.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 49: 帐篷模糊
+[CardScreenshot] Selected card 49: 帐篷模糊
+[Vulkan] Pipeline created (id=102)
+[Vulkan] Pipeline created (id=103)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_49.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 50: 移轴模糊
+[CardScreenshot] Selected card 50: 移轴模糊
+[Vulkan] Pipeline created (id=104)
+[Vulkan] Pipeline created (id=105)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_50.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 51: 移轴模糊 V2
+[CardScreenshot] Selected card 51: 移轴模糊 V2
+[Vulkan] Pipeline created (id=106)
+[Vulkan] Pipeline created (id=107)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_51.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 52: 漂白旁路
+[CardScreenshot] Selected card 52: 漂白旁路
+[Vulkan] Pipeline created (id=108)
+[Vulkan] Pipeline created (id=109)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_52.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 53: 亮度
+[CardScreenshot] Selected card 53: 亮度
+[Vulkan] Pipeline created (id=110)
+[Vulkan] Pipeline created (id=111)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_53.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 54: 对比度
+[CardScreenshot] Selected card 54: 对比度
+[Vulkan] Pipeline created (id=112)
+[Vulkan] Pipeline created (id=113)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_54.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 55: 对比度 V2
+[CardScreenshot] Selected card 55: 对比度 V2
+[Vulkan] Pipeline created (id=114)
+[Vulkan] Pipeline created (id=115)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_55.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 56: 对比度 V3
+[CardScreenshot] Selected card 56: 对比度 V3
+[Vulkan] Pipeline created (id=116)
+[Vulkan] Pipeline created (id=117)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_56.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 57: 色相
+[CardScreenshot] Selected card 57: 色相
+[Vulkan] Pipeline created (id=118)
+[Vulkan] Pipeline created (id=119)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_57.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 58: 镜头滤镜
+[CardScreenshot] Selected card 58: 镜头滤镜
+[Vulkan] Pipeline created (id=120)
+[Vulkan] Pipeline created (id=121)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_58.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 59: 饱和度
+[CardScreenshot] Selected card 59: 饱和度
+[Vulkan] Pipeline created (id=122)
+[Vulkan] Pipeline created (id=123)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_59.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 60: Technicolor
+[CardScreenshot] Selected card 60: Technicolor
+[Vulkan] Pipeline created (id=124)
+[Vulkan] Pipeline created (id=125)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_60.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 61: 色调
+[CardScreenshot] Selected card 61: 色调
+[Vulkan] Pipeline created (id=126)
+[Vulkan] Pipeline created (id=127)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_61.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 62: 白平衡
+[CardScreenshot] Selected card 62: 白平衡
+[Vulkan] Pipeline created (id=128)
+[Vulkan] Pipeline created (id=129)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_62.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 63: 颜色替换
+[CardScreenshot] Selected card 63: 颜色替换
+[Vulkan] Pipeline created (id=130)
+[Vulkan] Pipeline created (id=131)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_63.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 64: 颜色替换 V2
+[CardScreenshot] Selected card 64: 颜色替换 V2
+[Vulkan] Pipeline created (id=132)
+[Vulkan] Pipeline created (id=133)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_64.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 65: Roberts 边缘
+[CardScreenshot] Selected card 65: Roberts 边缘
+[Vulkan] Pipeline created (id=134)
+[Vulkan] Pipeline created (id=135)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_65.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 66: Roberts 霓虹
+[CardScreenshot] Selected card 66: Roberts 霓虹
+[Vulkan] Pipeline created (id=136)
+[Vulkan] Pipeline created (id=137)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_66.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 67: Roberts 霓虹 V2
+[CardScreenshot] Selected card 67: Roberts 霓虹 V2
+[Vulkan] Pipeline created (id=138)
+[Vulkan] Pipeline created (id=139)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_67.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 68: Scharr 边缘
+[CardScreenshot] Selected card 68: Scharr 边缘
+[Vulkan] Pipeline created (id=140)
+[Vulkan] Pipeline created (id=141)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_68.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 69: Scharr 霓虹
+[CardScreenshot] Selected card 69: Scharr 霓虹
+[Vulkan] Pipeline created (id=142)
+[Vulkan] Pipeline created (id=143)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_69.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 70: Scharr 霓虹 V2
+[CardScreenshot] Selected card 70: Scharr 霓虹 V2
+[Vulkan] Pipeline created (id=144)
+[Vulkan] Pipeline created (id=145)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_70.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 71: Sobel 边缘
+[CardScreenshot] Selected card 71: Sobel 边缘
+[Vulkan] Pipeline created (id=146)
+[Vulkan] Pipeline created (id=147)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_71.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 72: Sobel 霓虹
+[CardScreenshot] Selected card 72: Sobel 霓虹
+[Vulkan] Pipeline created (id=148)
+[Vulkan] Pipeline created (id=149)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_72.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 73: Sobel 霓虹 V2
+[CardScreenshot] Selected card 73: Sobel 霓虹 V2
+[Vulkan] Pipeline created (id=150)
+[Vulkan] Pipeline created (id=151)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_73.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 74: 圆形像素化
+[CardScreenshot] Selected card 74: 圆形像素化
+[Vulkan] Pipeline created (id=152)
+[Vulkan] Pipeline created (id=153)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_74.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 75: 菱形像素化
+[CardScreenshot] Selected card 75: 菱形像素化
+[Vulkan] Pipeline created (id=154)
+[Vulkan] Pipeline created (id=155)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_75.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 76: 六边形像素化
+[CardScreenshot] Selected card 76: 六边形像素化
+[Vulkan] Pipeline created (id=156)
+[Vulkan] Pipeline created (id=157)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_76.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 77: 六边形网格
+[CardScreenshot] Selected card 77: 六边形网格
+[Vulkan] Pipeline created (id=158)
+[Vulkan] Pipeline created (id=159)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_77.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 78: 叶片像素化
+[CardScreenshot] Selected card 78: 叶片像素化
+[Vulkan] Pipeline created (id=160)
+[Vulkan] Pipeline created (id=161)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_78.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 79: LED 像素化
+[CardScreenshot] Selected card 79: LED 像素化
+[Vulkan] Pipeline created (id=162)
+[Vulkan] Pipeline created (id=163)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_79.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 80: 方形像素化
+[CardScreenshot] Selected card 80: 方形像素化
+[Vulkan] Pipeline created (id=164)
+[Vulkan] Pipeline created (id=165)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_80.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 81: 扇形像素化
+[CardScreenshot] Selected card 81: 扇形像素化
+[Vulkan] Pipeline created (id=166)
+[Vulkan] Pipeline created (id=167)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_81.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 82: 三角形像素化
+[CardScreenshot] Selected card 82: 三角形像素化
+[Vulkan] Pipeline created (id=168)
+[Vulkan] Pipeline created (id=169)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_82.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 83: 极光暗角
+[CardScreenshot] Selected card 83: 极光暗角
+[Vulkan] Pipeline created (id=170)
+[Vulkan] Pipeline created (id=171)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_83.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 84: 老电视暗角
+[CardScreenshot] Selected card 84: 老电视暗角
+[Vulkan] Pipeline created (id=172)
+[Vulkan] Pipeline created (id=173)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_84.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 85: 老电视暗角 V2
+[CardScreenshot] Selected card 85: 老电视暗角 V2
+[Vulkan] Pipeline created (id=174)
+[Vulkan] Pipeline created (id=175)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_85.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 86: 快速暗角
+[CardScreenshot] Selected card 86: 快速暗角
+[Vulkan] Pipeline created (id=176)
+[Vulkan] Pipeline created (id=177)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_86.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 87: 快速暗角 V2
+[CardScreenshot] Selected card 87: 快速暗角 V2
+[Vulkan] Pipeline created (id=178)
+[Vulkan] Pipeline created (id=179)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_87.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 88: 锐化 V1
+[CardScreenshot] Selected card 88: 锐化 V1
+[Vulkan] Pipeline created (id=180)
+[Vulkan] Pipeline created (id=181)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_88.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 89: 锐化 V2
+[CardScreenshot] Selected card 89: 锐化 V2
+[Vulkan] Pipeline created (id=182)
+[Vulkan] Pipeline created (id=183)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_89.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 90: 锐化 V3
+[CardScreenshot] Selected card 90: 锐化 V3
+[Vulkan] Pipeline created (id=184)
+[Vulkan] Pipeline created (id=185)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_90.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 91: 径向模糊
+[CardScreenshot] Selected card 91: 径向模糊
+[Vulkan] Pipeline created (id=186)
+[Vulkan] Pipeline created (id=187)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_91.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 92: 水幕特效
+[CardScreenshot] Selected card 92: 水幕特效
+[Vulkan] Pipeline created (id=188)
+[Vulkan] Pipeline created (id=189)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_92.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 93: 油画特效
+[CardScreenshot] Selected card 93: 油画特效
+[Vulkan] Pipeline created (id=190)
+[Vulkan] Pipeline created (id=191)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_93.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 94: 高斯模糊
+[CardScreenshot] Selected card 94: 高斯模糊
+[Vulkan] Pipeline created (id=192)
+[Vulkan] Pipeline created (id=193)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_94.ppm
+[Application] Failed to get OpenGL backend for screenshot
+[CoverFlowScene] Selected card 95: 凹凸+边缘光
+[CardScreenshot] Selected card 95: 凹凸+边缘光
+[Vulkan] Pipeline created (id=194)
+[Vulkan] Pipeline created (id=195)

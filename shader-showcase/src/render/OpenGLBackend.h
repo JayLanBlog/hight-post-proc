@@ -44,7 +44,7 @@ public:
     void           BindPipeline(PipelineHandle handle) override;
 
     /// Save current framebuffer to PPM file for debugging.
-    void SaveScreenshot(const char* path) const;
+    bool SaveScreenshot(const char* path) override;
 
     // ---- Fullscreen quad ---------------------------------------------------
     void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;

@@ -95,6 +95,7 @@ public:
     // Utility
     void SetViewport(int x, int y, int width, int height) override;
     void Clear(float r, float g, float b, float a) override;
+    bool SaveScreenshot(const char* path) override;
 
     // ImGui
     void ImGuiInit(GLFWwindow* window) override;

@@ -445,13 +445,13 @@ void* OpenGLBackend::GetImTextureID(TextureHandle handle) {
     return reinterpret_cast<void*>(static_cast<uintptr_t>(tex));
 }
 
-void OpenGLBackend::SaveScreenshot(const char* path) const {
-    if (!path) return;
+bool OpenGLBackend::SaveScreenshot(const char* path) {
+    if (!path) return false;
 
     std::vector<uint8_t> pixels(m_width * m_height * 3);
     glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 
-    // Flip vertically (OpenGL reads bottom-to-top)
+    // Flip vertically
     std::vector<uint8_t> flipped(m_width * m_height * 3);
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width * 3; ++x) {
@@ -459,16 +459,16 @@ void OpenGLBackend::SaveScreenshot(const char* path) const {
         }
     }
 
-    // Write PPM file
     FILE* fp = fopen(path, "wb");
     if (fp) {
         fprintf(fp, "P6\n%d %d\n255\n", m_width, m_height);
         fwrite(flipped.data(), 1, m_width * m_height * 3, fp);
         fclose(fp);
         printf("[OpenGL] Screenshot saved to %s\n", path);
-    } else {
-        fprintf(stderr, "[OpenGL] Failed to open file for screenshot: %s\n", path);
+        return true;
     }
+    fprintf(stderr, "[OpenGL] Failed to open file for screenshot: %s\n", path);
+    return false;
 }
 
 // ============================================================================

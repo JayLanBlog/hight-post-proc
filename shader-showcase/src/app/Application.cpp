@@ -326,11 +326,10 @@ void Application::MainLoop()
         // Check for screenshot request (from auto-test)
         if (ScreenshotRequest::Consume()) {
             printf("[Application] Processing screenshot request: %s\n", ScreenshotRequest::path);
-            if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) {
-                gl->SaveScreenshot(ScreenshotRequest::path);
+            if (m_backend->SaveScreenshot(ScreenshotRequest::path)) {
                 printf("[Application] Screenshot saved: %s\n", ScreenshotRequest::path);
             } else {
-                printf("[Application] Failed to get OpenGL backend for screenshot\n");
+                fprintf(stderr, "[Application] Failed to save screenshot (backend: %s)\n", m_backend->GetName());
             }
         }
         
@@ -343,10 +342,8 @@ void Application::MainLoop()
             if (screenshotFrame >= 0 && screenshotFrame < 5) {
                 screenshotFrame++;
                 if (screenshotFrame == 3) {
-                    if (auto* gl = dynamic_cast<OpenGLBackend*>(m_backend.get())) {
-                        gl->SaveScreenshot("e:/AI/graph/hight-post-proc/ui_screenshot.ppm");
-                        printf("[Application] UI screenshot saved at frame %d\n", screenshotFrame);
-                    }
+                    m_backend->SaveScreenshot("e:/AI/graph/hight-post-proc/ui_screenshot.ppm");
+                    printf("[Application] UI screenshot saved at frame %d\n", screenshotFrame);
                 }
             }
         }

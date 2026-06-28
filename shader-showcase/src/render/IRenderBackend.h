@@ -105,6 +105,7 @@ public:
     // ---- Utility -----------------------------------------------------------
     virtual void SetViewport(int x, int y, int width, int height) = 0;
     virtual void Clear(float r, float g, float b, float a)        = 0;
+    virtual bool SaveScreenshot(const char* path)                 = 0;  // returns true on success
 
     // ---- ImGui -------------------------------------------------------------
     virtual void ImGuiInit(GLFWwindow* window) = 0;

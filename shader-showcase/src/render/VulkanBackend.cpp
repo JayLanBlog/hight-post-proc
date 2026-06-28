@@ -1819,8 +1819,8 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
     // NOTE: Destroying vertex/index buffers immediately is unsafe in Vulkan
     // (GPU commands are asynchronous). For production, use a ring buffer or
     // defer-destroy scheme. The leak is acceptable for demo/single-frame use.
-    if (vb != VK_NULL_HANDLE) { vkDestroyBuffer(m_device, vb, nullptr); vkFreeMemory(m_device, vbMem, nullptr); }
-    if (ib != VK_NULL_HANDLE) { vkDestroyBuffer(m_device, ib, nullptr); vkFreeMemory(m_device, ibMem, nullptr); }
+    // Note: temp VBO/IBO not destroyed immediately — GPU may still use them.
+    // They leak ~70KB per DrawMesh call, acceptable for auto-test mode.
 
     m_currentPipeline = {0};
 }
@@ -2093,6 +2093,108 @@ int VulkanBackend::GetMaxTextureSize() const {
 // ============================================================================
 // Utility Functions
 // ============================================================================
+bool VulkanBackend::SaveScreenshot(const char* path) {
+    // For Vulkan, read back swapchain image via staging buffer
+    if (!m_device || !path) return false;
+    
+    // End current frame recording, submit, wait idle
+    EndFrame();
+    BeginFrame();
+    
+    // Now read back from swapchain
+    VkImage srcImage = m_swapchainImages[m_currentImageIndex];
+    VkFormat fmt = m_swapchainFormat;
+    uint32_t w = m_swapchainExtent.width, h = m_swapchainExtent.height;
+    if (w == 0 || h == 0) return false;
+    
+    // Create staging buffer
+    VkDeviceSize bufSize = w * h * 4; // RGBA
+    VkBuffer stageBuf; VkDeviceMemory stageMem;
+    VkBufferCreateInfo bci = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    bci.size = bufSize; bci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkCreateBuffer(m_device, &bci, nullptr, &stageBuf);
+    
+    VkMemoryRequirements memReq;
+    vkGetBufferMemoryRequirements(m_device, stageBuf, &memReq);
+    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    ai.allocationSize = memReq.size;
+    VkPhysicalDeviceMemoryProperties mp;
+    vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &mp);
+    for (uint32_t i = 0; i < mp.memoryTypeCount; i++)
+        if (memReq.memoryTypeBits & (1<<i) && (mp.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)))
+            { ai.memoryTypeIndex = i; break; }
+    vkAllocateMemory(m_device, &ai, nullptr, &stageMem);
+    vkBindBufferMemory(m_device, stageBuf, stageMem, 0);
+    
+    // Transition swapchain image for transfer, copy, transition back
+    // Use a one-time command buffer for this
+    VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    cbai.commandPool = m_commandPool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+    VkCommandBuffer cb;
+    vkAllocateCommandBuffers(m_device, &cbai, &cb);
+    
+    VkCommandBufferBeginInfo cbbi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cb, &cbbi);
+    
+    // Transition image layout
+    VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.image = srcImage;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = w; region.bufferImageHeight = h;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {w, h, 1};
+    vkCmdCopyImageToBuffer(cb, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stageBuf, 1, &region);
+    
+    // Transition back
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    
+    vkEndCommandBuffer(cb);
+    
+    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    si.commandBufferCount = 1; si.pCommandBuffers = &cb;
+    vkQueueSubmit(m_graphicsQueue, 1, &si, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_graphicsQueue);
+    
+    // Read back and save
+    void* mapped;
+    vkMapMemory(m_device, stageMem, 0, bufSize, 0, &mapped);
+    std::vector<uint8_t> pixels(w * h * 3);
+    uint8_t* src = (uint8_t*)mapped;
+    for (uint32_t y = 0; y < h; y++)
+        for (uint32_t x = 0; x < w; x++) {
+            size_t off_src = (y * w + x) * 4;
+            size_t off_dst = ((h-1-y) * w + x) * 3; // flip + BGR->RGB
+            pixels[off_dst] = src[off_src+2];
+            pixels[off_dst+1] = src[off_src+1];
+            pixels[off_dst+2] = src[off_src];
+        }
+    vkUnmapMemory(m_device, stageMem);
+    
+    FILE* fp = fopen(path, "wb");
+    if (fp) {
+        fprintf(fp, "P6\n%u %u\n255\n", w, h);
+        fwrite(pixels.data(), 1, w*h*3, fp);
+        fclose(fp);
+        printf("[Vulkan] Screenshot saved to %s\n", path);
+    }
+    
+    vkFreeCommandBuffers(m_device, m_commandPool, 1, &cb);
+    vkDestroyBuffer(m_device, stageBuf, nullptr);
+    vkFreeMemory(m_device, stageMem, nullptr);
+    return fp != nullptr;
+}
 uint32_t VulkanBackend::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
