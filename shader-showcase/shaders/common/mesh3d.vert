@@ -27,8 +27,8 @@ void main() {
     vec4 worldPos = vec4(aPos, 1.0);
     gl_Position = uMVP * worldPos;
     vWorldPos = aPos;
-    vWorldNormal = mat3(uModelView) * aNormal;
+    vWorldNormal = normalize(aNormal);  // world-space since model is identity
     vUV = aUV;
-    vEyeDir = normalize(uEyePos - aPos);
-    vLightDir = normalize(uLightDir);
+    vEyeDir = normalize(uEyePos - aPos);    // world-space view dir
+    vLightDir = normalize(uLightDir);        // world-space light dir
 }

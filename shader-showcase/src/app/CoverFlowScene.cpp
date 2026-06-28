@@ -881,8 +881,8 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
         const uint32_t* idxData = (m_meshType[m_selectedIndex] == 0) ? m_sphereIndices.data() : m_cubeIndices.data();
         size_t idxCount = (m_meshType[m_selectedIndex] == 0) ? m_sphereIndices.size() : m_cubeIndices.size();
 
-        // 3D rendering: skip FBO, draw directly to swapchain for pipeline compatibility
-        backend->Clear(0.05f, 0.05f, 0.08f, 1.0f);
+        // HACK: render 3D directly to swapchain (FBO render pass incompatible with some effects)
+        // TODO: fix render-to-texture for 3D pipelines
         backend->DrawMesh(m_mesh3dVertShader, state.fragShader, params3d, vertData, vertCount, 32, idxData, idxCount);
     } else {
         // ---- Existing 2D fullscreen rendering (unchanged) ----
