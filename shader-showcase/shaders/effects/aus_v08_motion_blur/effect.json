@@ -1,0 +1,12 @@
+{
+  "name": "径向模糊",
+  "category": "AUS 后处理",
+  "description": "Vol.08 径向模糊屏幕特效 — 中心→边缘采样密度递增",
+  "passes": 1,
+  "params": [
+    {"name":"uParamFloat0","label":"采样数","type":"Float","min":2,"max":20,"default":12,"ui_type":"slider"},
+    {"name":"uParamFloat1","label":"强度","type":"Float","min":0.01,"max":0.3,"default":0.1,"ui_type":"slider"},
+    {"name":"uParamFloat2","label":"中心X偏移","type":"Float","min":-1,"max":1,"default":0,"ui_type":"slider"},
+    {"name":"uParamFloat3","label":"中心Y偏移","type":"Float","min":-1,"max":1,"default":0,"ui_type":"slider"}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "镜面高光+纹理",
+  "category": "AUS 3D物体",
+  "description": "Vol.13 带纹理载入Specular",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "高光指数",
+      "type": "Float",
+      "min": 0.2,
+      "max": 4,
+      "default": 1.2,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "高光强度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.7,
+      "ui_type": "slider"
+    }
+  ]
+}

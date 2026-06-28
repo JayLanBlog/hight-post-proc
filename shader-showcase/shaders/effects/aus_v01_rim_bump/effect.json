@@ -1,0 +1,44 @@
+{
+  "name": "凹凸+边缘光",
+  "category": "AUS 3D物体",
+  "description": "Vol.01 凹凸纹理显示+自选边缘颜色和强度",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "边缘强度",
+      "type": "Float",
+      "min": 0.5,
+      "max": 8,
+      "default": 3,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "边缘色R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "边缘色G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "边缘色B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "ui_type": "slider"
+    }
+  ]
+}

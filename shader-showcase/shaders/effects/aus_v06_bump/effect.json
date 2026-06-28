@@ -1,0 +1,17 @@
+{
+  "name": "凹凸纹理",
+  "category": "AUS 3D物体",
+  "description": "Vol.06 凹凸纹理(BumpMap)",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "凹凸强度",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 0.8,
+      "ui_type": "slider"
+    }
+  ]
+}

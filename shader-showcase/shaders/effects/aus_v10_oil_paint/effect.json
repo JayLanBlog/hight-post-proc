@@ -1,0 +1,9 @@
+{
+  "name": "油画特效",
+  "category": "AUS 后处理",
+  "description": "Vol.10 屏幕油画特效 — Kuwahara滤波网格采样",
+  "passes": 1,
+  "params": [
+    {"name":"uParamFloat0","label":"半径","type":"Float","min":1,"max":10,"default":4,"ui_type":"slider"}
+  ]
+}

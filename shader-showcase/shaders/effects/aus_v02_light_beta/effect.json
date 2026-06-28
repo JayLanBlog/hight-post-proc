@@ -1,0 +1,35 @@
+{
+  "name": "完备光照Beta",
+  "category": "AUS 3D物体",
+  "description": "Vol.02 光照材质完备beta版",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "漫反射强度",
+      "type": "Float",
+      "min": 0.2,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "高光指数",
+      "type": "Float",
+      "min": 0.1,
+      "max": 4,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "高光强度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.4,
+      "ui_type": "slider"
+    }
+  ]
+}

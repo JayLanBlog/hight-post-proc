@@ -1,0 +1,17 @@
+{
+  "name": "可调漫反射",
+  "category": "AUS 3D物体",
+  "description": "Vol.02 简单的可调漫反射光照(Lambert)",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "强度",
+      "type": "Float",
+      "min": 0.2,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    }
+  ]
+}

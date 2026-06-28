@@ -1,0 +1,35 @@
+{
+  "name": "材质颜色+光照",
+  "category": "AUS 3D物体",
+  "description": "Vol.02 材质颜色设置+开启光照",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.9,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.6,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.3,
+      "ui_type": "slider"
+    }
+  ]
+}

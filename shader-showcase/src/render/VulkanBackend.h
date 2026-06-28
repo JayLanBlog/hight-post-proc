@@ -81,6 +81,12 @@ public:
 
     // Fullscreen draw
     void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;
+
+    // 3D Mesh drawing
+    void DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params,
+                  const float* vertexData, size_t vertexCount, size_t vertexStride,
+                  const uint32_t* indexData, size_t indexCount) override;
+
     void DrawCards(const std::vector<IRenderBackend::CardDrawInfo>& cards, const float* viewMatrix, const float* projMatrix) override;
     void BlitToScreen(TextureHandle src) override;
     void BeginRenderToTexture(TextureHandle target) override;

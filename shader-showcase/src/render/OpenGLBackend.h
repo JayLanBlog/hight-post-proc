@@ -49,6 +49,11 @@ public:
     // ---- Fullscreen quad ---------------------------------------------------
     void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;
 
+    // ---- 3D Mesh drawing ----------------------------------------------------
+    void DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params,
+                  const float* vertexData, size_t vertexCount, size_t vertexStride,
+                  const uint32_t* indexData, size_t indexCount) override;
+
     // ---- Cards (3D card rendering) -----------------------------------------
     void DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) override;
 

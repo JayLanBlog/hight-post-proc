@@ -155,6 +155,33 @@ private:
     bool m_videoActive = false;
     double m_videoLastFrameTime = 0.0;
 
+    // ---- 3D Mesh rendering ----
+    ShaderHandle m_mesh3dVertShader = INVALID_SHADER;
+    std::vector<float> m_sphereVertices;
+    std::vector<uint32_t> m_sphereIndices;
+    std::vector<float> m_cubeVertices;
+    std::vector<uint32_t> m_cubeIndices;
+    bool m_3dGeometryReady = false;
+    std::vector<int> m_meshType;  // per-card: -1=fullscreen, 0=sphere, 1=cube
+
+    // 3D camera state
+    float m_camRotationX = 0.0f;   // pitch (rad)
+    float m_camRotationY = 0.0f;   // yaw (rad)
+    float m_camDistance = 3.0f;    // zoom
+    bool m_isDragging3D = false;
+    float m_lastMouse3DX = 0.0f;
+    float m_lastMouse3DY = 0.0f;
+    float m_lightAngleX = 0.5f;
+    float m_lightAngleY = 0.8f;
+
+    void GenerateSphereMesh();
+    void GenerateCubeMesh();
+    void Setup3DGeometry();
+    void BuildMVPMatrix(float* mvp, float* mv, int width, int height);
+
+    // Check if a card is a 3D effect
+    bool Is3DEffect() const { return m_selectedIndex >= 0 && (size_t)m_selectedIndex < m_meshType.size() && m_meshType[m_selectedIndex] >= 0; }
+
     void RegisterCards();
     void SelectCard(int index);
     void OpenSelectedEffect();

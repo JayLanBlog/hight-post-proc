@@ -1,0 +1,17 @@
+{
+  "name": "MatCap车漆",
+  "category": "AUS 3D物体",
+  "description": "Vol.16 基于MatCap的高真实感车漆Shader",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "金属度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.7,
+      "ui_type": "slider"
+    }
+  ]
+}

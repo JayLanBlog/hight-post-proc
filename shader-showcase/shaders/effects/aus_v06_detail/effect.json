@@ -1,0 +1,17 @@
+{
+  "name": "细节纹理",
+  "category": "AUS 3D物体",
+  "description": "Vol.06 细节纹理(DetailTex)",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "细节缩放",
+      "type": "Float",
+      "min": 2,
+      "max": 16,
+      "default": 6,
+      "ui_type": "slider"
+    }
+  ]
+}

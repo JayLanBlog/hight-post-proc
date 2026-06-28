@@ -1,0 +1,17 @@
+{
+  "name": "漫反射光照",
+  "category": "AUS 3D物体",
+  "description": "Vol.07 内置漫反射光照(Diffuse)",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "(占位)",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

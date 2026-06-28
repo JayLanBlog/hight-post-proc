@@ -1,0 +1,62 @@
+{
+  "name": "凹凸+边缘+色",
+  "category": "AUS 3D物体",
+  "description": "Vol.06 凹凸纹理+颜色+边缘光照",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "凹凸强度",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 0.6,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "边缘指数",
+      "type": "Float",
+      "min": 0.5,
+      "max": 8,
+      "default": 3,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "边缘色R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.3,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "边缘色G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.7,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "边缘色B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "纹理色调",
+      "type": "Float",
+      "min": 0.5,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    }
+  ]
+}

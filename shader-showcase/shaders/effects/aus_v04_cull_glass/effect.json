@@ -1,0 +1,17 @@
+{
+  "name": "剔除玻璃效果",
+  "category": "AUS 3D物体",
+  "description": "Vol.04 用剔除实现玻璃效果",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "透明度",
+      "type": "Float",
+      "min": 0.1,
+      "max": 0.9,
+      "default": 0.4,
+      "ui_type": "slider"
+    }
+  ]
+}

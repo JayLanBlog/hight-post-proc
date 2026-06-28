@@ -1,0 +1,17 @@
+{
+  "name": "玻璃效果V2",
+  "category": "AUS 3D物体",
+  "description": "Vol.05 玻璃效果v2版",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "透明度",
+      "type": "Float",
+      "min": 0.1,
+      "max": 0.9,
+      "default": 0.4,
+      "ui_type": "slider"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "水幕特效",
+  "category": "AUS 后处理",
+  "description": "Vol.09 屏幕水幕特效 — 程序化波纹折射模拟",
+  "passes": 1,
+  "params": [
+    {"name":"uParamFloat0","label":"波纹密度","type":"Float","min":2,"max":20,"default":8,"ui_type":"slider"},
+    {"name":"uParamFloat1","label":"速度","type":"Float","min":0.2,"max":3,"default":1,"ui_type":"slider"},
+    {"name":"uParamFloat2","label":"扭曲强度","type":"Float","min":0.01,"max":0.1,"default":0.04,"ui_type":"slider"}
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "name": "颜色可调透明",
+  "category": "AUS 3D物体",
+  "description": "Vol.13 颜色可调版单色透明",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.3,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.8,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "透明度",
+      "type": "Float",
+      "min": 0.1,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    }
+  ]
+}

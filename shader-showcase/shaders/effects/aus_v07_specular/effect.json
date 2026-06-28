@@ -1,0 +1,26 @@
+{
+  "name": "自定义高光",
+  "category": "AUS 3D物体",
+  "description": "Vol.07 简单高光光照模型",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "高光指数",
+      "type": "Float",
+      "min": 0.1,
+      "max": 4,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "高光强度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.6,
+      "ui_type": "slider"
+    }
+  ]
+}

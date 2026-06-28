@@ -1,0 +1,17 @@
+{
+  "name": "剔除背面V2",
+  "category": "AUS 3D物体",
+  "description": "Vol.04 用剔除操作渲染对象背面v2",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "(占位)",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

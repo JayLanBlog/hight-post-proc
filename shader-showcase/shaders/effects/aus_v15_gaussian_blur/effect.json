@@ -1,0 +1,9 @@
+{
+  "name": "高斯模糊",
+  "category": "AUS 后处理",
+  "description": "Vol.15 屏幕高斯模糊 — 单Pass水平+垂直13-tap混合",
+  "passes": 1,
+  "params": [
+    {"name":"uParamFloat0","label":"模糊半径","type":"Float","min":0.5,"max":15,"default":5,"ui_type":"slider"}
+  ]
+}

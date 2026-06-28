@@ -1,0 +1,17 @@
+{
+  "name": "植被Shader",
+  "category": "AUS 3D物体",
+  "description": "Vol.04 简单植被Shader(Alpha裁切+双面)",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Alpha阈值",
+      "type": "Float",
+      "min": 0.1,
+      "max": 0.8,
+      "default": 0.3,
+      "ui_type": "slider"
+    }
+  ]
+}

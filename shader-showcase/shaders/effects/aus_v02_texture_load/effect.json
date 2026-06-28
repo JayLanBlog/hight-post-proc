@@ -1,0 +1,17 @@
+{
+  "name": "纹理载入",
+  "category": "AUS 3D物体",
+  "description": "Vol.02 简单的纹理载入Shader",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "(未使用)",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

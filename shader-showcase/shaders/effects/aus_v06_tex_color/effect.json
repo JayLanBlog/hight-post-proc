@@ -1,0 +1,35 @@
+{
+  "name": "纹理+颜色",
+  "category": "AUS 3D物体",
+  "description": "Vol.06 纹理载入+颜色可调",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "R",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "G",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "B",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    }
+  ]
+}

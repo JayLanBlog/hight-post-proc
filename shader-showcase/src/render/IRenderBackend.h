@@ -16,6 +16,7 @@ struct PipelineDesc {
     int width;
     int height;
     bool blendEnable = true;
+    bool useVertexInput = false;  // true for DrawMesh (3D), false for DrawFullscreenQuad
 };
 
 // ---------------------------------------------------------------------------
@@ -29,6 +30,13 @@ struct ShaderParams {
     int   viewportHeight = 720;
     float time           = 0.0f;
     uint32_t frameCount  = 0;
+
+    // 3D pipeline extensions
+    std::vector<float> mvp;           // mat4 (16 floats) -- model-view-projection
+    std::vector<float> modelView;     // mat4 (16 floats) -- model-view (for normal transform)
+    std::vector<float> lightDir;      // vec3 (3 floats)
+    std::vector<float> lightColor;    // vec3 (3 floats)
+    std::vector<float> eyePos;        // vec3 (3 floats)
 };
 
 // ---------------------------------------------------------------------------
@@ -78,6 +86,11 @@ public:
 
     // ---- Fullscreen quad ---------------------------------------------------
     virtual void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) = 0;
+
+    // ---- 3D Mesh drawing ----------------------------------------------------
+    virtual void DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params,
+                          const float* vertexData, size_t vertexCount, size_t vertexStride,
+                          const uint32_t* indexData, size_t indexCount) = 0;
 
     // ---- Cards (3D card rendering) -----------------------------------------
     virtual void DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) = 0;

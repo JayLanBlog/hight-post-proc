@@ -1,0 +1,17 @@
+{
+  "name": "Alpha纹理混合",
+  "category": "AUS 3D物体",
+  "description": "Vol.03 Alpha纹理混合",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "透明度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.7,
+      "ui_type": "slider"
+    }
+  ]
+}

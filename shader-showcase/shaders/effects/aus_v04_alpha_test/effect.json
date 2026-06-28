@@ -1,0 +1,17 @@
+{
+  "name": "Alpha测试",
+  "category": "AUS 3D物体",
+  "description": "Vol.04 基本Alpha测试",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Alpha阈值",
+      "type": "Float",
+      "min": 0.1,
+      "max": 0.9,
+      "default": 0.5,
+      "ui_type": "slider"
+    }
+  ]
+}

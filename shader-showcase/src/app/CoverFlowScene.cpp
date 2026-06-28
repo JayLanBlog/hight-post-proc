@@ -27,6 +27,10 @@ CoverFlowScene::~CoverFlowScene()
             m_backend->DestroyShader(m_sharedVertShader);
             m_sharedVertShader = INVALID_SHADER;
         }
+        if (m_mesh3dVertShader.id != INVALID_SHADER.id) {
+            m_backend->DestroyShader(m_mesh3dVertShader);
+            m_mesh3dVertShader = INVALID_SHADER;
+        }
         for (auto& state : m_thumbnailStates) {
             if (state.fragShader.id != INVALID_SHADER.id) {
                 m_backend->DestroyShader(state.fragShader);
@@ -41,8 +45,8 @@ CoverFlowScene::~CoverFlowScene()
     }
 }
 
-#define CARD(id, name, cat, desc, frag) \
-    add(id, name, cat, desc, frag)
+#define CARD(id, name, cat, desc, frag, ...) \
+    add(id, name, cat, desc, frag, -1)
 
 void CoverFlowScene::RegisterCards()
 {
@@ -54,16 +58,22 @@ void CoverFlowScene::RegisterCards()
     }
 
     m_cards.clear();
-    m_cards.reserve(91);
+    m_cards.reserve(160);
 
     auto add = [&](const char* id, const char* name, const char* category,
-                   const char* desc, const char* fragRelPath) {
+                   const char* desc, const char* fragRelPath, int meshType) {
         EffectCard c;
         c.id = id; c.name = name; c.category = category; c.description = desc;
-        c.vertSpirvPath = vertPath;
+        if (meshType >= 0) {
+            // 3D effect uses mesh3d.vert
+            c.vertSpirvPath = shaderDir + "/common/mesh3d.vert.spv";
+        } else {
+            c.vertSpirvPath = vertPath;  // fullscreen.vert or fullscreen_vk.vert
+        }
         c.fragSpirvPath = shaderDir + "/" + fragRelPath;
         c.passes = 1;
         m_cards.push_back(std::move(c));
+        m_meshType.push_back(meshType);
     };
 
     CARD("simple_test",  "Grayscale Test",    "Color Adjustment",
@@ -360,7 +370,168 @@ void CoverFlowScene::RegisterCards()
          "锐化 V3效果 - 自动迁移自 X-PostProcessing-Library",
          "effects/xpl_sharpen_v3/xpl_sharpen_v3.frag.spv");
 
-    printf("[CoverFlowScene] Registered %zu effect cards\n", m_cards.size());
+    // ===================================================================
+    // Awesome-Unity-Shader 移植效果 (62张新卡片)
+    // meshType: -1=全屏后处理, 0=球体, 1=立方体
+    // ===================================================================
+
+    // --- Phase 1: 后处理屏幕特效 (4个) ---
+    CARD("aus_v08_motion_blur",    "径向模糊",     "AUS 后处理",
+         "Vol.08 径向模糊屏幕特效 — 中心→边缘采样密度递增",
+         "effects/aus_v08_motion_blur/aus_v08_motion_blur.frag.spv");
+
+    CARD("aus_v09_water_drop",     "水幕特效",     "AUS 后处理",
+         "Vol.09 屏幕水幕特效 — 法线贴图uv偏移 + 折射模拟",
+         "effects/aus_v09_water_drop/aus_v09_water_drop.frag.spv");
+
+    CARD("aus_v10_oil_paint",      "油画特效",     "AUS 后处理",
+         "Vol.10 屏幕油画特效 — Kuwahara 滤波网格采样",
+         "effects/aus_v10_oil_paint/aus_v10_oil_paint.frag.spv");
+
+    CARD("aus_v15_gaussian_blur",  "高斯模糊",     "AUS 后处理",
+         "Vol.15 屏幕高斯模糊 — 单Pass水平+垂直混合采样",
+         "effects/aus_v15_gaussian_blur/aus_v15_gaussian_blur.frag.spv");
+
+    // --- Phase 2: Vol.01 (1个, 球体) ---
+    CARD("aus_v01_rim_bump",       "凹凸+边缘光",   "AUS 3D物体",
+         "Vol.01 凹凸纹理显示+自选边缘颜色和强度",
+         "effects/aus_v01_rim_bump/aus_v01_rim_bump.frag.spv", 0);
+
+    // --- Vol.02 基础光照 (7个, 球体) ---
+    CARD("aus_v02_solid_color",    "基础单色",     "AUS 3D物体",
+         "Vol.02 基础单色Shader", "effects/aus_v02_solid_color/aus_v02_solid_color.frag.spv", 0);
+    CARD("aus_v02_color_light",    "材质颜色+光照", "AUS 3D物体",
+         "Vol.02 材质颜色设置+开启光照", "effects/aus_v02_color_light/aus_v02_color_light.frag.spv", 0);
+    CARD("aus_v02_lambert",        "可调漫反射",    "AUS 3D物体",
+         "Vol.02 简单的可调漫反射光照", "effects/aus_v02_lambert/aus_v02_lambert.frag.spv", 0);
+    CARD("aus_v02_light_beta",     "完备光照Beta",  "AUS 3D物体",
+         "Vol.02 光照材质完备beta版", "effects/aus_v02_light_beta/aus_v02_light_beta.frag.spv", 0);
+    CARD("aus_v02_texture_load",   "纹理载入",     "AUS 3D物体",
+         "Vol.02 简单纹理载入Shader", "effects/aus_v02_texture_load/aus_v02_texture_load.frag.spv", 0);
+    CARD("aus_v02_light_full",     "完备光照正式",  "AUS 3D物体",
+         "Vol.02 光照材质完备正式版", "effects/aus_v02_light_full/aus_v02_light_full.frag.spv", 0);
+    CARD("aus_v02_shader_frame",   "Shader框架示例","AUS 3D物体",
+         "Vol.02 Shader框架示例", "effects/aus_v02_shader_frame/aus_v02_shader_frame.frag.spv", 0);
+
+    // --- Vol.03 纹理混合 (5个, 立方体) ---
+    CARD("aus_v03_alpha_blend",    "Alpha纹理混合", "AUS 3D物体",
+         "Vol.03 Alpha纹理混合", "effects/aus_v03_alpha_blend/aus_v03_alpha_blend.frag.spv", 1);
+    CARD("aus_v03_alpha_emissive", "Alpha+自发光",  "AUS 3D物体",
+         "Vol.03 纹理Alpha与自发光混合", "effects/aus_v03_alpha_emissive/aus_v03_alpha_emissive.frag.spv", 1);
+    CARD("aus_v03_alpha_tint",     "可调色混合",    "AUS 3D物体",
+         "Vol.03 纹理Alpha与自发光混合可调色", "effects/aus_v03_alpha_tint/aus_v03_alpha_tint.frag.spv", 1);
+    CARD("aus_v03_vertex_alpha",   "顶点光照+Alpha","AUS 3D物体",
+         "Vol.03 顶点光照+纹理Alpha自发光", "effects/aus_v03_vertex_alpha/aus_v03_vertex_alpha.frag.spv", 1);
+    CARD("aus_v03_vertex_emiss",   "顶点光+自发光", "AUS 3D物体",
+         "Vol.03 顶点光照+自发光+纹理混合", "effects/aus_v03_vertex_emiss/aus_v03_vertex_emiss.frag.spv", 1);
+
+    // --- Vol.04 剔除/Alpha/雾 (6个) ---
+    CARD("aus_v04_cull_back",      "剔除背面",     "AUS 3D物体",
+         "Vol.04 用剔除操作渲染对象背面", "effects/aus_v04_cull_back/aus_v04_cull_back.frag.spv", 1);
+    CARD("aus_v04_cull_back_v2",   "剔除背面V2",   "AUS 3D物体",
+         "Vol.04 用剔除操作渲染对象背面v2", "effects/aus_v04_cull_back_v2/aus_v04_cull_back_v2.frag.spv", 1);
+    CARD("aus_v04_cull_glass",     "剔除玻璃效果",  "AUS 3D物体",
+         "Vol.04 用剔除实现玻璃效果", "effects/aus_v04_cull_glass/aus_v04_cull_glass.frag.spv", 1);
+    CARD("aus_v04_alpha_test",     "Alpha测试",   "AUS 3D物体",
+         "Vol.04 基本Alpha测试", "effects/aus_v04_alpha_test/aus_v04_alpha_test.frag.spv", 1);
+    CARD("aus_v04_transparent",    "顶点光+透明",  "AUS 3D物体",
+         "Vol.04 顶点光照+可调透明度", "effects/aus_v04_transparent/aus_v04_transparent.frag.spv", 1);
+    CARD("aus_v04_vegetation",     "植被Shader",   "AUS 3D物体",
+         "Vol.04 简单植被Shader(Alpha裁切)", "effects/aus_v04_vegetation/aus_v04_vegetation.frag.spv", 1);
+
+    // --- Vol.05 三种形态+混合 (9个) ---
+    CARD("aus_v05_fixed_func",     "固定功能Shader","AUS 3D物体",
+         "Vol.05 固定功能Shader示例", "effects/aus_v05_fixed_func/aus_v05_fixed_func.frag.spv", 0);
+    CARD("aus_v05_surface",        "表面Shader示例","AUS 3D物体",
+         "Vol.05 表面着色器示例", "effects/aus_v05_surface/aus_v05_surface.frag.spv", 0);
+    CARD("aus_v05_programmable",   "可编程Shader", "AUS 3D物体",
+         "Vol.05 可编程Shader示例", "effects/aus_v05_programmable/aus_v05_programmable.frag.spv", 0);
+    CARD("aus_v05_tex_load",       "纹理载入",     "AUS 3D物体",
+         "Vol.05 混合操作-纹理载入", "effects/aus_v05_tex_load/aus_v05_tex_load.frag.spv", 1);
+    CARD("aus_v05_blend",          "基本Blend",    "AUS 3D物体",
+         "Vol.05 基本Blend使用", "effects/aus_v05_blend/aus_v05_blend.frag.spv", 1);
+    CARD("aus_v05_blend_color",    "Blend+颜色",   "AUS 3D物体",
+         "Vol.05 基本Blend+颜色可调", "effects/aus_v05_blend_color/aus_v05_blend_color.frag.spv", 1);
+    CARD("aus_v05_blend_vertex",   "Blend+顶点光", "AUS 3D物体",
+         "Vol.05 Blend+顶点光照", "effects/aus_v05_blend_vertex/aus_v05_blend_vertex.frag.spv", 1);
+    CARD("aus_v05_glass_v2",       "玻璃效果V2",   "AUS 3D物体",
+         "Vol.05 玻璃效果v2版", "effects/aus_v05_glass_v2/aus_v05_glass_v2.frag.spv", 1);
+    CARD("aus_v05_glass_v3",       "玻璃效果V3",   "AUS 3D物体",
+         "Vol.05 玻璃效果v3版", "effects/aus_v05_glass_v3/aus_v05_glass_v3.frag.spv", 1);
+
+    // --- Vol.06 SurfaceShader (9个, 球体) ---
+    CARD("aus_v06_basic_surf",     "基本Surface",  "AUS 3D物体",
+         "Vol.06 最基本的SurfaceShader", "effects/aus_v06_basic_surf/aus_v06_basic_surf.frag.spv", 0);
+    CARD("aus_v06_color_adj",      "颜色可调",     "AUS 3D物体",
+         "Vol.06 颜色可调SurfaceShader", "effects/aus_v06_color_adj/aus_v06_color_adj.frag.spv", 0);
+    CARD("aus_v06_tex_load",       "纹理载入",     "AUS 3D物体",
+         "Vol.06 基本纹理载入", "effects/aus_v06_tex_load/aus_v06_tex_load.frag.spv", 0);
+    CARD("aus_v06_bump",           "凹凸纹理",     "AUS 3D物体",
+         "Vol.06 凹凸纹理(BumpMap)", "effects/aus_v06_bump/aus_v06_bump.frag.spv", 0);
+    CARD("aus_v06_tex_color",      "纹理+颜色",    "AUS 3D物体",
+         "Vol.06 纹理载入+颜色可调", "effects/aus_v06_tex_color/aus_v06_tex_color.frag.spv", 0);
+    CARD("aus_v06_bump_rim",       "凹凸+边缘光",  "AUS 3D物体",
+         "Vol.06 凹凸纹理+边缘光照", "effects/aus_v06_bump_rim/aus_v06_bump_rim.frag.spv", 0);
+    CARD("aus_v06_bump_rim_col",   "凹凸+边缘+色", "AUS 3D物体",
+         "Vol.06 凹凸纹理+颜色+边缘光照", "effects/aus_v06_bump_rim_col/aus_v06_bump_rim_col.frag.spv", 0);
+    CARD("aus_v06_detail",         "细节纹理",     "AUS 3D物体",
+         "Vol.06 细节纹理(DetailTex)", "effects/aus_v06_detail/aus_v06_detail.frag.spv", 0);
+    CARD("aus_v06_full",           "完整Surface",  "AUS 3D物体",
+         "Vol.06 凹凸+颜色+边缘+细节纹理", "effects/aus_v06_full/aus_v06_full.frag.spv", 0);
+
+    // --- Vol.07 自定义光照 (6个, 球体) ---
+    CARD("aus_v07_diffuse",        "漫反射光照",   "AUS 3D物体",
+         "Vol.07 内置漫反射光照(Diffuse)", "effects/aus_v07_diffuse/aus_v07_diffuse.frag.spv", 0);
+    CARD("aus_v07_specular",       "自定义高光",   "AUS 3D物体",
+         "Vol.07 简单高光光照模型", "effects/aus_v07_specular/aus_v07_specular.frag.spv", 0);
+    CARD("aus_v07_lambert",        "自制Lambert",  "AUS 3D物体",
+         "Vol.07 自定义Lambert光照", "effects/aus_v07_lambert/aus_v07_lambert.frag.spv", 0);
+    CARD("aus_v07_half_lambert",   "半Lambert",    "AUS 3D物体",
+         "Vol.07 自定义半Lambert光照", "effects/aus_v07_half_lambert/aus_v07_half_lambert.frag.spv", 0);
+    CARD("aus_v07_toon",           "卡通渐变光照", "AUS 3D物体",
+         "Vol.07 自定义卡通渐变光照", "effects/aus_v07_toon/aus_v07_toon.frag.spv", 0);
+    CARD("aus_v07_toon_v2",        "卡通渐变V2",   "AUS 3D物体",
+         "Vol.07 自定义卡通渐变光照v2", "effects/aus_v07_toon_v2/aus_v07_toon_v2.frag.spv", 0);
+
+    // --- Vol.12 可编程管线 (7个) ---
+    CARD("aus_v12_simple",         "单色Shader",   "AUS 3D物体",
+         "Vol.12 单色Shader", "effects/aus_v12_simple/aus_v12_simple.frag.spv", 0);
+    CARD("aus_v12_color_change",   "单色可调",     "AUS 3D物体",
+         "Vol.12 单色可调Shader", "effects/aus_v12_color_change/aus_v12_color_change.frag.spv", 0);
+    CARD("aus_v12_rgb_cube",       "RGB Cube",    "AUS 3D物体",
+         "Vol.12 RGB Cube", "effects/aus_v12_rgb_cube/aus_v12_rgb_cube.frag.spv", 1);
+    CARD("aus_v12_rgb_cube_adj",   "可调RGB Cube","AUS 3D物体",
+         "Vol.12 颜色单项可调RGB Cube", "effects/aus_v12_rgb_cube_adj/aus_v12_rgb_cube_adj.frag.spv", 1);
+    CARD("aus_v12_rgb_cube_3",     "三色RGB Cube","AUS 3D物体",
+         "Vol.12 三色分量可调RGB Cube", "effects/aus_v12_rgb_cube_3/aus_v12_rgb_cube_3.frag.spv", 1);
+    CARD("aus_v12_diffuse",        "漫反射(Lambert)","AUS 3D物体",
+         "Vol.12 单色可调漫反射(Lambert)", "effects/aus_v12_diffuse/aus_v12_diffuse.frag.spv", 0);
+    CARD("aus_v12_diffuse_tex",    "漫反射+纹理",  "AUS 3D物体",
+         "Vol.12 可调颜色+纹理漫反射", "effects/aus_v12_diffuse_tex/aus_v12_diffuse_tex.frag.spv", 0);
+
+    // --- Vol.13 透明+镜面高光 (5个) ---
+    CARD("aus_v13_alpha",          "单色透明",     "AUS 3D物体",
+         "Vol.13 单色透明Shader", "effects/aus_v13_alpha/aus_v13_alpha.frag.spv", 1);
+    CARD("aus_v13_alpha_color",    "颜色可调透明", "AUS 3D物体",
+         "Vol.13 颜色可调版单色透明", "effects/aus_v13_alpha_color/aus_v13_alpha_color.frag.spv", 1);
+    CARD("aus_v13_two_side",       "双面透明",     "AUS 3D物体",
+         "Vol.13 双面双色可调透明Shader", "effects/aus_v13_two_side/aus_v13_two_side.frag.spv", 1);
+    CARD("aus_v13_specular",       "镜面高光",     "AUS 3D物体",
+         "Vol.13 标准镜面高光Specular", "effects/aus_v13_specular/aus_v13_specular.frag.spv", 0);
+    CARD("aus_v13_specular_tex",   "镜面高光+纹理","AUS 3D物体",
+         "Vol.13 带纹理载入Specular", "effects/aus_v13_specular_tex/aus_v13_specular_tex.frag.spv", 0);
+
+    // --- Vol.14 边缘光 (2个, 球体) ---
+    CARD("aus_v14_rim",            "边缘发光",     "AUS 3D物体",
+         "Vol.14 基础边缘发光Shader", "effects/aus_v14_rim/aus_v14_rim.frag.spv", 0);
+    CARD("aus_v14_rim_surf",       "边缘发光(Surface)","AUS 3D物体",
+         "Vol.14 边缘发光SurfaceShader版", "effects/aus_v14_rim_surf/aus_v14_rim_surf.frag.spv", 0);
+
+    // --- Vol.16 MatCap车漆 (1个, 球体) ---
+    CARD("aus_v16_carpaint",       "MatCap车漆",  "AUS 3D物体",
+         "Vol.16 基于MatCap的车漆Shader", "effects/aus_v16_carpaint/aus_v16_carpaint.frag.spv", 0);
+
+    printf("[CoverFlowScene] Total cards registered: %zu\n", m_cards.size());
 
     // Load effect.json params for each card
     int loadedCount = 0;
@@ -423,6 +594,9 @@ void CoverFlowScene::OnEnter()
 
     printf("[CoverFlowScene] Entered with %zu cards, selected=%d\n",
            m_cards.size(), m_selectedIndex);
+
+    // Initialize 3D geometry for mesh-based effects
+    Setup3DGeometry();
 
     // Initialize thumbnails for all backends (OpenGL and Vulkan)
     InitializeThumbnails();
@@ -597,6 +771,30 @@ void CoverFlowScene::OnUpdate(float dt)
     } else {
         m_dragging = false;
     }
+
+    // ---- 3D camera rotation (right-click drag) ----
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::GetIO().WantCaptureMouse) {
+        m_isDragging3D = true;
+        m_lastMouse3DX = ImGui::GetIO().MousePos.x;
+        m_lastMouse3DY = ImGui::GetIO().MousePos.y;
+    }
+    if (m_isDragging3D && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+        float dx = ImGui::GetIO().MousePos.x - m_lastMouse3DX;
+        float dy = ImGui::GetIO().MousePos.y - m_lastMouse3DY;
+        m_camRotationY -= dx * 0.005f;
+        m_camRotationX += dy * 0.005f;
+        m_camRotationX = std::clamp(m_camRotationX, -1.5f, 1.5f);
+        m_lastMouse3DX = ImGui::GetIO().MousePos.x;
+        m_lastMouse3DY = ImGui::GetIO().MousePos.y;
+    }
+    if (m_isDragging3D && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+        m_isDragging3D = false;
+    }
+    // Scroll to zoom
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        m_camDistance -= ImGui::GetIO().MouseWheel * 0.5f;
+        m_camDistance = std::clamp(m_camDistance, 1.5f, 10.0f);
+    }
 }
 
 void CoverFlowScene::OnRender(IRenderBackend* backend)
@@ -657,9 +855,42 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
     params.time           = m_effectTime;
     params.frameCount     = m_effectFrameCount;
 
-    backend->BeginRenderToTexture(m_immersiveTex);
-    backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
-    backend->EndRenderToTexture();
+    // Check if we need to render 3D mesh for this effect
+    if (Is3DEffect()) {
+        // ---- 3D effect rendering ----
+        float mvp[16], mv[16];
+        BuildMVPMatrix(mvp, mv, fbWidth, fbHeight);
+
+        ShaderParams params3d;
+        // Bind input texture (used as _MainTex for 3D objects)
+        params3d.inputTextures.push_back(input);
+        params3d.uniformFloats = uniformFloats;
+        params3d.uniformInts = uniformInts;
+        params3d.viewportWidth = fbWidth;
+        params3d.viewportHeight = fbHeight;
+        params3d.time = m_effectTime;
+        params3d.frameCount = m_effectFrameCount;
+        // 3D params
+        params3d.mvp.assign(mvp, mvp+16);
+        params3d.modelView.assign(mv, mv+16);
+        params3d.lightDir = {cos(m_lightAngleX)*cos(m_lightAngleY), sin(m_lightAngleX), sin(m_lightAngleY)};
+        params3d.lightColor = {1.0f, 1.0f, 1.0f};
+        params3d.eyePos = {0, 0, m_camDistance}; // camera position in world space
+
+        const float* vertData = (m_meshType[m_selectedIndex] == 0) ? m_sphereVertices.data() : m_cubeVertices.data();
+        size_t vertCount = (m_meshType[m_selectedIndex] == 0) ? m_sphereVertices.size()/8 : m_cubeVertices.size()/8;
+        const uint32_t* idxData = (m_meshType[m_selectedIndex] == 0) ? m_sphereIndices.data() : m_cubeIndices.data();
+        size_t idxCount = (m_meshType[m_selectedIndex] == 0) ? m_sphereIndices.size() : m_cubeIndices.size();
+
+        backend->BeginRenderToTexture(m_immersiveTex);
+        backend->DrawMesh(m_mesh3dVertShader, state.fragShader, params3d, vertData, vertCount, 32, idxData, idxCount);
+        backend->EndRenderToTexture();
+    } else {
+        // ---- Existing 2D fullscreen rendering (unchanged) ----
+        backend->BeginRenderToTexture(m_immersiveTex);
+        backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
+        backend->EndRenderToTexture();
+    }
     m_immersiveImTexID = backend->GetImTextureID(m_immersiveTex);
 }
 
@@ -1411,4 +1642,154 @@ void CoverFlowScene::StopVideo()
     m_videoActive = false;
     // Note: we don't destroy m_videoTex here because it might still be referenced
     // by EffectDetailScene. A proper implementation would use reference counting.
+}
+
+// ============================================================================
+// 3D Mesh generation
+// ============================================================================
+
+void CoverFlowScene::GenerateSphereMesh() {
+    const int latSegs = 64, lonSegs = 32;
+    const float radius = 1.0f;
+    m_sphereVertices.clear();
+    m_sphereIndices.clear();
+    m_sphereVertices.reserve((latSegs+1)*(lonSegs+1)*8);
+    m_sphereIndices.reserve(latSegs*lonSegs*6);
+
+    for (int j = 0; j <= lonSegs; ++j) {
+        float theta = j * 3.14159265f / lonSegs;
+        float sinT = sin(theta), cosT = cos(theta);
+        for (int i = 0; i <= latSegs; ++i) {
+            float phi = i * 2.0f * 3.14159265f / latSegs;
+            float sinP = sin(phi), cosP = cos(phi);
+            float nx = cosP * sinT, ny = cosT, nz = sinP * sinT;
+            m_sphereVertices.push_back(nx * radius);
+            m_sphereVertices.push_back(ny * radius);
+            m_sphereVertices.push_back(nz * radius);
+            m_sphereVertices.push_back(nx);
+            m_sphereVertices.push_back(ny);
+            m_sphereVertices.push_back(nz);
+            m_sphereVertices.push_back((float)i / latSegs);
+            m_sphereVertices.push_back((float)j / lonSegs);
+        }
+    }
+    for (int j = 0; j < lonSegs; ++j) {
+        for (int i = 0; i < latSegs; ++i) {
+            uint32_t a = j*(latSegs+1)+i, b = a+1;
+            uint32_t c = (j+1)*(latSegs+1)+i, d = c+1;
+            m_sphereIndices.push_back(a); m_sphereIndices.push_back(c); m_sphereIndices.push_back(b);
+            m_sphereIndices.push_back(b); m_sphereIndices.push_back(c); m_sphereIndices.push_back(d);
+        }
+    }
+    printf("[CoverFlowScene] Sphere mesh: %zu vertices, %zu indices\n",
+           m_sphereVertices.size()/8, m_sphereIndices.size());
+}
+
+void CoverFlowScene::GenerateCubeMesh() {
+    float faces[6][4][8] = {
+        {{-1,-1, 1, 0,0,1, 0,0},{ 1,-1, 1, 0,0,1, 1,0},{ 1, 1, 1, 0,0,1, 1,1},{-1, 1, 1, 0,0,1, 0,1}},
+        {{ 1,-1,-1, 0,0,-1,0,0},{-1,-1,-1, 0,0,-1,1,0},{-1, 1,-1, 0,0,-1,1,1},{ 1, 1,-1, 0,0,-1,0,1}},
+        {{-1, 1, 1, 0,1,0, 0,0},{ 1, 1, 1, 0,1,0, 1,0},{ 1, 1,-1, 0,1,0, 1,1},{-1, 1,-1, 0,1,0, 0,1}},
+        {{-1,-1,-1, 0,-1,0,0,0},{ 1,-1,-1, 0,-1,0,1,0},{ 1,-1, 1, 0,-1,0,1,1},{-1,-1, 1, 0,-1,0,0,1}},
+        {{ 1,-1, 1, 1,0,0, 0,0},{ 1,-1,-1, 1,0,0, 1,0},{ 1, 1,-1, 1,0,0, 1,1},{ 1, 1, 1, 1,0,0, 0,1}},
+        {{-1,-1,-1,-1,0,0, 0,0},{-1,-1, 1,-1,0,0, 1,0},{-1, 1, 1,-1,0,0, 1,1},{-1, 1,-1,-1,0,0, 0,1}},
+    };
+    m_cubeVertices.clear(); m_cubeIndices.clear();
+    for (int f = 0; f < 6; ++f) {
+        uint32_t base = (uint32_t)m_cubeVertices.size()/8;
+        for (int v = 0; v < 4; ++v)
+            for (int c = 0; c < 8; ++c) m_cubeVertices.push_back(faces[f][v][c]);
+        m_cubeIndices.push_back(base); m_cubeIndices.push_back(base+1); m_cubeIndices.push_back(base+2);
+        m_cubeIndices.push_back(base); m_cubeIndices.push_back(base+2); m_cubeIndices.push_back(base+3);
+    }
+    printf("[CoverFlowScene] Cube mesh: %zu vertices, %zu indices\n",
+           m_cubeVertices.size()/8, m_cubeIndices.size());
+}
+
+void CoverFlowScene::Setup3DGeometry() {
+    if (m_3dGeometryReady) return;
+    if (!m_backend) return;
+
+    GenerateSphereMesh();
+    GenerateCubeMesh();
+
+    // Load mesh3d.vert.spv
+    std::string shaderDir = ShaderLoader::FindShaderDir();
+    std::string vertPath = shaderDir + "/common/mesh3d.vert.spv";
+
+    std::vector<uint32_t> spvData = ShaderLoader::LoadSPIRV(vertPath);
+    if (spvData.empty()) {
+        fprintf(stderr, "[CoverFlowScene] Failed to load mesh3d.vert.spv\n");
+        return;
+    }
+    m_mesh3dVertShader = m_backend->CreateVertexShader(spvData.data(), spvData.size() * sizeof(uint32_t));
+
+    printf("[CoverFlowScene] 3D geometry setup complete. Sphere V=%zu I=%zu, Cube V=%zu I=%zu\n",
+           m_sphereVertices.size()/8, m_sphereIndices.size(),
+           m_cubeVertices.size()/8, m_cubeIndices.size());
+    m_3dGeometryReady = true;
+}
+
+void CoverFlowScene::BuildMVPMatrix(float* mvp, float* mv, int width, int height) {
+    // Simple perspective projection + orbit camera
+    float aspect = (float)width / std::max(height, 1);
+    float fov = 1.0f; // ~57 degrees
+    float nearP = 0.1f, farP = 100.0f;
+
+    // Projection matrix (column-major for Vulkan std140)
+    float proj[16] = {
+        1.0f/(aspect*tan(fov/2)), 0, 0, 0,
+        0, 1.0f/tan(fov/2), 0, 0,
+        0, 0, farP/(farP-nearP), 1,
+        0, 0, -nearP*farP/(farP-nearP), 0
+    };
+
+    // View matrix: orbital camera
+    float cx = cos(m_camRotationX), sx = sin(m_camRotationX);
+    float cy = cos(m_camRotationY), sy = sin(m_camRotationY);
+    float ex = m_camDistance * sy * cx;
+    float ey = m_camDistance * sx;
+    float ez = m_camDistance * cy * cx;
+
+    // View matrix (look-at, column-major)
+    float upX = -sy*sx, upY = cx, upZ = -cy*sx;
+    float fwdX = -ex, fwdY = -ey, fwdZ = -ez;
+    float fl = sqrtf(fwdX*fwdX+fwdY*fwdY+fwdZ*fwdZ);
+    fwdX/=fl; fwdY/=fl; fwdZ/=fl;
+
+    float rx = upY*fwdZ - upZ*fwdY;
+    float ry = upZ*fwdX - upX*fwdZ;
+    float rz = upX*fwdY - upY*fwdX;
+    float rl = sqrtf(rx*rx+ry*ry+rz*rz);
+    rx/=rl; ry/=rl; rz/=rl;
+
+    float ux = fwdY*rz - fwdZ*ry;
+    float uy = fwdZ*rx - fwdX*rz;
+    float uz = fwdX*ry - fwdY*rx;
+
+    float view[16] = {
+        rx, ux, fwdX, 0,
+        ry, uy, fwdY, 0,
+        rz, uz, fwdZ, 0,
+        -(rx*ex+ry*ey+rz*ez), -(ux*ex+uy*ey+uz*ez), -(fwdX*ex+fwdY*ey+fwdZ*ez), 1
+    };
+
+    // Model matrix = identity (objects centered at origin)
+    float model[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+
+    // ModelView = View * Model
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            mv[i*4+j] = 0;
+            for (int k = 0; k < 4; ++k) mv[i*4+j] += view[i*4+k] * model[k*4+j];
+        }
+    }
+
+    // MVP = Projection * ModelView
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            mvp[i*4+j] = 0;
+            for (int k = 0; k < 4; ++k) mvp[i*4+j] += proj[i*4+k] * mv[k*4+j];
+        }
+    }
 }

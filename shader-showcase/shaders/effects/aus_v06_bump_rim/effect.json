@@ -1,0 +1,17 @@
+{
+  "name": "凹凸+边缘光",
+  "category": "AUS 3D物体",
+  "description": "Vol.06 凹凸纹理+边缘光照",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "(占位)",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

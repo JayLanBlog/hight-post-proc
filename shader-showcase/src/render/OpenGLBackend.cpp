@@ -626,6 +626,15 @@ void OpenGLBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 }
 
 // ============================================================================
+// 3D Mesh drawing (not implemented for OpenGL)
+// ============================================================================
+void OpenGLBackend::DrawMesh(ShaderHandle, ShaderHandle, const ShaderParams&,
+                              const float*, size_t, size_t,
+                              const uint32_t*, size_t) {
+    fprintf(stderr, "[OpenGL] DrawMesh not implemented\n");
+}
+
+// ============================================================================
 // Cards (3D card rendering)
 // ============================================================================
 void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) {

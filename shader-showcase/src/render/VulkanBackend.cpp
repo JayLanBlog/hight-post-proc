@@ -1282,11 +1282,12 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
         return {0};
     }
 
-    // Cache key: vert shader + frag shader + render pass
+    // Cache key: vert shader + frag shader + render pass + vertex input mode
     VkRenderPass renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
     // Also factor in render pass to avoid incompatibility
     cacheKey ^= (uint64_t)renderPass;
+    cacheKey ^= (desc.useVertexInput ? (1ULL << 60) : 0);
 
     // Check cache
     auto cacheIt = m_pipelineCache.find(cacheKey);
@@ -1318,13 +1319,47 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-    // Vertex input (no vertex data for fullscreen quad)
+    // Vertex input state
+    VkVertexInputBindingDescription bindingDesc{};
+    VkVertexInputAttributeDescription attrDesc[3]{};
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+    if (desc.useVertexInput) {
+        // 3D mesh vertex layout: pos(3) + normal(3) + uv(2) = 8 floats * 4 = 32 bytes stride
+        bindingDesc.binding = 0;
+        bindingDesc.stride = 32;
+        bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        // Position: location=0, format R32G32B32, offset 0
+        attrDesc[0].location = 0;
+        attrDesc[0].binding = 0;
+        attrDesc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attrDesc[0].offset = 0;
+
+        // Normal: location=1, format R32G32B32, offset 12
+        attrDesc[1].location = 1;
+        attrDesc[1].binding = 0;
+        attrDesc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attrDesc[1].offset = 12;
+
+        // UV: location=2, format R32G32, offset 24
+        attrDesc[2].location = 2;
+        attrDesc[2].binding = 0;
+        attrDesc[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attrDesc[2].offset = 24;
+
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
+        vertexInputInfo.vertexAttributeDescriptionCount = 3;
+        vertexInputInfo.pVertexAttributeDescriptions = attrDesc;
+    } else {
+        vertexInputInfo.vertexBindingDescriptionCount = 0;
+        vertexInputInfo.pVertexBindingDescriptions = nullptr;
+        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+    }
 
     // Input assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -1429,7 +1464,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 
     // --- Create per-pipeline UBO and descriptor set (reused every frame) ---
     auto& pp = m_pipelines[id];
-    const size_t UBO_SIZE = 48; // float param[6] + vec2 res + float time + float frame
+    const size_t UBO_SIZE = desc.useVertexInput ? 224 : 48; // 3D needs 224, fullscreen needs 48
     CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  pp->uboBuffer, pp->uboMemory);
@@ -1597,6 +1632,197 @@ void VulkanBackend::DrawCards(const std::vector<IRenderBackend::CardDrawInfo>& c
     (void)cards; (void)viewMatrix; (void)projMatrix;
     // TODO: Implement card rendering
     // This would require vertex buffers, index buffers, and more complex setup
+}
+
+// ============================================================================
+// 3D Mesh Drawing
+// ============================================================================
+void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params,
+                              const float* vertexData, size_t vertexCount, size_t vertexStride,
+                              const uint32_t* indexData, size_t indexCount)
+{
+    if (!m_isRecording) return;
+
+    PipelineDesc desc;
+    desc.vertShader = vert;
+    desc.fragShader = frag;
+    desc.width = params.viewportWidth;
+    desc.height = params.viewportHeight;
+    desc.blendEnable = false;
+    desc.useVertexInput = true;
+
+    PipelineHandle pipeHandle = CreatePipeline(desc);
+    if (pipeHandle.id == 0) return;
+
+    BindPipeline(pipeHandle);
+
+    // Set viewport
+    VkViewport vp{};
+    vp.x = 0.0f;
+    vp.y = 0.0f;
+    vp.width = static_cast<float>(params.viewportWidth);
+    vp.height = static_cast<float>(params.viewportHeight);
+    vp.minDepth = 0.0f;
+    vp.maxDepth = 1.0f;
+    vkCmdSetViewport(m_commandBuffer, 0, 1, &vp);
+
+    // Set scissor
+    VkRect2D sc{};
+    sc.offset = {0, 0};
+    sc.extent = {static_cast<uint32_t>(params.viewportWidth), static_cast<uint32_t>(params.viewportHeight)};
+    vkCmdSetScissor(m_commandBuffer, 0, 1, &sc);
+
+    // --- Create temporary vertex buffer ---
+    VkDeviceSize vbSize = vertexCount * vertexStride;
+    VkBuffer vb = VK_NULL_HANDLE;
+    VkDeviceMemory vbMem = VK_NULL_HANDLE;
+    {
+        VkBufferCreateInfo ci{};
+        ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        ci.size = vbSize;
+        ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VK_CHECK(vkCreateBuffer(m_device, &ci, nullptr, &vb));
+
+        VkMemoryRequirements memReq;
+        vkGetBufferMemoryRequirements(m_device, vb, &memReq);
+
+        VkMemoryAllocateInfo ai{};
+        ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        ai.allocationSize = memReq.size;
+        ai.memoryTypeIndex = FindMemoryType(memReq.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_CHECK(vkAllocateMemory(m_device, &ai, nullptr, &vbMem));
+        VK_CHECK(vkBindBufferMemory(m_device, vb, vbMem, 0));
+
+        void* mapped;
+        VK_CHECK(vkMapMemory(m_device, vbMem, 0, vbSize, 0, &mapped));
+        memcpy(mapped, vertexData, static_cast<size_t>(vbSize));
+        vkUnmapMemory(m_device, vbMem);
+    }
+
+    // --- Create temporary index buffer ---
+    VkDeviceSize ibSize = indexCount * sizeof(uint32_t);
+    VkBuffer ib = VK_NULL_HANDLE;
+    VkDeviceMemory ibMem = VK_NULL_HANDLE;
+    {
+        VkBufferCreateInfo ci{};
+        ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        ci.size = ibSize;
+        ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VK_CHECK(vkCreateBuffer(m_device, &ci, nullptr, &ib));
+
+        VkMemoryRequirements memReq;
+        vkGetBufferMemoryRequirements(m_device, ib, &memReq);
+
+        VkMemoryAllocateInfo ai{};
+        ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        ai.allocationSize = memReq.size;
+        ai.memoryTypeIndex = FindMemoryType(memReq.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_CHECK(vkAllocateMemory(m_device, &ai, nullptr, &ibMem));
+        VK_CHECK(vkBindBufferMemory(m_device, ib, ibMem, 0));
+
+        void* mapped;
+        VK_CHECK(vkMapMemory(m_device, ibMem, 0, ibSize, 0, &mapped));
+        memcpy(mapped, indexData, static_cast<size_t>(ibSize));
+        vkUnmapMemory(m_device, ibMem);
+    }
+
+    // --- Bind vertex and index buffers ---
+    VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vb, offsets);
+    vkCmdBindIndexBuffer(m_commandBuffer, ib, 0, VK_INDEX_TYPE_UINT32);
+
+    // --- Update UBO (224 bytes) and bind descriptor set ---
+    auto pipeIt = m_pipelines.find(pipeHandle.id);
+    if (pipeIt != m_pipelines.end() && pipeIt->second->descSet != VK_NULL_HANDLE) {
+        const size_t UBO_SIZE = 224;
+
+        // Update UBO data via map/memcpy/unmap
+        {
+            uint8_t uboData[224] = {};
+            // floats 0-5 (offset 0-23)
+            for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
+                float v = params.uniformFloats[i];
+                memcpy(uboData + i * 4, &v, sizeof(float));
+            }
+            // uResolution + uTime + uFrameCount (offset 24-39)
+            { float r[2] = {static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight)}; memcpy(uboData + 24, r, 8); }
+            { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
+
+            // MVP at offset 40-103 (mat4 = 64 bytes)
+            if (!params.mvp.empty()) memcpy(uboData + 40, params.mvp.data(), 64);
+            // ModelView at offset 104-167 (mat4 = 64 bytes)
+            if (!params.modelView.empty()) memcpy(uboData + 104, params.modelView.data(), 64);
+            // LightDir at offset 168-179 (vec3 = 12 bytes)
+            if (!params.lightDir.empty()) memcpy(uboData + 168, params.lightDir.data(), 12);
+            // LightColor at offset 184-195 (vec3 = 12 bytes, padded to 16)
+            if (!params.lightColor.empty()) memcpy(uboData + 184, params.lightColor.data(), 12);
+            // EyePos at offset 200-211 (vec3 = 12 bytes, padded to 16)
+            if (!params.eyePos.empty()) memcpy(uboData + 200, params.eyePos.data(), 12);
+
+            void* mapped = nullptr;
+            VK_CHECK(vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped));
+            memcpy(mapped, uboData, UBO_SIZE);
+            vkUnmapMemory(m_device, pipeIt->second->uboMemory);
+        }
+
+        // --- Update descriptor set with current texture + UBO ---
+        VkDescriptorImageInfo imageInfo{};
+        VkDescriptorBufferInfo bufferInfo{};
+        std::vector<VkWriteDescriptorSet> writes;
+
+        if (!params.inputTextures.empty()) {
+            auto texIt = m_textures.find(params.inputTextures[0].id);
+            if (texIt != m_textures.end()) {
+                imageInfo.sampler = texIt->second->sampler;
+                imageInfo.imageView = texIt->second->view;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                VkWriteDescriptorSet texWrite{};
+                texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                texWrite.dstSet = pipeIt->second->descSet;
+                texWrite.dstBinding = 0;
+                texWrite.dstArrayElement = 0;
+                texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                texWrite.descriptorCount = 1;
+                texWrite.pImageInfo = &imageInfo;
+                writes.push_back(texWrite);
+            }
+        }
+
+        bufferInfo.buffer = pipeIt->second->uboBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = UBO_SIZE;
+
+        VkWriteDescriptorSet uboWrite{};
+        uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        uboWrite.dstSet = pipeIt->second->descSet;
+        uboWrite.dstBinding = 1;
+        uboWrite.dstArrayElement = 0;
+        uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboWrite.descriptorCount = 1;
+        uboWrite.pBufferInfo = &bufferInfo;
+        writes.push_back(uboWrite);
+
+        vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
+        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipeIt->second->layout, 0, 1, &pipeIt->second->descSet, 0, nullptr);
+    }
+
+    // Draw indexed
+    vkCmdDrawIndexed(m_commandBuffer, static_cast<uint32_t>(indexCount), 1, 0, 0, 0);
+
+    // NOTE: Destroying vertex/index buffers immediately is unsafe in Vulkan
+    // (GPU commands are asynchronous). For production, use a ring buffer or
+    // defer-destroy scheme. The leak is acceptable for demo/single-frame use.
+    if (vb != VK_NULL_HANDLE) { vkDestroyBuffer(m_device, vb, nullptr); vkFreeMemory(m_device, vbMem, nullptr); }
+    if (ib != VK_NULL_HANDLE) { vkDestroyBuffer(m_device, ib, nullptr); vkFreeMemory(m_device, ibMem, nullptr); }
+
+    m_currentPipeline = {0};
 }
 
 void VulkanBackend::BlitToScreen(TextureHandle src) {

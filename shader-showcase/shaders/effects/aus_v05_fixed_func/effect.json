@@ -1,0 +1,35 @@
+{
+  "name": "固定功能Shader",
+  "category": "AUS 3D物体",
+  "description": "Vol.05 固定功能Shader示例",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "亮度",
+      "type": "Float",
+      "min": 0.5,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "加色R",
+      "type": "Float",
+      "min": 0,
+      "max": 0.5,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "加色G",
+      "type": "Float",
+      "min": 0,
+      "max": 0.5,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

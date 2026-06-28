@@ -1,0 +1,44 @@
+{
+  "name": "漫反射+纹理",
+  "category": "AUS 3D物体",
+  "description": "Vol.12 可调颜色+纹理漫反射",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "R色调",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "G色调",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "B色调",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "强度",
+      "type": "Float",
+      "min": 0.2,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    }
+  ]
+}

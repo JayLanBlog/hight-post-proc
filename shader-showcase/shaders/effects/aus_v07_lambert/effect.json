@@ -1,0 +1,17 @@
+{
+  "name": "自制Lambert",
+  "category": "AUS 3D物体",
+  "description": "Vol.07 自定义Lambert光照",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "强度",
+      "type": "Float",
+      "min": 0.2,
+      "max": 2,
+      "default": 1,
+      "ui_type": "slider"
+    }
+  ]
+}

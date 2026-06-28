@@ -1,0 +1,17 @@
+{
+  "name": "卡通渐变光照",
+  "category": "AUS 3D物体",
+  "description": "Vol.07 自定义卡通渐变光照",
+  "passes": 1,
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "色调级数",
+      "type": "Float",
+      "min": 2,
+      "max": 10,
+      "default": 4,
+      "ui_type": "slider"
+    }
+  ]
+}
