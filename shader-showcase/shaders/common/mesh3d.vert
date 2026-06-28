@@ -1,5 +1,5 @@
 #version 460
-// mesh3d.vert -- 3D object vertex shader for AUS port
+// mesh3d.vert — 3D object vertex shader for AUS port
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNormal;
 layout(location=2) in vec2 aUV;

@@ -1,0 +1,3 @@
+[Vulkan] vkCreateGraphicsPipelines failed: -13 (vert=1 frag=98 vtxInput=1)
+[Vulkan] vkCreateGraphicsPipelines failed: -13 (vert=1 frag=99 vtxInput=1)
+[Vulkan] vkCreateGraphicsPipelines failed: -13 (vert=1 frag=100 vtxInput=1)

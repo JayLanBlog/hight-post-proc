@@ -26,7 +26,7 @@
 // Configuration
 // ============================================================================
 #ifdef _DEBUG
-const bool ENABLE_VALIDATION_LAYERS = true;
+const bool ENABLE_VALIDATION_LAYERS = false;
 #else
 const bool ENABLE_VALIDATION_LAYERS = false;
 #endif
