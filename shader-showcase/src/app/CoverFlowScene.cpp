@@ -976,6 +976,8 @@ void CoverFlowScene::OnImGui()
         {"Color Adjustment",    LM.CategoryColorAdj()},
         {"Vignette Effects",    LM.CategoryVignette()},
         {"Image Processing",    LM.CategoryImageProc()},
+        {"AUS 后处理",           LM.CategoryAUSPost()},
+        {"AUS 3D物体",           LM.CategoryAUS3D()},
     };
     const int nCats = sizeof(cats) / sizeof(cats[0]);
     float tabH = h * 0.033f, tabY = h * 0.008f, tabFS = h * 0.014f;

@@ -36,6 +36,8 @@ public:
     const char* CategoryVignette()const { return m_lang == Language::Chinese ? u8"暗角效果" : "Vignette Effects"; }
     const char* CategoryImageProc()const{ return m_lang == Language::Chinese ? u8"图像处理效果" : "Image Processing"; }
     const char* CategoryProcess() const { return m_lang == Language::Chinese ? u8"处理效果" : "Process Effects"; }
+    const char* CategoryAUSPost() const { return m_lang == Language::Chinese ? u8"AUS 后处理" : "AUS Post FX"; }
+    const char* CategoryAUS3D()   const { return m_lang == Language::Chinese ? u8"AUS 3D物体" : "AUS 3D Objects"; }
 
     const char* LanguageButton() const { return m_lang == Language::Chinese ? u8"中文 / EN" : u8"EN / 中文"; }
 

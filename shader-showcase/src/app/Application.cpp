@@ -52,10 +52,10 @@ int Application::Run(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // AUTO_TEST_CARDS mode: force OpenGL for screenshot capture
+    // AUTO_TEST_CARDS mode: force Vulkan for 3D mesh support
     if (getenv("AUTO_TEST_CARDS") && !getenv("AUTO_TEST_UI")) {
-        printf("[Application] AUTO_TEST_CARDS: forcing OpenGL backend\n");
-        m_backendType = BackendType::OpenGL;
+        printf("[Application] AUTO_TEST_CARDS: forcing Vulkan backend\n");
+        m_backendType = BackendType::Vulkan;
     }
 
     InitBackend(m_backendType);
