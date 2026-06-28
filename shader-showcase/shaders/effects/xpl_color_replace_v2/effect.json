@@ -1,0 +1,64 @@
+{
+  "name": "颜色替换V2",
+  "name_cn": "颜色替换V2",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "颜色替换V2：平滑过渡",
+  "description_cn": "颜色替换V2：平滑过渡",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "源色R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "源色G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "源色B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "目标色R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "范围",
+      "type": "Float",
+      "min": 0.001,
+      "max": 1,
+      "default": 0.3,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "目标色G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    }
+  ]
+}

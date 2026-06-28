@@ -1,0 +1,65 @@
+{
+  "name": "屏幕跳跃",
+  "name_cn": "屏幕跳跃",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Screen jump displacement. Horizontal/vertical continuous scrolling jump.",
+  "description_cn": "画面沿水平方向持续滚动跳跃，模拟信号中断后的画面跳动效果。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Intensity",
+      "label_cn": "强度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "uParamFloat1",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "uParamFloat2",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "uParamFloat3",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "uParamFloat4",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

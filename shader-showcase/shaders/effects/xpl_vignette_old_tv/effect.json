@@ -1,0 +1,37 @@
+{
+  "name": "老电视暗角",
+  "name_cn": "老电视暗角",
+  "category": "Vignette Effects",
+  "category_cn": "Vignette Effects",
+  "description": "老电视暗角+噪声+灰度",
+  "description_cn": "老电视暗角+噪声+灰度",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "暗角强度",
+      "type": "Float",
+      "min": 0,
+      "max": 5,
+      "default": 2.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "噪声强度",
+      "type": "Float",
+      "min": 0,
+      "max": 3,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "灰度混合",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    }
+  ]
+}

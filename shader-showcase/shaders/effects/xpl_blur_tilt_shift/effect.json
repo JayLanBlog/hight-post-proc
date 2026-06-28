@@ -1,0 +1,28 @@
+{
+  "name": "移轴模糊",
+  "name_cn": "移轴模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "移轴模糊：中部清晰上下模糊",
+  "description_cn": "移轴模糊：中部清晰上下模糊",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊量",
+      "type": "Float",
+      "min": 0,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "模糊范围",
+      "type": "Float",
+      "min": 0,
+      "max": 40,
+      "default": 20,
+      "ui_type": "slider"
+    }
+  ]
+}

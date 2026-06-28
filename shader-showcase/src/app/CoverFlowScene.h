@@ -1,5 +1,7 @@
 #pragma once
 
+enum class EffectCategory { Dynamic, Static };
+
 #include "app/Scene.h"
 #include "app/CoverFlowState.h"
 #include "shader/EffectMetadata.h"
@@ -71,8 +73,22 @@ public:
 
 private:
     std::vector<EffectCard> m_cards;
+    std::string m_activeCategory = "Process Effects";
+    std::vector<int> m_filteredIndices;
+    std::vector<int> m_dynamicIndices;  // cards that are dynamic (time-varying)
+    std::vector<int> m_staticIndices;   // cards that are static (no time)
+    EffectCategory m_currentCategory = EffectCategory::Static;
     int m_selectedIndex   = 0;
     float m_scrollOffset  = 0.0f;
+
+    // Full-screen immersive rendering
+    TextureHandle m_immersiveTex    = INVALID_TEXTURE;
+    int m_immersiveTexW            = 0;
+    int m_immersiveTexH            = 0;
+    void* m_immersiveImTexID       = nullptr;
+    float m_effectTime             = 0.0f;
+    uint32_t m_effectFrameCount    = 0;
+
     float m_targetOffset  = 0.0f;
     TextureHandle m_inputTex = {0};
     std::vector<TextureHandle> m_inputTexCache;  // per-effect cached input textures

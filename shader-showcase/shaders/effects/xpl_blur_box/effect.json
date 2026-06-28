@@ -1,0 +1,19 @@
+{
+  "name": "方框模糊",
+  "name_cn": "方框模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "方框模糊：4-tap 盒式滤波",
+  "description_cn": "方框模糊：4-tap 盒式滤波",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊偏移",
+      "type": "Float",
+      "min": 0,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    }
+  ]
+}

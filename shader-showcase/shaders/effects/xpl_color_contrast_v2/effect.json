@@ -1,0 +1,28 @@
+{
+  "name": "对比度V2",
+  "name_cn": "对比度V2",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "对比度V2：自定义中点",
+  "description_cn": "对比度V2：自定义中点",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "中点",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "对比度",
+      "type": "Float",
+      "min": 0,
+      "max": 5,
+      "default": 1.5,
+      "ui_type": "slider"
+    }
+  ]
+}

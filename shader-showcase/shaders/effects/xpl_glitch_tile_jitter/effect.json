@@ -1,0 +1,68 @@
+{
+  "name": "瓦片抖动",
+  "name_cn": "瓦片抖动",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Alternating tile band jitter. Screen split into bands that jitter independently.",
+  "description_cn": "将画面分割为等宽水平条带，奇数行与偶数行交替左右抖动，产生条带状撕裂效果。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Splitting",
+      "label_cn": "分割数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 5,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Jitter Amount",
+      "label_cn": "抖动强度",
+      "type": "float",
+      "min": 0,
+      "max": 100,
+      "default": 10,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.7,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "Frequency",
+      "label_cn": "频率",
+      "type": "float",
+      "min": 0,
+      "max": 25,
+      "default": 1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "uParamFloat4",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

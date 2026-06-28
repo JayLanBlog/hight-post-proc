@@ -1,0 +1,19 @@
+{
+  "name": "帐篷模糊",
+  "name_cn": "帐篷模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "帐篷模糊：十字形5-tap",
+  "description_cn": "帐篷模糊：十字形5-tap",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊偏移",
+      "type": "Float",
+      "min": 0,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "画面块错位 V2",
+  "name_cn": "画面块错位 V2",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Single block layer displacement with RGB split and fade control.",
+  "description_cn": "单层方块网格错位 + RGB 通道分裂，配合渐变强度控制，可精细调节故障程度。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Offset Amount",
+      "label_cn": "偏移量",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 3,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Block U",
+      "label_cn": "块列数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "Block V",
+      "label_cn": "块行数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "Block Intensity",
+      "label_cn": "块强度",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 4,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "RGB Split",
+      "label_cn": "RGB分裂",
+      "type": "float",
+      "min": 0,
+      "max": 50,
+      "default": 1.0,
+      "ui": "slider"
+    }
+  ]
+}

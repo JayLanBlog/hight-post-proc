@@ -1,0 +1,67 @@
+{
+  "name": "模拟信号噪声",
+  "name_cn": "模拟信号噪声",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Analog static interference with luminance jitter and per-channel noise.",
+  "description_cn": "模拟老旧电视的雪花噪点和亮度抖动，叠加分通道彩色随机噪点。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Noise Speed",
+      "label_cn": "噪声速度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Noise Fading",
+      "label_cn": "噪声渐变",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 1.5,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Luminance Threshold",
+      "label_cn": "亮度阈值",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "uParamFloat3",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "uParamFloat4",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

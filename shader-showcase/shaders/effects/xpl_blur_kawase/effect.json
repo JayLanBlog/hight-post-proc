@@ -1,0 +1,19 @@
+{
+  "name": "Kawase模糊",
+  "name_cn": "Kawase模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "Kawase模糊：对角4-tap下采样",
+  "description_cn": "Kawase模糊：对角4-tap下采样",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊偏移",
+      "type": "Float",
+      "min": 0,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    }
+  ]
+}

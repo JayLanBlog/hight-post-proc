@@ -1,0 +1,1 @@
+[Application] EXCEPTION in main loop: bad allocation

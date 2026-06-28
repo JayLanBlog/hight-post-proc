@@ -1,0 +1,19 @@
+{
+  "name": "亮度",
+  "name_cn": "亮度",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "亮度调整",
+  "description_cn": "亮度调整",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "亮度",
+      "type": "Float",
+      "min": 0,
+      "max": 3,
+      "default": 1.2,
+      "ui_type": "slider"
+    }
+  ]
+}

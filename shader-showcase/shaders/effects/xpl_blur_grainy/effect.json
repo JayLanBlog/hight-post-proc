@@ -1,0 +1,28 @@
+{
+  "name": "颗粒模糊",
+  "name_cn": "颗粒模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "颗粒模糊：随机旋转采样",
+  "description_cn": "颗粒模糊：随机旋转采样",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "迭代次数",
+      "type": "Float",
+      "min": 1,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "模糊半径(UV)",
+      "type": "Float",
+      "min": 0.001,
+      "max": 40,
+      "default": 20,
+      "ui_type": "slider"
+    }
+  ]
+}

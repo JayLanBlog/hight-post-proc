@@ -1,0 +1,70 @@
+{
+  "name": "画面块错位 V1",
+  "name_cn": "画面块错位 V1",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Dual block layer displacement with RGB split. Two grid layers for complex block corruption.",
+  "description_cn": "双层方块网格叠加错位 + RGB 分离，双网格交错产生复杂不规则的画面块损坏效果。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Offset Amount",
+      "label_cn": "偏移量",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 3,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Block1 Columns",
+      "label_cn": "层1列数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "Block1 Rows",
+      "label_cn": "层1行数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "Block2 Columns",
+      "label_cn": "层2列数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 6,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "Block2 Rows",
+      "label_cn": "层2行数",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 6,
+      "ui": "slider"
+    }
+  ]
+}

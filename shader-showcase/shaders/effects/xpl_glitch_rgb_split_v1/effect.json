@@ -1,0 +1,70 @@
+{
+  "name": "RGB分离 V1",
+  "name_cn": "RGB分离 V1",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Classic RGB split with sine pulsing, center-distance fading, per-channel amount.",
+  "description_cn": "经典正弦脉冲 RGB 通道分离，越靠近画面边缘偏移越大（中心衰减），每通道强度独立可调。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Fading",
+      "label_cn": "渐变",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Amount",
+      "label_cn": "强度",
+      "type": "float",
+      "min": 0,
+      "max": 5,
+      "default": 5,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "Amount R",
+      "label_cn": "R通道量",
+      "type": "float",
+      "min": 0,
+      "max": 5,
+      "default": 1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "Amount B",
+      "label_cn": "B通道量",
+      "type": "float",
+      "min": 0,
+      "max": 5,
+      "default": 1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "Center Fading",
+      "label_cn": "中心衰减",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "ui": "slider"
+    }
+  ]
+}

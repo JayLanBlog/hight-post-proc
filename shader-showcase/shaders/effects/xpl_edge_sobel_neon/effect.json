@@ -1,0 +1,64 @@
+{
+  "name": "Sobel霓虹",
+  "name_cn": "Sobel霓虹",
+  "category": "Edge Detection",
+  "category_cn": "Edge Detection",
+  "description": "Sobel + 霓虹叠加",
+  "description_cn": "Sobel + 霓虹叠加",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "边缘宽度X",
+      "type": "Float",
+      "min": 0,
+      "max": 20,
+      "default": 8.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "边缘宽度Y",
+      "type": "Float",
+      "min": 0,
+      "max": 20,
+      "default": 3.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "霓虹R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 3.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "霓虹G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 3.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "霓虹B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "强度",
+      "type": "Float",
+      "min": 0,
+      "max": 5,
+      "default": 1.0,
+      "ui_type": "slider"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "画面块错位 V3",
+  "name_cn": "画面块错位 V3",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Single block layer displacement with RGB split. Simplest ImageBlock variant.",
+  "description_cn": "将画面按方块网格切分，每个方块随机水平错位并分离 RGB 通道，最简版块故障。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 50,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Block Size",
+      "label_cn": "块大小",
+      "type": "float",
+      "min": 1,
+      "max": 50,
+      "default": 40,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "uParamFloat2",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "uParamFloat3",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "uParamFloat4",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

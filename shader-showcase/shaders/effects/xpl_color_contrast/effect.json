@@ -1,0 +1,19 @@
+{
+  "name": "对比度",
+  "name_cn": "对比度",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "对比度调整",
+  "description_cn": "对比度调整",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "对比度",
+      "type": "Float",
+      "min": 0,
+      "max": 5,
+      "default": 1.5,
+      "ui_type": "slider"
+    }
+  ]
+}

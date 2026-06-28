@@ -1,0 +1,28 @@
+{
+  "name": "扇形像素化",
+  "name_cn": "扇形像素化",
+  "category": "Pixelate Effects",
+  "category_cn": "Pixelate Effects",
+  "description": "扇形分块",
+  "description_cn": "扇形分块",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "像素大小",
+      "type": "Float",
+      "min": 4,
+      "max": 256,
+      "default": 16,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "扇区数",
+      "type": "Float",
+      "min": 2,
+      "max": 16,
+      "default": 8,
+      "ui_type": "slider"
+    }
+  ]
+}

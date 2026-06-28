@@ -1,0 +1,28 @@
+{
+  "name": "锐化V3",
+  "name_cn": "锐化V3",
+  "category": "Image Processing",
+  "category_cn": "Image Processing",
+  "description": "反锐化掩膜：径向自适应",
+  "description_cn": "反锐化掩膜：径向自适应",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "中心强度",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 5.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "边缘强度",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 3.0,
+      "ui_type": "slider"
+    }
+  ]
+}

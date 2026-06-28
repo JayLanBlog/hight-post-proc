@@ -17,6 +17,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <direct.h>   // _chdir, _fullpath
 #endif
 
 #include "stb_image.h"
@@ -42,6 +43,35 @@ static std::string FindAssetDir() {
 int main(int argc, char* argv[]) {
     setvbuf(stdout, nullptr, _IONBF, 0);
     setvbuf(stderr, nullptr, _IONBF, 0);
+
+    // Set working directory to project root so relative paths (assets/images/*.jpg, etc.) resolve
+#ifdef _WIN32
+    {
+        char buf[MAX_PATH];
+        DWORD len = GetModuleFileNameA(nullptr, buf, MAX_PATH);
+        if (len > 0 && len < MAX_PATH) {
+            std::string exePath(buf, (size_t)len);
+            auto sl = exePath.find_last_of("\\/");
+            if (sl != std::string::npos) {
+                std::string exeDir = exePath.substr(0, sl);
+                for (const char* up : {"../../..", "../..", "..", "."}) {
+                    std::string test = exeDir + "/" + up + "/assets/images/00_grayscale_landscape.jpg";
+                    FILE* f = fopen(test.c_str(), "rb");
+                    if (f) {
+                        fclose(f);
+                        std::string root = exeDir + "/" + up;
+                        char absRoot[MAX_PATH];
+                        if (_fullpath(absRoot, root.c_str(), MAX_PATH)) {
+                            _chdir(absRoot);
+                            printf("[main] Working directory set to: %s\n", absRoot);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     // Check for auto-test mode via environment variable
     const char* autoTestEnv = getenv("AUTO_TEST");
@@ -146,85 +176,116 @@ int main(int argc, char* argv[]) {
 
         printf("[main] All %d input textures cached\n", (int)inputTexCache.size());
 
-        auto coverFlow = std::make_unique<CoverFlowScene>();
-        coverFlow->SetBackend(backend);
-        coverFlow->SetInputTexture(inputTex);
-        coverFlow->SetInputTexCache(inputTexCache);
-        coverFlow->SetTestImageBaseDir(testImageBaseDir);
-        coverFlow->SetApplication(&app);
-        coverFlow->AddImageToPool(jpgPath);
-        coverFlow->AddImageToPool(assetDir + "/portrait.jpg");
-        coverFlow->AddImageToPool(assetDir + "/nature.jpg");
-        coverFlow->AddImageToPool(assetDir + "/abstract.jpg");
+        // ================================================================
+        // Register "后处理特效" (CoverFlowScene) with a reusable factory.
+        // ALL captured variables MUST be by-VALUE — the frame callback's
+        // local variables are destroyed after first invocation. References
+        // to them are dangling when the factory runs later.
+        // ================================================================
+        auto* be     = backend;
+        auto  tex    = inputTex;
+        // Copy by value — these are local variables that go out of scope
+        auto  cache  = inputTexCache;            // copy vector
+        auto  imgDir = testImageBaseDir;          // copy string
+        auto  ad     = assetDir;                  // copy string
+        auto  jpg    = jpgPath;                   // copy string
+        auto  ne     = NUM_EFFECTS;
 
-        // Add test images to pool for Ctrl+Left/Right cycling
-        for (int i = 0; i < NUM_EFFECTS; i++) {
-            std::string imgPath = testImageBaseDir + testImageList[i];
-            FILE* f = fopen(imgPath.c_str(), "rb");
-            if (f) {
-                fclose(f);
-                coverFlow->AddImageToPool(imgPath);
-            }
-        }
-
-        // Add test videos to pool
-        const char* testVideoList[] = {
-            "00_grayscale.mp4", "01_bloom.mp4", "02_blur.mp4", "03_sharpen.mp4",
-            "04_edge.mp4", "05_emboss.mp4", "06_pixelate.mp4", "07_vignette.mp4",
-            "08_chromatic.mp4", "09_colorgrade.mp4", "10_noise.mp4", "11_kaleidoscope.mp4",
-            "12_glitch.mp4", "13_toon.mp4", "14_vhs.mp4", "15_crt.mp4",
-            "16_water.mp4", "17_lens.mp4"
-        };
+        // Find test video directory
         std::string testVideoBaseDir;
 #ifdef _WIN32
-        if (len > 0 && len < MAX_PATH) {
-            std::string exePath(buf, (size_t)len);
-            auto sl = exePath.find_last_of("\\/");
-            if (sl != std::string::npos) exePath = exePath.substr(0, sl);
-            for (const char* rel : {"../../../assets/videos", "../../assets/videos",
-                                    "../assets/videos", "assets/videos",
-                                    "../../../screenshots/assets/videos", "../../screenshots/assets/videos",
-                                    "../screenshots/assets/videos", "screenshots/assets/videos"}) {
-                std::string test = exePath + "/" + rel + "/00_grayscale.mp4";
-                FILE* f = fopen(test.c_str(), "rb");
-                if (f) { fclose(f); testVideoBaseDir = exePath + "/" + rel + "/"; break; }
+        {
+            char buf2[MAX_PATH];
+            DWORD len2 = GetModuleFileNameA(nullptr, buf2, MAX_PATH);
+            if (len2 > 0 && len2 < MAX_PATH) {
+                std::string ep(buf2, (size_t)len2);
+                auto sl = ep.find_last_of("\\/");
+                if (sl != std::string::npos) ep = ep.substr(0, sl);
+                for (const char* rel : {"../../../assets/videos","../../assets/videos","../assets/videos","assets/videos"}) {
+                    std::string test = ep + "/" + rel + "/00_grayscale.mp4";
+                    FILE* f = fopen(test.c_str(), "rb");
+                    if (f) { fclose(f); testVideoBaseDir = ep + "/" + rel + "/"; break; }
+                }
             }
         }
 #endif
-        if (testVideoBaseDir.empty()) {
-            testVideoBaseDir = "assets/videos/";
-        }
+        if (testVideoBaseDir.empty()) testVideoBaseDir = "assets/videos/";
         printf("[main] Test videos directory: %s\n", testVideoBaseDir.c_str());
+        auto  vdDir  = testVideoBaseDir;          // copy string
 
-        for (int i = 0; i < NUM_EFFECTS; i++) {
-            std::string vidPath = testVideoBaseDir + testVideoList[i];
-            FILE* f = fopen(vidPath.c_str(), "rb");
-            if (f) {
-                fclose(f);
-                coverFlow->AddVideoToPool(vidPath);
-            }
-        }
-
-        if (autoTest) {
-            coverFlow->EnableAutoTest(80); // auto-cycle every card, hold 80 frames each
-        }
-
-        std::unique_ptr<CoverFlowScene> cf = std::move(coverFlow);
-        auto cfShared = std::make_shared<std::unique_ptr<CoverFlowScene>>(std::move(cf));
-
+        // Capture EVERYTHING by value (including copies of vectors/strings)
         SceneRegistry::Instance().Register({
             "post-processing",
             "后处理特效",
             "后处理",
-            "18 种 GPU 实时后处理效果：模糊、辉光、故障、CRT…",
+            "91 种 GPU 实时后处理效果：模糊、辉光、故障、CRT…",
             "assets/images/00_grayscale_landscape.jpg",
-            [cfShared]() { return std::move(*cfShared); },
+            [be, tex, cache, imgDir, ad, jpg, ne, vdDir, autoTest, &app]() -> std::unique_ptr<Scene> {
+                printf("[main] Factory: creating new CoverFlowScene\n");
+                auto c = std::make_unique<CoverFlowScene>();
+                c->SetBackend(be);
+                c->SetInputTexture(tex);
+                c->SetInputTexCache(cache);
+                c->SetTestImageBaseDir(imgDir);
+                c->SetApplication(&app);
+                c->AddImageToPool(jpg);
+                c->AddImageToPool(ad + "/portrait.jpg");
+                c->AddImageToPool(ad + "/nature.jpg");
+                c->AddImageToPool(ad + "/abstract.jpg");
+                {
+                    const char* testImageList[] = {
+                        "00_grayscale_landscape.jpg","01_bloom_citynight.jpg","02_blur_brickwall.jpg",
+                        "03_sharpen_architecture.jpg","04_edge_building.jpg","05_emboss_metal.jpg",
+                        "06_pixelate_portrait.jpg","07_vignette_flower.jpg","08_chromatic_leaves.jpg",
+                        "09_colorgrading_food.jpg","10_noise_sky.jpg","11_kaleidoscope_mandala.jpg",
+                        "12_glitch_tech.jpg","13_toon_cartoon.jpg","14_vhs_retro.jpg",
+                        "15_crt_screen.jpg","16_water_lake.jpg","17_lens_wideangle.jpg"
+                    };
+                    for (int i = 0; i < ne; i++) {
+                        std::string p = imgDir + testImageList[i];
+                        FILE* f = fopen(p.c_str(), "rb");
+                        if (f) { fclose(f); c->AddImageToPool(p); }
+                    }
+                }
+                {
+                    const char* testVideoList[] = {
+                        "00_grayscale.mp4","01_bloom.mp4","02_blur.mp4","03_sharpen.mp4",
+                        "04_edge.mp4","05_emboss.mp4","06_pixelate.mp4","07_vignette.mp4",
+                        "08_chromatic.mp4","09_colorgrade.mp4","10_noise.mp4","11_kaleidoscope.mp4",
+                        "12_glitch.mp4","13_toon.mp4","14_vhs.mp4","15_crt.mp4",
+                        "16_water.mp4","17_lens.mp4"
+                    };
+                    for (int i = 0; i < ne; i++) {
+                        std::string v = vdDir + testVideoList[i];
+                        FILE* f = fopen(v.c_str(), "rb");
+                        if (f) { fclose(f); c->AddVideoToPool(v); }
+                    }
+                }
+                if (autoTest) c->EnableAutoTest(80);
+                printf("[main] Factory: CoverFlowScene created\n");
+                return c;
+            },
             true
         });
 
         auto gallery = std::make_unique<SceneGalleryScene>();
         gallery->SetApplication(&app);
-        app.SetScene(std::move(gallery));
+
+        // AUTO_TEST_CARDS: skip gallery, launch CoverFlowScene directly for screenshots
+        if (getenv("AUTO_TEST_CARDS") && !getenv("AUTO_TEST_UI")) {
+            printf("[main] AUTO_TEST_CARDS mode: launching CoverFlowScene directly\n");
+            auto c = std::make_unique<CoverFlowScene>();
+            c->SetBackend(backend);
+            c->SetInputTexture(inputTex);
+            c->SetInputTexCache(inputTexCache);
+            c->SetTestImageBaseDir(testImageBaseDir);
+            c->SetApplication(&app);
+            c->AddImageToPool(assetDir + "/test.jpg");
+            if (autoTest) c->EnableAutoTest(80);
+            app.SetScene(std::move(c));
+        } else {
+            app.SetScene(std::move(gallery));
+        }
         printf("[main] SceneGalleryScene started (autoTest=%d)\n", autoTest);
     });
 

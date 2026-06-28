@@ -52,6 +52,12 @@ int Application::Run(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // AUTO_TEST_CARDS mode: force OpenGL for screenshot capture
+    if (getenv("AUTO_TEST_CARDS") && !getenv("AUTO_TEST_UI")) {
+        printf("[Application] AUTO_TEST_CARDS: forcing OpenGL backend\n");
+        m_backendType = BackendType::OpenGL;
+    }
+
     InitBackend(m_backendType);
 
     if (!m_window || !m_backend)
@@ -249,18 +255,20 @@ void Application::MainLoop()
         m_backend->BeginFrame();
 
         // --- Deferred scene transition ---
-        // Must happen AFTER BeginFrame's vkWaitForFences so GPU has finished
-        // with old scene's resources before they're destroyed.
         if (m_pendingNextScene) {
-            printf("[Application] Processing deferred scene transition\n");
+            printf("[Application] Processing deferred scene transition\n"); fflush(stdout);
             if (m_currentScene) {
+                printf("[Application]   Calling OnExit on old scene\n"); fflush(stdout);
                 m_currentScene->OnExit();
+                printf("[Application]   Old scene OnExit complete\n"); fflush(stdout);
                 m_currentScene.reset();
+                printf("[Application]   Old scene destroyed\n"); fflush(stdout);
             }
             m_currentScene = std::move(m_pendingNextScene);
             if (m_currentScene) {
+                printf("[Application]   Calling OnEnter on new scene\n"); fflush(stdout);
                 m_currentScene->OnEnter();
-                printf("[Application] New scene entered OK\n");
+                printf("[Application] New scene entered OK\n"); fflush(stdout);
             }
         }
 

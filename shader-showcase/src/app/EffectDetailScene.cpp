@@ -320,6 +320,14 @@ void EffectDetailScene::OnImGui()
 
             ImDrawList* dl = ImGui::GetWindowDrawList();
 
+            // Shadow text helper for compare labels
+            auto cmpShadowText = [&](ImFont* f, float sz, ImVec2 p, ImU32 fg, const char* t) {
+                const ImVec2 kOff[] = {{-2,-2},{2,-2},{-2,2},{2,2},{0,3}};
+                ImU32 sh = IM_COL32(0, 0, 0, 180);
+                for (auto& o : kOff) dl->AddText(f, sz, ImVec2(p.x+o.x, p.y+o.y), sh, t);
+                dl->AddText(f, sz, p, fg, t);
+            };
+
             // Split position in screen coordinates
             float splitX = displayMin.x + displaySize.x * m_compareSplitPos;
 
@@ -352,10 +360,12 @@ void EffectDetailScene::OnImGui()
                 IM_COL32(68, 175, 255, 255));
 
             // Labels: "Before" on left, "After" on right
-            dl->AddText(ImVec2(displayMin.x + 10, displayMin.y + 10),
-                        IM_COL32(255, 255, 255, 200), "Before");
-            dl->AddText(ImVec2(displayMax.x - 60, displayMin.y + 10),
-                        IM_COL32(255, 255, 255, 200), "After");
+            cmpShadowText(ImGui::GetFont(), 24.0f,
+                ImVec2(displayMin.x + 12, displayMin.y + 12),
+                IM_COL32(255, 255, 255, 220), "Before");
+            cmpShadowText(ImGui::GetFont(), 24.0f,
+                ImVec2(displayMax.x - 80, displayMin.y + 12),
+                IM_COL32(255, 255, 255, 220), "After");
 
             // Handle mouse interaction for dragging the split
             ImVec2 mousePos = ImGui::GetIO().MousePos;
@@ -391,27 +401,67 @@ void EffectDetailScene::OnImGui()
         }
     }
 
-    // --- InfoBar at bottom of screen ---
+    // --- Floating overlay: effect name + description + hints ---
     {
-        const float barHeight = 60.0f;
-        ImGui::SetNextWindowPos(ImVec2(0, (float)height - barHeight));
-        ImGui::SetNextWindowSize(ImVec2((float)width, barHeight));
-        ImGui::Begin("##InfoBar", nullptr,
-            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-            ImGuiWindowFlags_NoSavedSettings);
-        ImGui::TextColored(ImVec4(1, 1, 1, 0.9f), "%s", LanguageManager::Instance().CardName(m_card.id));
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.7f, 0.7f), "%s", LanguageManager::Instance().EscReturn());
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 0.8f), "%s", LanguageManager::Instance().CardDesc(m_card.id));
-        ImGui::End();
+        float w = (float)width, h = (float)height;
+        float cx = w * 0.5f;
+
+        auto drawShadowText = [&](ImFont* font, float size, ImVec2 pos, ImU32 fg, const char* text) {
+            const ImVec2 kOff[] = {{-2,-2},{2,-2},{-2,2},{2,2},{0,3}};
+            ImU32 sh = IM_COL32(0, 0, 0, 180);
+            ImDrawList* fgdl = ImGui::GetForegroundDrawList();
+            for (auto& o : kOff)
+                fgdl->AddText(font, size, ImVec2(pos.x+o.x, pos.y+o.y), sh, text);
+            fgdl->AddText(font, size, pos, fg, text);
+        };
+
+        auto& LM = LanguageManager::Instance();
+        const char* nameStr = LM.CardName(m_card.id);
+        const char* descStr = LM.CardDesc(m_card.id);
+        ImFont* font = ImGui::GetFont();
+
+        // Effect name — large, centered near bottom
+        ImVec2 ns = font->CalcTextSizeA(h * 0.045f, FLT_MAX, 0.0f, nameStr);
+        drawShadowText(font, h * 0.045f,
+            ImVec2(cx - ns.x * 0.5f, h * 0.84f),
+            IM_COL32(255, 255, 255, 230), nameStr);
+
+        // Description
+        ImVec2 ds = font->CalcTextSizeA(h * 0.020f, FLT_MAX, 0.0f, descStr);
+        drawShadowText(font, h * 0.020f,
+            ImVec2(cx - ds.x * 0.5f, h * 0.89f),
+            IM_COL32(200, 205, 230, 180), descStr);
+
+        // ESC return hint — bottom-right
+        const char* escStr = LM.EscReturn();
+        ImVec2 es = font->CalcTextSizeA(h * 0.017f, FLT_MAX, 0.0f, escStr);
+        drawShadowText(font, h * 0.017f,
+            ImVec2(w - es.x - 20.0f, h * 0.94f),
+            IM_COL32(160, 170, 200, 140), escStr);
+
+        // Shortcuts hint — bottom-center
+        const char* shortcuts = (LM.GetLanguage() == Language::Chinese)
+            ? u8"Tab 参数面板 ｜ C 对比模式"
+            : "Tab Params ｜ C Compare";
+        ImVec2 ks = font->CalcTextSizeA(h * 0.017f, FLT_MAX, 0.0f, shortcuts);
+        // Light shadow only (single offset)
+        ImDrawList* fgdl = ImGui::GetForegroundDrawList();
+        fgdl->AddText(font, h * 0.017f,
+            ImVec2(cx - ks.x * 0.5f + 1.0f, h * 0.96f),
+            IM_COL32(0, 0, 0, 120), shortcuts);
+        fgdl->AddText(font, h * 0.017f,
+            ImVec2(cx - ks.x * 0.5f, h * 0.96f),
+            IM_COL32(140, 150, 170, 140), shortcuts);
     }
 
     // --- Debug Panel ---
     if (m_showDebug) {
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.07f, 0.08f, 0.12f, 0.92f));
+        ImGui::SetNextWindowPos(ImVec2(20, 80), ImGuiCond_FirstUseEver);
         ImGui::Begin(LanguageManager::Instance().EffectParams(), &m_showDebug);
         m_debugPanel.Render(&m_showDebug);
         ImGui::End();
+        ImGui::PopStyleColor();
         // Update uniform values after UI interaction
         m_debugPanel.SetUniformValues(m_uniformFloats, m_uniformInts);
         if (m_uniformFloats.size() != m_expectedFloatCount) {

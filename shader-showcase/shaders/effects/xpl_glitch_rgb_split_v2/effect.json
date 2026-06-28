@@ -1,0 +1,66 @@
+{
+  "name": "RGB分离 V2",
+  "name_cn": "RGB分离 V2",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "RGB split from 4-sine product. Organic pulsing chromatic aberration.",
+  "description_cn": "四层正弦波叠加驱动红蓝通道位移，产生有机脉动的色散故障效果。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Amount",
+      "label_cn": "强度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Amplitude",
+      "label_cn": "振幅",
+      "type": "float",
+      "min": 1,
+      "max": 6,
+      "default": 5,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "uParamFloat2",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "uParamFloat3",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "uParamFloat4",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

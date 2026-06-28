@@ -1,0 +1,28 @@
+{
+  "name": "LED像素化",
+  "name_cn": "LED像素化",
+  "category": "Pixelate Effects",
+  "category_cn": "Pixelate Effects",
+  "description": "圆形LED阵列",
+  "description_cn": "圆形LED阵列",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "LED大小",
+      "type": "Float",
+      "min": 4,
+      "max": 128,
+      "default": 12,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "圆度",
+      "type": "Float",
+      "min": 0.1,
+      "max": 2.0,
+      "default": 1.5,
+      "ui_type": "slider"
+    }
+  ]
+}

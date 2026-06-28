@@ -1,0 +1,28 @@
+{
+  "name": "六边形像素化",
+  "name_cn": "六边形像素化",
+  "category": "Pixelate Effects",
+  "category_cn": "Pixelate Effects",
+  "description": "六边形网格像素化",
+  "description_cn": "六边形网格像素化",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "网格大小",
+      "type": "Float",
+      "min": 4,
+      "max": 128,
+      "default": 48,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Grid",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    }
+  ]
+}

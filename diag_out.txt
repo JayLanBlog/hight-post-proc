@@ -1,0 +1,589 @@
+[main] Working directory set to: E:\AI\graph\hight-post-proc\shader-showcase
+[Application] AUTO_TEST_CARDS: forcing OpenGL backend
+[GL Loader] All OpenGL 4.6 function pointers loaded.
+[OpenGL] Initialized - GL Version: 4.6.0 NVIDIA 560.70
+[Application] Backend initialized: OpenGL 4.6 (SPIR-V)
+[main] Loaded image: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/test.jpg (1920 x 1280)
+[main] Test images directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/
+[main] Loaded test image for effect 0: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/00_grayscale_landscape.jpg (800 x 533)
+[main] Loaded test image for effect 1: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/01_bloom_citynight.jpg (800 x 486)
+[main] Loaded test image for effect 2: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/02_blur_brickwall.jpg (800 x 1200)
+[main] Loaded test image for effect 3: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/03_sharpen_architecture.jpg (800 x 533)
+[main] Loaded test image for effect 4: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/04_edge_building.jpg (800 x 533)
+[main] Loaded test image for effect 5: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/05_emboss_metal.jpg (800 x 533)
+[main] Loaded test image for effect 6: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/06_pixelate_portrait.jpg (800 x 1000)
+[main] Loaded test image for effect 7: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/07_vignette_flower.jpg (800 x 532)
+[main] Loaded test image for effect 8: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/08_chromatic_leaves.jpg (800 x 1422)
+[main] Loaded test image for effect 9: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/09_colorgrading_food.jpg (800 x 533)
+[main] Loaded test image for effect 10: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/10_noise_sky.jpg (800 x 1030)
+[main] Loaded test image for effect 11: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/11_kaleidoscope_mandala.jpg (800 x 533)
+[main] Loaded test image for effect 12: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/12_glitch_tech.jpg (800 x 533)
+[main] Loaded test image for effect 13: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/13_toon_cartoon.jpg (800 x 1135)
+[main] Loaded test image for effect 14: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/14_vhs_retro.jpg (800 x 533)
+[main] Loaded test image for effect 15: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/15_crt_screen.jpg (800 x 533)
+[main] Loaded test image for effect 16: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/16_water_lake.jpg (800 x 601)
+[main] Loaded test image for effect 17: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/17_lens_wideangle.jpg (800 x 534)
+[main] All 18 input textures cached
+[main] Test videos directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/videos/
+[main] AUTO_TEST_CARDS mode: launching CoverFlowScene directly
+[CoverFlowScene] Registered 91 effect cards
+[CoverFlowScene] Loaded effect.json params for 91/91 cards
+[CoverFlowScene] Dynamic: 79, Static: 12 effects
+[CoverFlowScene] Added image to pool: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/test.jpg (total 1)
+[Application] SetScene: entering new scene
+[CoverFlowScene] Entered with 91 cards, selected=35
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/common/fullscreen.vert.spv (988 bytes, 247 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/simple_test/simple_test.frag.spv (1644 bytes, 411 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/bloom/bloom.frag.spv (4624 bytes, 1156 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/blur/blur.frag.spv (3908 bytes, 977 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/sharpen/sharpen.frag.spv (4160 bytes, 1040 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/edge_detect/edge_detect.frag.spv (5204 bytes, 1301 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/emboss/emboss.frag.spv (2352 bytes, 588 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/pixelate/pixelate.frag.spv (1840 bytes, 460 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/vignette/vignette.frag.spv (2460 bytes, 615 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/chromatic/chromatic.frag.spv (2868 bytes, 717 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/color_grade/color_grade.frag.spv (4452 bytes, 1113 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/noise/noise.frag.spv (4924 bytes, 1231 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/kaleidoscope/kaleidoscope.frag.spv (2824 bytes, 706 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/glitch/glitch.frag.spv (4616 bytes, 1154 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/toon/toon.frag.spv (4208 bytes, 1052 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/vhs/vhs.frag.spv (4556 bytes, 1139 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/crt/crt.frag.spv (5308 bytes, 1327 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/water_ripple/water_ripple.frag.spv (5604 bytes, 1401 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/lens_distort/lens_distort.frag.spv (2408 bytes, 602 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_screen_jump/xpl_glitch_screen_jump.frag.spv (2212 bytes, 553 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_screen_shake/xpl_glitch_screen_shake.frag.spv (2232 bytes, 558 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_scan_line_jitter/xpl_glitch_scan_line_jitter.frag.spv (2600 bytes, 650 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v4/xpl_glitch_rgb_split_v4.frag.spv (2500 bytes, 625 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v2/xpl_glitch_rgb_split_v2.frag.spv (2848 bytes, 712 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_analog_noise/xpl_glitch_analog_noise.frag.spv (4304 bytes, 1076 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v3/xpl_glitch_image_block_v3.frag.spv (3036 bytes, 759 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v4/xpl_glitch_image_block_v4.frag.spv (3448 bytes, 862 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_tile_jitter/xpl_glitch_tile_jitter.frag.spv (2288 bytes, 572 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v3/xpl_glitch_rgb_split_v3.frag.spv (5752 bytes, 1438 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_digital_stripe/xpl_glitch_digital_stripe.frag.spv (3940 bytes, 985 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v2/xpl_glitch_image_block_v2.frag.spv (3728 bytes, 932 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_image_block_v1/xpl_glitch_image_block_v1.frag.spv (4456 bytes, 1114 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v1/xpl_glitch_rgb_split_v1.frag.spv (5404 bytes, 1351 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_rgb_split_v5/xpl_glitch_rgb_split_v5.frag.spv (3992 bytes, 998 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_line_block/xpl_glitch_line_block.frag.spv (7336 bytes, 1834 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_glitch_wave_jitter/xpl_glitch_wave_jitter.frag.spv (8080 bytes, 2020 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_bokeh/xpl_blur_bokeh.frag.spv (3648 bytes, 912 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_box/xpl_blur_box.frag.spv (2800 bytes, 700 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_directional/xpl_blur_directional.frag.spv (3128 bytes, 782 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_box/xpl_blur_dual_box.frag.spv (2800 bytes, 700 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_gaussian/xpl_blur_dual_gaussian.frag.spv (3052 bytes, 763 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_kawase/xpl_blur_dual_kawase.frag.spv (2800 bytes, 700 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_dual_tent/xpl_blur_dual_tent.frag.spv (3844 bytes, 961 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_gaussian/xpl_blur_gaussian.frag.spv (3052 bytes, 763 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_grainy/xpl_blur_grainy.frag.spv (3456 bytes, 864 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_iris/xpl_blur_iris.frag.spv (3068 bytes, 767 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_iris_v2/xpl_blur_iris_v2.frag.spv (3412 bytes, 853 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_kawase/xpl_blur_kawase.frag.spv (2800 bytes, 700 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_radial/xpl_blur_radial.frag.spv (3048 bytes, 762 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_radial_v2/xpl_blur_radial_v2.frag.spv (2920 bytes, 730 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_tent/xpl_blur_tent.frag.spv (3844 bytes, 961 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_tilt_shift/xpl_blur_tilt_shift.frag.spv (3052 bytes, 763 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_blur_tilt_shift_v2/xpl_blur_tilt_shift_v2.frag.spv (2776 bytes, 694 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_bleach_bypass/xpl_color_bleach_bypass.frag.spv (2560 bytes, 640 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_brightness/xpl_color_brightness.frag.spv (1516 bytes, 379 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_contrast/xpl_color_contrast.frag.spv (1692 bytes, 423 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_contrast_v2/xpl_color_contrast_v2.frag.spv (1728 bytes, 432 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_contrast_v3/xpl_color_contrast_v3.frag.spv (1916 bytes, 479 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_hue/xpl_color_hue.frag.spv (3284 bytes, 821 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_lens_filter/xpl_color_lens_filter.frag.spv (2172 bytes, 543 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_saturation/xpl_color_saturation.frag.spv (1772 bytes, 443 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_technicolor/xpl_color_technicolor.frag.spv (2660 bytes, 665 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_tint/xpl_color_tint.frag.spv (1876 bytes, 469 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_white_balance/xpl_color_white_balance.frag.spv (2604 bytes, 651 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_replace/xpl_color_replace.frag.spv (2316 bytes, 579 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_color_replace_v2/xpl_color_replace_v2.frag.spv (2388 bytes, 597 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_roberts/xpl_edge_roberts.frag.spv (3716 bytes, 929 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_roberts_neon/xpl_edge_roberts_neon.frag.spv (3868 bytes, 967 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_roberts_neon_v2/xpl_edge_roberts_neon_v2.frag.spv (3932 bytes, 983 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_scharr/xpl_edge_scharr.frag.spv (5188 bytes, 1297 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_scharr_neon/xpl_edge_scharr_neon.frag.spv (5620 bytes, 1405 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_scharr_neon_v2/xpl_edge_scharr_neon_v2.frag.spv (5460 bytes, 1365 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_sobel/xpl_edge_sobel.frag.spv (5596 bytes, 1399 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_sobel_neon/xpl_edge_sobel_neon.frag.spv (5460 bytes, 1365 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_edge_sobel_neon_v2/xpl_edge_sobel_neon_v2.frag.spv (5300 bytes, 1325 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_circle/xpl_pixel_circle.frag.spv (2960 bytes, 740 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_diamond/xpl_pixel_diamond.frag.spv (2352 bytes, 588 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_hexagon/xpl_pixel_hexagon.frag.spv (2392 bytes, 598 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_hexagon_grid/xpl_pixel_hexagon_grid.frag.spv (3128 bytes, 782 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_leaf/xpl_pixel_leaf.frag.spv (2560 bytes, 640 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_led/xpl_pixel_led.frag.spv (2080 bytes, 520 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_quad/xpl_pixel_quad.frag.spv (1604 bytes, 401 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_sector/xpl_pixel_sector.frag.spv (2580 bytes, 645 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_pixel_triangle/xpl_pixel_triangle.frag.spv (2224 bytes, 556 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_aurora/xpl_vignette_aurora.frag.spv (2604 bytes, 651 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_old_tv/xpl_vignette_old_tv.frag.spv (2848 bytes, 712 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_old_tv_v2/xpl_vignette_old_tv_v2.frag.spv (2948 bytes, 737 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_rapid/xpl_vignette_rapid.frag.spv (2048 bytes, 512 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_vignette_rapid_v2/xpl_vignette_rapid_v2.frag.spv (2428 bytes, 607 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_sharpen_v1/xpl_sharpen_v1.frag.spv (3352 bytes, 838 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_sharpen_v2/xpl_sharpen_v2.frag.spv (2532 bytes, 633 words)
+[ShaderLoader] Loaded SPIR-V: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../shaders/effects/xpl_sharpen_v3/xpl_sharpen_v3.frag.spv (2976 bytes, 744 words)
+[CoverFlowScene] Thumbnails initialized: 91 cards, 256x144
+[Application] SetScene: new scene entered OK
+[main] SceneGalleryScene started (autoTest=0)
+[CoverFlowScene] Selected card 0: Grayscale Test
+[CardScreenshot] Selected card 0: Grayscale Test
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_00.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_00.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_00.ppm
+[CoverFlowScene] Selected card 1: Bloom
+[CardScreenshot] Selected card 1: Bloom
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_01.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_01.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_01.ppm
+[CoverFlowScene] Selected card 2: Gaussian Blur
+[CardScreenshot] Selected card 2: Gaussian Blur
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_02.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_02.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_02.ppm
+[CoverFlowScene] Selected card 3: Sharpen
+[CardScreenshot] Selected card 3: Sharpen
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_03.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_03.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_03.ppm
+[CoverFlowScene] Selected card 4: Edge Detection
+[CardScreenshot] Selected card 4: Edge Detection
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_04.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_04.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_04.ppm
+[CoverFlowScene] Selected card 5: Emboss
+[CardScreenshot] Selected card 5: Emboss
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_05.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_05.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_05.ppm
+[CoverFlowScene] Selected card 6: Pixelate
+[CardScreenshot] Selected card 6: Pixelate
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_06.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_06.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_06.ppm
+[CoverFlowScene] Selected card 7: Vignette
+[CardScreenshot] Selected card 7: Vignette
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_07.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_07.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_07.ppm
+[CoverFlowScene] Selected card 8: Chromatic Aberration
+[CardScreenshot] Selected card 8: Chromatic Aberration
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_08.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_08.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_08.ppm
+[CoverFlowScene] Selected card 9: Color Grading
+[CardScreenshot] Selected card 9: Color Grading
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_09.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_09.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_09.ppm
+[CoverFlowScene] Selected card 10: Noise Generator
+[CardScreenshot] Selected card 10: Noise Generator
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_10.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_10.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_10.ppm
+[CoverFlowScene] Selected card 11: Kaleidoscope
+[CardScreenshot] Selected card 11: Kaleidoscope
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_11.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_11.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_11.ppm
+[CoverFlowScene] Selected card 12: Glitch Art
+[CardScreenshot] Selected card 12: Glitch Art
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_12.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_12.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_12.ppm
+[CoverFlowScene] Selected card 13: Toon Shading
+[CardScreenshot] Selected card 13: Toon Shading
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_13.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_13.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_13.ppm
+[CoverFlowScene] Selected card 14: VHS Retro
+[CardScreenshot] Selected card 14: VHS Retro
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_14.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_14.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_14.ppm
+[CoverFlowScene] Selected card 15: CRT Monitor
+[CardScreenshot] Selected card 15: CRT Monitor
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_15.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_15.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_15.ppm
+[CoverFlowScene] Selected card 16: Water Ripple
+[CardScreenshot] Selected card 16: Water Ripple
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_16.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_16.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_16.ppm
+[CoverFlowScene] Selected card 17: Lens Distortion
+[CardScreenshot] Selected card 17: Lens Distortion
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_17.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_17.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_17.ppm
+[CoverFlowScene] Selected card 18: 屏幕跳跃
+[CardScreenshot] Selected card 18: 屏幕跳跃
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_18.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_18.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_18.ppm
+[CoverFlowScene] Selected card 19: 屏幕震动
+[CardScreenshot] Selected card 19: 屏幕震动
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_19.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_19.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_19.ppm
+[CoverFlowScene] Selected card 20: 扫描线抖动
+[CardScreenshot] Selected card 20: 扫描线抖动
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_20.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_20.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_20.ppm
+[CoverFlowScene] Selected card 21: RGB分离 V4
+[CardScreenshot] Selected card 21: RGB分离 V4
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_21.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_21.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_21.ppm
+[CoverFlowScene] Selected card 22: RGB分离 V2
+[CardScreenshot] Selected card 22: RGB分离 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_22.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_22.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_22.ppm
+[CoverFlowScene] Selected card 23: 模拟信号噪声
+[CardScreenshot] Selected card 23: 模拟信号噪声
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_23.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_23.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_23.ppm
+[CoverFlowScene] Selected card 24: 画面块错位 V3
+[CardScreenshot] Selected card 24: 画面块错位 V3
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_24.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_24.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_24.ppm
+[CoverFlowScene] Selected card 25: 画面块错位 V4
+[CardScreenshot] Selected card 25: 画面块错位 V4
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_25.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_25.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_25.ppm
+[CoverFlowScene] Selected card 26: 瓦片抖动
+[CardScreenshot] Selected card 26: 瓦片抖动
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_26.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_26.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_26.ppm
+[CoverFlowScene] Selected card 27: RGB分离 V3
+[CardScreenshot] Selected card 27: RGB分离 V3
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_27.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_27.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_27.ppm
+[CoverFlowScene] Selected card 28: 数字条纹
+[CardScreenshot] Selected card 28: 数字条纹
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_28.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_28.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_28.ppm
+[CoverFlowScene] Selected card 29: 画面块错位 V2
+[CardScreenshot] Selected card 29: 画面块错位 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_29.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_29.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_29.ppm
+[CoverFlowScene] Selected card 30: 画面块错位 V1
+[CardScreenshot] Selected card 30: 画面块错位 V1
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_30.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_30.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_30.ppm
+[CoverFlowScene] Selected card 31: RGB分离 V1
+[CardScreenshot] Selected card 31: RGB分离 V1
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_31.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_31.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_31.ppm
+[CoverFlowScene] Selected card 32: RGB分离 V5
+[CardScreenshot] Selected card 32: RGB分离 V5
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_32.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_32.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_32.ppm
+[CoverFlowScene] Selected card 33: 行块错位
+[CardScreenshot] Selected card 33: 行块错位
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_33.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_33.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_33.ppm
+[CoverFlowScene] Selected card 34: 波浪抖动
+[CardScreenshot] Selected card 34: 波浪抖动
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_34.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_34.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_34.ppm
+[CoverFlowScene] Selected card 35: 散景模糊
+[CardScreenshot] Selected card 35: 散景模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_35.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_35.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_35.ppm
+[CoverFlowScene] Selected card 36: 方框模糊
+[CardScreenshot] Selected card 36: 方框模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_36.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_36.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_36.ppm
+[CoverFlowScene] Selected card 37: 定向模糊
+[CardScreenshot] Selected card 37: 定向模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_37.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_37.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_37.ppm
+[CoverFlowScene] Selected card 38: 双重方框模糊
+[CardScreenshot] Selected card 38: 双重方框模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_38.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_38.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_38.ppm
+[CoverFlowScene] Selected card 39: 双重高斯模糊
+[CardScreenshot] Selected card 39: 双重高斯模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_39.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_39.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_39.ppm
+[CoverFlowScene] Selected card 40: 双重Kawase模糊
+[CardScreenshot] Selected card 40: 双重Kawase模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_40.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_40.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_40.ppm
+[CoverFlowScene] Selected card 41: 双重帐篷模糊
+[CardScreenshot] Selected card 41: 双重帐篷模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_41.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_41.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_41.ppm
+[CoverFlowScene] Selected card 42: 高斯模糊
+[CardScreenshot] Selected card 42: 高斯模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_42.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_42.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_42.ppm
+[CoverFlowScene] Selected card 43: 颗粒模糊
+[CardScreenshot] Selected card 43: 颗粒模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_43.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_43.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_43.ppm
+[CoverFlowScene] Selected card 44: 光圈模糊
+[CardScreenshot] Selected card 44: 光圈模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_44.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_44.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_44.ppm
+[CoverFlowScene] Selected card 45: 光圈模糊 V2
+[CardScreenshot] Selected card 45: 光圈模糊 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_45.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_45.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_45.ppm
+[CoverFlowScene] Selected card 46: Kawase 模糊
+[CardScreenshot] Selected card 46: Kawase 模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_46.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_46.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_46.ppm
+[CoverFlowScene] Selected card 47: 径向模糊
+[CardScreenshot] Selected card 47: 径向模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_47.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_47.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_47.ppm
+[CoverFlowScene] Selected card 48: 径向模糊 V2
+[CardScreenshot] Selected card 48: 径向模糊 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_48.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_48.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_48.ppm
+[CoverFlowScene] Selected card 49: 帐篷模糊
+[CardScreenshot] Selected card 49: 帐篷模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_49.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_49.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_49.ppm
+[CoverFlowScene] Selected card 50: 移轴模糊
+[CardScreenshot] Selected card 50: 移轴模糊
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_50.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_50.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_50.ppm
+[CoverFlowScene] Selected card 51: 移轴模糊 V2
+[CardScreenshot] Selected card 51: 移轴模糊 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_51.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_51.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_51.ppm
+[CoverFlowScene] Selected card 52: 漂白旁路
+[CardScreenshot] Selected card 52: 漂白旁路
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_52.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_52.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_52.ppm
+[CoverFlowScene] Selected card 53: 亮度
+[CardScreenshot] Selected card 53: 亮度
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_53.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_53.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_53.ppm
+[CoverFlowScene] Selected card 54: 对比度
+[CardScreenshot] Selected card 54: 对比度
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_54.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_54.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_54.ppm
+[CoverFlowScene] Selected card 55: 对比度 V2
+[CardScreenshot] Selected card 55: 对比度 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_55.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_55.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_55.ppm
+[CoverFlowScene] Selected card 56: 对比度 V3
+[CardScreenshot] Selected card 56: 对比度 V3
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_56.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_56.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_56.ppm
+[CoverFlowScene] Selected card 57: 色相
+[CardScreenshot] Selected card 57: 色相
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_57.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_57.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_57.ppm
+[CoverFlowScene] Selected card 58: 镜头滤镜
+[CardScreenshot] Selected card 58: 镜头滤镜
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_58.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_58.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_58.ppm
+[CoverFlowScene] Selected card 59: 饱和度
+[CardScreenshot] Selected card 59: 饱和度
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_59.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_59.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_59.ppm
+[CoverFlowScene] Selected card 60: Technicolor
+[CardScreenshot] Selected card 60: Technicolor
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_60.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_60.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_60.ppm
+[CoverFlowScene] Selected card 61: 色调
+[CardScreenshot] Selected card 61: 色调
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_61.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_61.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_61.ppm
+[CoverFlowScene] Selected card 62: 白平衡
+[CardScreenshot] Selected card 62: 白平衡
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_62.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_62.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_62.ppm
+[CoverFlowScene] Selected card 63: 颜色替换
+[CardScreenshot] Selected card 63: 颜色替换
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_63.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_63.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_63.ppm
+[CoverFlowScene] Selected card 64: 颜色替换 V2
+[CardScreenshot] Selected card 64: 颜色替换 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_64.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_64.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_64.ppm
+[CoverFlowScene] Selected card 65: Roberts 边缘
+[CardScreenshot] Selected card 65: Roberts 边缘
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_65.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_65.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_65.ppm
+[CoverFlowScene] Selected card 66: Roberts 霓虹
+[CardScreenshot] Selected card 66: Roberts 霓虹
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_66.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_66.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_66.ppm
+[CoverFlowScene] Selected card 67: Roberts 霓虹 V2
+[CardScreenshot] Selected card 67: Roberts 霓虹 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_67.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_67.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_67.ppm
+[CoverFlowScene] Selected card 68: Scharr 边缘
+[CardScreenshot] Selected card 68: Scharr 边缘
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_68.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_68.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_68.ppm
+[CoverFlowScene] Selected card 69: Scharr 霓虹
+[CardScreenshot] Selected card 69: Scharr 霓虹
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_69.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_69.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_69.ppm
+[CoverFlowScene] Selected card 70: Scharr 霓虹 V2
+[CardScreenshot] Selected card 70: Scharr 霓虹 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_70.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_70.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_70.ppm
+[CoverFlowScene] Selected card 71: Sobel 边缘
+[CardScreenshot] Selected card 71: Sobel 边缘
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_71.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_71.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_71.ppm
+[CoverFlowScene] Selected card 72: Sobel 霓虹
+[CardScreenshot] Selected card 72: Sobel 霓虹
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_72.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_72.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_72.ppm
+[CoverFlowScene] Selected card 73: Sobel 霓虹 V2
+[CardScreenshot] Selected card 73: Sobel 霓虹 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_73.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_73.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_73.ppm
+[CoverFlowScene] Selected card 74: 圆形像素化
+[CardScreenshot] Selected card 74: 圆形像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_74.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_74.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_74.ppm
+[CoverFlowScene] Selected card 75: 菱形像素化
+[CardScreenshot] Selected card 75: 菱形像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_75.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_75.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_75.ppm
+[CoverFlowScene] Selected card 76: 六边形像素化
+[CardScreenshot] Selected card 76: 六边形像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_76.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_76.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_76.ppm
+[CoverFlowScene] Selected card 77: 六边形网格
+[CardScreenshot] Selected card 77: 六边形网格
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_77.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_77.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_77.ppm
+[CoverFlowScene] Selected card 78: 叶片像素化
+[CardScreenshot] Selected card 78: 叶片像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_78.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_78.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_78.ppm
+[CoverFlowScene] Selected card 79: LED 像素化
+[CardScreenshot] Selected card 79: LED 像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_79.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_79.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_79.ppm
+[CoverFlowScene] Selected card 80: 方形像素化
+[CardScreenshot] Selected card 80: 方形像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_80.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_80.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_80.ppm
+[CoverFlowScene] Selected card 81: 扇形像素化
+[CardScreenshot] Selected card 81: 扇形像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_81.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_81.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_81.ppm
+[CoverFlowScene] Selected card 82: 三角形像素化
+[CardScreenshot] Selected card 82: 三角形像素化
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_82.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_82.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_82.ppm
+[CoverFlowScene] Selected card 83: 极光暗角
+[CardScreenshot] Selected card 83: 极光暗角
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_83.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_83.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_83.ppm
+[CoverFlowScene] Selected card 84: 老电视暗角
+[CardScreenshot] Selected card 84: 老电视暗角
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_84.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_84.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_84.ppm
+[CoverFlowScene] Selected card 85: 老电视暗角 V2
+[CardScreenshot] Selected card 85: 老电视暗角 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_85.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_85.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_85.ppm
+[CoverFlowScene] Selected card 86: 快速暗角
+[CardScreenshot] Selected card 86: 快速暗角
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_86.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_86.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_86.ppm
+[CoverFlowScene] Selected card 87: 快速暗角 V2
+[CardScreenshot] Selected card 87: 快速暗角 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_87.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_87.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_87.ppm
+[CoverFlowScene] Selected card 88: 锐化 V1
+[CardScreenshot] Selected card 88: 锐化 V1
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_88.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_88.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_88.ppm
+[CoverFlowScene] Selected card 89: 锐化 V2
+[CardScreenshot] Selected card 89: 锐化 V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_89.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_89.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_89.ppm
+[CoverFlowScene] Selected card 90: 锐化 V3
+[CardScreenshot] Selected card 90: 锐化 V3
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_90.ppm
+[OpenGL] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_90.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_90.ppm
+[CardScreenshot] All 91 cards captured
+[Application] Scene requested exit with no replacement; shutting down
+[Application] Main loop exited: m_running=0, m_window=0000023A2E51F770, shouldClose=0
+[CoverFlowScene] Exiting
+[OpenGL] Shutdown

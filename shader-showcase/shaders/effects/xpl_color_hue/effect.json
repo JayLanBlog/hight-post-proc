@@ -1,0 +1,19 @@
+{
+  "name": "色相",
+  "name_cn": "色相",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "色相旋转（度）",
+  "description_cn": "色相旋转（度）",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "色相角度",
+      "type": "Float",
+      "min": 0,
+      "max": 360,
+      "default": 45,
+      "ui_type": "slider"
+    }
+  ]
+}

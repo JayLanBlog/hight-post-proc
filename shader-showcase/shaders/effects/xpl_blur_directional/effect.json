@@ -1,0 +1,37 @@
+{
+  "name": "定向模糊",
+  "name_cn": "定向模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "定向模糊：沿方向向量采样",
+  "description_cn": "定向模糊：沿方向向量采样",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "迭代次数",
+      "type": "Float",
+      "min": 1,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "方向X(像素)",
+      "type": "Float",
+      "min": 0,
+      "max": 40,
+      "default": 20,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "方向Y(像素)",
+      "type": "Float",
+      "min": 0,
+      "max": 50,
+      "default": 3,
+      "ui_type": "slider"
+    }
+  ]
+}

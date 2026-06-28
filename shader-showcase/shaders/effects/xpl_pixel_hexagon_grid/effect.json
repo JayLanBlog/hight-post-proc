@@ -1,0 +1,28 @@
+{
+  "name": "六边形网格",
+  "name_cn": "六边形网格",
+  "category": "Pixelate Effects",
+  "category_cn": "Pixelate Effects",
+  "description": "六边形网格+边框",
+  "description_cn": "六边形网格+边框",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "网格大小",
+      "type": "Float",
+      "min": 4,
+      "max": 128,
+      "default": 48,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "边框宽度",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 1.0,
+      "ui_type": "slider"
+    }
+  ]
+}

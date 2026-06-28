@@ -4,6 +4,14 @@
   "description": "Adjustable mosaic pixelation with block size control",
   "passes": 1,
   "params": [
-    {"name": "uParamFloat0", "label": "像素大小", "type": "Float", "min": 1.0, "max": 50.0, "default": 8.0, "ui_type": "slider"}
+    {
+      "name": "uParamFloat0",
+      "label": "像素大小",
+      "type": "Float",
+      "min": 1.0,
+      "max": 50.0,
+      "default": 24,
+      "ui_type": "slider"
+    }
   ]
 }

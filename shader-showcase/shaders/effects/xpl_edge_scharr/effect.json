@@ -1,0 +1,37 @@
+{
+  "name": "Scharr边缘",
+  "name_cn": "Scharr边缘",
+  "category": "Edge Detection",
+  "category_cn": "Edge Detection",
+  "description": "Scharr 3x3 高精度梯度",
+  "description_cn": "Scharr 3x3 高精度梯度",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "边缘宽度X",
+      "type": "Float",
+      "min": 0,
+      "max": 20,
+      "default": 2,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "边缘宽度Y",
+      "type": "Float",
+      "min": 0,
+      "max": 20,
+      "default": 2,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "边缘倍率",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 3,
+      "ui_type": "slider"
+    }
+  ]
+}

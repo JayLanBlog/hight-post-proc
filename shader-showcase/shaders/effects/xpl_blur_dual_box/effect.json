@@ -1,0 +1,19 @@
+{
+  "name": "双重方框模糊",
+  "name_cn": "双重方框模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "双重方框模糊",
+  "description_cn": "双重方框模糊",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊偏移",
+      "type": "Float",
+      "min": 0,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "方形像素化",
+  "name_cn": "方形像素化",
+  "category": "Pixelate Effects",
+  "category_cn": "Pixelate Effects",
+  "description": "经典马赛克",
+  "description_cn": "经典马赛克",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "像素大小",
+      "type": "Float",
+      "min": 4,
+      "max": 256,
+      "default": 16,
+      "ui_type": "slider"
+    }
+  ]
+}

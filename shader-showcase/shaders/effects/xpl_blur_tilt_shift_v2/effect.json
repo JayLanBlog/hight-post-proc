@@ -1,0 +1,28 @@
+{
+  "name": "移轴模糊V2",
+  "name_cn": "移轴模糊V2",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "移轴模糊V2：9-tap 水平平均",
+  "description_cn": "移轴模糊V2：9-tap 水平平均",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊量",
+      "type": "Float",
+      "min": 0,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "模糊范围",
+      "type": "Float",
+      "min": 0,
+      "max": 40,
+      "default": 20,
+      "ui_type": "slider"
+    }
+  ]
+}

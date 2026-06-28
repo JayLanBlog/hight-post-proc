@@ -28,14 +28,14 @@ public:
     const char* InputInfoFormat() const { return m_lang == Language::Chinese ? u8"输入: %s  |  FPS: %.0f  |  拖放文件加载  |  Ctrl+←→ 切换图片" : "Input: %s  |  FPS: %.0f  |  Drag File to Load  |  Ctrl+Arrow Cycle Images"; }
     const char* BottomHelp() const { return m_lang == Language::Chinese ? u8"F1-F8 快速选择  |  点击卡片打开  |  拖动浏览  |  Ctrl+S 截图  |  Esc 退出" : "F1-F8 Quick Select  |  Click Card to Open  |  Drag to Browse  |  Ctrl+S Screen Capture  |  Esc Exit"; }
 
-    const char* CategorySimple() const { return m_lang == Language::Chinese ? u8"简单" : "Simple"; }
-    const char* CategoryLighting() const { return m_lang == Language::Chinese ? u8"光照" : "Lighting"; }
-    const char* CategoryFilter() const { return m_lang == Language::Chinese ? u8"滤镜" : "Filter"; }
-    const char* CategoryStylize() const { return m_lang == Language::Chinese ? u8"风格化" : "Stylize"; }
-    const char* CategoryColor() const { return m_lang == Language::Chinese ? u8"色彩" : "Color"; }
-    const char* CategoryDistort() const { return m_lang == Language::Chinese ? u8"扭曲" : "Distort"; }
-    const char* CategoryProcedural() const { return m_lang == Language::Chinese ? u8"程序化" : "Procedural"; }
-    const char* CategoryRetro() const { return m_lang == Language::Chinese ? u8"复古" : "Retro"; }
+    const char* CategoryBlur()    const { return m_lang == Language::Chinese ? u8"模糊效果" : "Blur Effects"; }
+    const char* CategoryPixelate()const { return m_lang == Language::Chinese ? u8"像素化效果" : "Pixelate Effects"; }
+    const char* CategoryEdge()    const { return m_lang == Language::Chinese ? u8"边缘检测效果" : "Edge Detection"; }
+    const char* CategoryGlitch()  const { return m_lang == Language::Chinese ? u8"故障效果" : "Glitch Effects"; }
+    const char* CategoryColorAdj()const { return m_lang == Language::Chinese ? u8"色彩调整效果" : "Color Adjustment"; }
+    const char* CategoryVignette()const { return m_lang == Language::Chinese ? u8"暗角效果" : "Vignette Effects"; }
+    const char* CategoryImageProc()const{ return m_lang == Language::Chinese ? u8"图像处理效果" : "Image Processing"; }
+    const char* CategoryProcess() const { return m_lang == Language::Chinese ? u8"处理效果" : "Process Effects"; }
 
     const char* LanguageButton() const { return m_lang == Language::Chinese ? u8"中文 / EN" : u8"EN / 中文"; }
 

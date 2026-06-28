@@ -1,0 +1,69 @@
+{
+  "name": "数字条纹",
+  "name_cn": "数字条纹",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Digital stripe glitch with noise-driven UV shifting and trash frame color overlay.",
+  "description_cn": "噪声驱动的 UV 坐标偏移，叠加可调色彩的残帧条纹，模拟数字信号损坏效果。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Intensity",
+      "label_cn": "强度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Strip Color Intensity",
+      "label_cn": "条纹色强度",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 4.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Strip Color R",
+      "label_cn": "条纹色R",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.3,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "Strip Color G",
+      "label_cn": "条纹色G",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "Strip Color B",
+      "label_cn": "条纹色B",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

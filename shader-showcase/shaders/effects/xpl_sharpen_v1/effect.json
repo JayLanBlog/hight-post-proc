@@ -1,0 +1,28 @@
+{
+  "name": "锐化V1",
+  "name_cn": "锐化V1",
+  "category": "Image Processing",
+  "category_cn": "Image Processing",
+  "description": "反锐化掩膜：亮度加权",
+  "description_cn": "反锐化掩膜：亮度加权",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "锐化强度",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 2.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "阈值",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.8,
+      "ui_type": "slider"
+    }
+  ]
+}

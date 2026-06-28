@@ -1,0 +1,64 @@
+{
+  "name": "颜色替换",
+  "name_cn": "颜色替换",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "颜色替换：欧几里得距离匹配",
+  "description_cn": "颜色替换：欧几里得距离匹配",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "源色R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "源色G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "源色B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "目标色R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "目标色G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "目标色B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.0,
+      "ui_type": "slider"
+    }
+  ]
+}

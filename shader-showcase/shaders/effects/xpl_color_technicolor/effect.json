@@ -1,0 +1,28 @@
+{
+  "name": "Technicolor",
+  "name_cn": "Technicolor",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "三色分离混合",
+  "description_cn": "三色分离混合",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "偏移量",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.2,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "混合强度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    }
+  ]
+}

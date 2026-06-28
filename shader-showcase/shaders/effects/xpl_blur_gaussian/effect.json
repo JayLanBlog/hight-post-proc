@@ -1,0 +1,19 @@
+{
+  "name": "高斯模糊",
+  "name_cn": "高斯模糊",
+  "category": "Blur Effects",
+  "category_cn": "Blur Effects",
+  "description": "高斯模糊：7-tap 近似",
+  "description_cn": "高斯模糊：7-tap 近似",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "模糊半径",
+      "type": "Float",
+      "min": 1,
+      "max": 200,
+      "default": 60,
+      "ui_type": "slider"
+    }
+  ]
+}

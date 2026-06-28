@@ -24,6 +24,7 @@ public:
     void OnUpdate(float dt) override;
     void OnRender(IRenderBackend* backend) override;
     void OnImGui() override;
+    bool WantsExit() const override { return !m_pendingEnter.empty(); }
     std::unique_ptr<Scene> GetNextScene() override;
 
 private:
@@ -50,5 +51,6 @@ private:
 
     std::vector<CardAnim> m_anim;
     std::vector<TextureHandle> m_thumbs;
+    std::vector<std::pair<int,int>> m_thumbDims;  // (width, height) per thumbnail
     bool m_thumbsOk = false;
 };

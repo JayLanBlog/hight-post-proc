@@ -1,0 +1,19 @@
+{
+  "name": "饱和度",
+  "name_cn": "饱和度",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "饱和度调整",
+  "description_cn": "饱和度调整",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "饱和度",
+      "type": "Float",
+      "min": 0,
+      "max": 3,
+      "default": 1.5,
+      "ui_type": "slider"
+    }
+  ]
+}

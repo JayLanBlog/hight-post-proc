@@ -1,0 +1,55 @@
+{
+  "name": "极光暗角",
+  "name_cn": "极光暗角",
+  "category": "Vignette Effects",
+  "category_cn": "Vignette Effects",
+  "description": "极光暗角：动态极光波纹",
+  "description_cn": "极光暗角：动态极光波纹",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "暗角强度",
+      "type": "Float",
+      "min": 0,
+      "max": 5,
+      "default": 1.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "极光强度",
+      "type": "Float",
+      "min": 0,
+      "max": 3,
+      "default": 1.0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "极光R",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.1,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "极光G",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "极光B",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui_type": "slider"
+    }
+  ]
+}

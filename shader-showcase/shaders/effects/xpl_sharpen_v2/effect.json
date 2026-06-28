@@ -1,0 +1,19 @@
+{
+  "name": "锐化V2",
+  "name_cn": "锐化V2",
+  "category": "Image Processing",
+  "category_cn": "Image Processing",
+  "description": "反锐化掩膜：四角Box模糊差分",
+  "description_cn": "反锐化掩膜：四角Box模糊差分",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "锐化强度",
+      "type": "Float",
+      "min": 0,
+      "max": 2,
+      "default": 5.0,
+      "ui_type": "slider"
+    }
+  ]
+}

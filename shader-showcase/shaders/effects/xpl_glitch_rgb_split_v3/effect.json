@@ -1,0 +1,67 @@
+{
+  "name": "RGB分离 V3",
+  "name_cn": "RGB分离 V3",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Multi-channel RGB split with per-channel sine wave offsets at different frequencies.",
+  "description_cn": "三通道独立正弦偏移（R/G/B 各用不同频率），支持水平/垂直/对角线三种模式。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Frequency",
+      "label_cn": "频率",
+      "type": "float",
+      "min": 0.1,
+      "max": 25,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Amount",
+      "label_cn": "强度",
+      "type": "float",
+      "min": 0,
+      "max": 200,
+      "default": 5,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 15,
+      "default": 2.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "uParamFloat3",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "uParamFloat4",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "uParamFloat5",
+      "type": "Float",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "ui_type": "slider"
+    }
+  ]
+}

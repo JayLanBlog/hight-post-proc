@@ -54,7 +54,7 @@ void CoverFlowScene::RegisterCards()
     }
 
     m_cards.clear();
-    m_cards.reserve(18);
+    m_cards.reserve(91);
 
     auto add = [&](const char* id, const char* name, const char* category,
                    const char* desc, const char* fragRelPath) {
@@ -66,79 +66,339 @@ void CoverFlowScene::RegisterCards()
         m_cards.push_back(std::move(c));
     };
 
-    CARD("simple_test",  "Grayscale Test",    "Simple",
+    CARD("simple_test",  "Grayscale Test",    "Color Adjustment",
          "Basic grayscale shader, validates render pipeline",
          "effects/simple_test/simple_test.frag.spv");
 
-    CARD("bloom",        "Bloom",             "Lighting",
+    CARD("bloom",        "Bloom",             "Blur Effects",
          "Extract bright areas with blur overlay for dreamy glow",
          "effects/bloom/bloom.frag.spv");
 
-    CARD("blur",         "Gaussian Blur",     "Filter",
+    CARD("blur",         "Gaussian Blur",     "Blur Effects",
          "Multi-pass separable Gaussian blur, large radius soft focus",
          "effects/blur/blur.frag.spv");
 
-    CARD("sharpen",      "Sharpen",           "Filter",
+    CARD("sharpen",      "Sharpen",           "Image Processing",
          "Unsharp mask image sharpening, enhances edge detail",
          "effects/sharpen/sharpen.frag.spv");
 
-    CARD("edge_detect",  "Edge Detection",    "Filter",
+    CARD("edge_detect",  "Edge Detection",    "Edge Detection",
          "Sobel edge detection with optional normal visualization",
          "effects/edge_detect/edge_detect.frag.spv");
 
-    CARD("emboss",       "Emboss",            "Stylize",
+    CARD("emboss",       "Emboss",            "Edge Detection",
          "Emboss filter for relief texture effect",
          "effects/emboss/emboss.frag.spv");
 
-    CARD("pixelate",     "Pixelate",          "Stylize",
+    CARD("pixelate",     "Pixelate",          "Pixelate Effects",
          "Adjustable mosaic pixelation block size",
          "effects/pixelate/pixelate.frag.spv");
 
-    CARD("vignette",     "Vignette",          "Color",
+    CARD("vignette",     "Vignette",          "Vignette Effects",
          "Darken edges to focus on center subject",
          "effects/vignette/vignette.frag.spv");
 
-    CARD("chromatic",    "Chromatic Aberration", "Distort",
+    CARD("chromatic",    "Chromatic Aberration", "Color Adjustment",
          "RGB channel offset simulating chromatic distortion",
          "effects/chromatic/chromatic.frag.spv");
 
-    CARD("color_grade",  "Color Grading",     "Color",
+    CARD("color_grade",  "Color Grading",     "Color Adjustment",
          "LUT-based cinematic color grading",
          "effects/color_grade/color_grade.frag.spv");
 
-    CARD("noise",        "Noise Generator",   "Procedural",
+    CARD("noise",        "Noise Generator",   "Glitch Effects",
          "Perlin noise with adjustable frequency and amplitude",
          "effects/noise/noise.frag.spv");
 
-    CARD("kaleidoscope", "Kaleidoscope",      "Distort",
+    CARD("kaleidoscope", "Kaleidoscope",      "Image Processing",
          "Radial symmetry with adjustable sectors and rotation",
          "effects/kaleidoscope/kaleidoscope.frag.spv");
 
-    CARD("glitch",       "Glitch Art",        "Stylize",
+    CARD("glitch",       "Glitch Art",        "Glitch Effects",
          "Digital glitch with random block shift and color tearing",
          "effects/glitch/glitch.frag.spv");
 
-    CARD("toon",         "Toon Shading",      "Stylize",
+    CARD("toon",         "Toon Shading",      "Color Adjustment",
          "Cartoon-style color quantization, cel shading",
          "effects/toon/toon.frag.spv");
 
-    CARD("vhs",          "VHS Retro",         "Retro",
+    CARD("vhs",          "VHS Retro",         "Glitch Effects",
          "VHS tape scanlines, noise and color drift",
          "effects/vhs/vhs.frag.spv");
 
-    CARD("crt",          "CRT Monitor",       "Retro",
+    CARD("crt",          "CRT Monitor",       "Glitch Effects",
          "CRT scanlines + phosphor RGB pattern + screen curvature",
          "effects/crt/crt.frag.spv");
 
-    CARD("water_ripple", "Water Ripple",      "Distort",
+    CARD("water_ripple", "Water Ripple",      "Image Processing",
          "Normal-map based water ripple displacement",
          "effects/water_ripple/water_ripple.frag.spv");
 
-    CARD("lens_distort", "Lens Distortion",   "Distort",
+    CARD("lens_distort", "Lens Distortion",   "Image Processing",
          "Barrel/pincushion lens distortion correction and simulation",
          "effects/lens_distort/lens_distort.frag.spv");
 
+    // === XPL Glitch Effects (17) ===
+    CARD("xpl_glitch_screen_jump",      "屏幕跳跃",    "Glitch Effects",
+         "Screen jump displacement with horizontal/vertical scrolling.",
+         "effects/xpl_glitch_screen_jump/xpl_glitch_screen_jump.frag.spv");
+    CARD("xpl_glitch_screen_shake",     "屏幕震动",   "Glitch Effects",
+         "Random screen shake simulating handheld camera/earthquake.",
+         "effects/xpl_glitch_screen_shake/xpl_glitch_screen_shake.frag.spv");
+    CARD("xpl_glitch_scan_line_jitter", "扫描线抖动","Glitch Effects",
+         "Horizontal scan line random jitter.",
+         "effects/xpl_glitch_scan_line_jitter/xpl_glitch_scan_line_jitter.frag.spv");
+    CARD("xpl_glitch_rgb_split_v4",     "RGB分离 V4",   "Glitch Effects",
+         "Clean jittery RGB channel separation with time-quantized noise.",
+         "effects/xpl_glitch_rgb_split_v4/xpl_glitch_rgb_split_v4.frag.spv");
+    CARD("xpl_glitch_rgb_split_v2",     "RGB分离 V2",   "Glitch Effects",
+         "Organic pulsing chromatic aberration from 4-sine product.",
+         "effects/xpl_glitch_rgb_split_v2/xpl_glitch_rgb_split_v2.frag.spv");
+    CARD("xpl_glitch_analog_noise",     "模拟信号噪声",   "Glitch Effects",
+         "Analog static interference with luminance jitter and color noise.",
+         "effects/xpl_glitch_analog_noise/xpl_glitch_analog_noise.frag.spv");
+    CARD("xpl_glitch_image_block_v3",   "画面块错位 V3", "Glitch Effects",
+         "Single-layer block displacement with RGB split.",
+         "effects/xpl_glitch_image_block_v3/xpl_glitch_image_block_v3.frag.spv");
+    CARD("xpl_glitch_image_block_v4",   "画面块错位 V4", "Glitch Effects",
+         "Dual-axis block RGB split with per-block channel shifting.",
+         "effects/xpl_glitch_image_block_v4/xpl_glitch_image_block_v4.frag.spv");
+    CARD("xpl_glitch_tile_jitter",      "瓦片抖动",    "Glitch Effects",
+         "Alternating tile band jitter with frequency gating.",
+         "effects/xpl_glitch_tile_jitter/xpl_glitch_tile_jitter.frag.spv");
+    CARD("xpl_glitch_rgb_split_v3",     "RGB分离 V3",   "Glitch Effects",
+         "Multi-channel sine-wave RGB split with 3 direction modes.",
+         "effects/xpl_glitch_rgb_split_v3/xpl_glitch_rgb_split_v3.frag.spv");
+    CARD("xpl_glitch_digital_stripe",   "数字条纹", "Glitch Effects",
+         "Noise-driven UV shifting with trash frame color overlay.",
+         "effects/xpl_glitch_digital_stripe/xpl_glitch_digital_stripe.frag.spv");
+    CARD("xpl_glitch_image_block_v2",   "画面块错位 V2", "Glitch Effects",
+         "Single block layer displacement with fade control.",
+         "effects/xpl_glitch_image_block_v2/xpl_glitch_image_block_v2.frag.spv");
+    CARD("xpl_glitch_image_block_v1",   "画面块错位 V1", "Glitch Effects",
+         "Dual block layer grid corruption with RGB split.",
+         "effects/xpl_glitch_image_block_v1/xpl_glitch_image_block_v1.frag.spv");
+    CARD("xpl_glitch_rgb_split_v1",     "RGB分离 V1",   "Glitch Effects",
+         "Classic sine-pulsing RGB split with center-distance fading.",
+         "effects/xpl_glitch_rgb_split_v1/xpl_glitch_rgb_split_v1.frag.spv");
+    CARD("xpl_glitch_rgb_split_v5",     "RGB分离 V5",   "Glitch Effects",
+         "Noise-driven cross-channel permutation RGB split.",
+         "effects/xpl_glitch_rgb_split_v5/xpl_glitch_rgb_split_v5.frag.spv");
+    CARD("xpl_glitch_line_block",       "行块错位",     "Glitch Effects",
+         "Complex rhythmic line block with YUV chrominance distortion.",
+         "effects/xpl_glitch_line_block/xpl_glitch_line_block.frag.spv");
+    CARD("xpl_glitch_wave_jitter",      "波浪抖动",    "Glitch Effects",
+         "Simplex-noise wave displacement with per-line RGB split.",
+         "effects/xpl_glitch_wave_jitter/xpl_glitch_wave_jitter.frag.spv");
+
+    CARD("xpl_blur_bokeh", "散景模糊", "Blur Effects",
+         "散景模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_bokeh/xpl_blur_bokeh.frag.spv");
+    CARD("xpl_blur_box", "方框模糊", "Blur Effects",
+         "方框模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_box/xpl_blur_box.frag.spv");
+    CARD("xpl_blur_directional", "定向模糊", "Blur Effects",
+         "定向模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_directional/xpl_blur_directional.frag.spv");
+    CARD("xpl_blur_dual_box", "双重方框模糊", "Blur Effects",
+         "双重方框模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_dual_box/xpl_blur_dual_box.frag.spv");
+    CARD("xpl_blur_dual_gaussian", "双重高斯模糊", "Blur Effects",
+         "双重高斯模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_dual_gaussian/xpl_blur_dual_gaussian.frag.spv");
+    CARD("xpl_blur_dual_kawase", "双重Kawase模糊", "Blur Effects",
+         "双重Kawase模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_dual_kawase/xpl_blur_dual_kawase.frag.spv");
+    CARD("xpl_blur_dual_tent", "双重帐篷模糊", "Blur Effects",
+         "双重帐篷模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_dual_tent/xpl_blur_dual_tent.frag.spv");
+    CARD("xpl_blur_gaussian", "高斯模糊", "Blur Effects",
+         "高斯模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_gaussian/xpl_blur_gaussian.frag.spv");
+    CARD("xpl_blur_grainy", "颗粒模糊", "Blur Effects",
+         "颗粒模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_grainy/xpl_blur_grainy.frag.spv");
+    CARD("xpl_blur_iris", "光圈模糊", "Blur Effects",
+         "光圈模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_iris/xpl_blur_iris.frag.spv");
+    CARD("xpl_blur_iris_v2", "光圈模糊 V2", "Blur Effects",
+         "光圈模糊 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_iris_v2/xpl_blur_iris_v2.frag.spv");
+    CARD("xpl_blur_kawase", "Kawase 模糊", "Blur Effects",
+         "Kawase 模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_kawase/xpl_blur_kawase.frag.spv");
+    CARD("xpl_blur_radial", "径向模糊", "Blur Effects",
+         "径向模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_radial/xpl_blur_radial.frag.spv");
+    CARD("xpl_blur_radial_v2", "径向模糊 V2", "Blur Effects",
+         "径向模糊 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_radial_v2/xpl_blur_radial_v2.frag.spv");
+    CARD("xpl_blur_tent", "帐篷模糊", "Blur Effects",
+         "帐篷模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_tent/xpl_blur_tent.frag.spv");
+    CARD("xpl_blur_tilt_shift", "移轴模糊", "Blur Effects",
+         "移轴模糊效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_tilt_shift/xpl_blur_tilt_shift.frag.spv");
+    CARD("xpl_blur_tilt_shift_v2", "移轴模糊 V2", "Blur Effects",
+         "移轴模糊 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_blur_tilt_shift_v2/xpl_blur_tilt_shift_v2.frag.spv");
+    CARD("xpl_color_bleach_bypass", "漂白旁路", "Color Adjustment",
+         "漂白旁路效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_bleach_bypass/xpl_color_bleach_bypass.frag.spv");
+    CARD("xpl_color_brightness", "亮度", "Color Adjustment",
+         "亮度效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_brightness/xpl_color_brightness.frag.spv");
+    CARD("xpl_color_contrast", "对比度", "Color Adjustment",
+         "对比度效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_contrast/xpl_color_contrast.frag.spv");
+    CARD("xpl_color_contrast_v2", "对比度 V2", "Color Adjustment",
+         "对比度 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_contrast_v2/xpl_color_contrast_v2.frag.spv");
+    CARD("xpl_color_contrast_v3", "对比度 V3", "Color Adjustment",
+         "对比度 V3效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_contrast_v3/xpl_color_contrast_v3.frag.spv");
+    CARD("xpl_color_hue", "色相", "Color Adjustment",
+         "色相效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_hue/xpl_color_hue.frag.spv");
+    CARD("xpl_color_lens_filter", "镜头滤镜", "Color Adjustment",
+         "镜头滤镜效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_lens_filter/xpl_color_lens_filter.frag.spv");
+    CARD("xpl_color_saturation", "饱和度", "Color Adjustment",
+         "饱和度效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_saturation/xpl_color_saturation.frag.spv");
+    CARD("xpl_color_technicolor", "Technicolor", "Color Adjustment",
+         "Technicolor效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_technicolor/xpl_color_technicolor.frag.spv");
+    CARD("xpl_color_tint", "色调", "Color Adjustment",
+         "色调效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_tint/xpl_color_tint.frag.spv");
+    CARD("xpl_color_white_balance", "白平衡", "Color Adjustment",
+         "白平衡效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_white_balance/xpl_color_white_balance.frag.spv");
+    CARD("xpl_color_replace", "颜色替换", "Color Adjustment",
+         "颜色替换效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_replace/xpl_color_replace.frag.spv");
+    CARD("xpl_color_replace_v2", "颜色替换 V2", "Color Adjustment",
+         "颜色替换 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_color_replace_v2/xpl_color_replace_v2.frag.spv");
+    CARD("xpl_edge_roberts", "Roberts 边缘", "Edge Detection",
+         "Roberts 边缘效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_roberts/xpl_edge_roberts.frag.spv");
+    CARD("xpl_edge_roberts_neon", "Roberts 霓虹", "Edge Detection",
+         "Roberts 霓虹效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_roberts_neon/xpl_edge_roberts_neon.frag.spv");
+    CARD("xpl_edge_roberts_neon_v2", "Roberts 霓虹 V2", "Edge Detection",
+         "Roberts 霓虹 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_roberts_neon_v2/xpl_edge_roberts_neon_v2.frag.spv");
+    CARD("xpl_edge_scharr", "Scharr 边缘", "Edge Detection",
+         "Scharr 边缘效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_scharr/xpl_edge_scharr.frag.spv");
+    CARD("xpl_edge_scharr_neon", "Scharr 霓虹", "Edge Detection",
+         "Scharr 霓虹效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_scharr_neon/xpl_edge_scharr_neon.frag.spv");
+    CARD("xpl_edge_scharr_neon_v2", "Scharr 霓虹 V2", "Edge Detection",
+         "Scharr 霓虹 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_scharr_neon_v2/xpl_edge_scharr_neon_v2.frag.spv");
+    CARD("xpl_edge_sobel", "Sobel 边缘", "Edge Detection",
+         "Sobel 边缘效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_sobel/xpl_edge_sobel.frag.spv");
+    CARD("xpl_edge_sobel_neon", "Sobel 霓虹", "Edge Detection",
+         "Sobel 霓虹效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_sobel_neon/xpl_edge_sobel_neon.frag.spv");
+    CARD("xpl_edge_sobel_neon_v2", "Sobel 霓虹 V2", "Edge Detection",
+         "Sobel 霓虹 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_edge_sobel_neon_v2/xpl_edge_sobel_neon_v2.frag.spv");
+    CARD("xpl_pixel_circle", "圆形像素化", "Pixelate Effects",
+         "圆形像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_circle/xpl_pixel_circle.frag.spv");
+    CARD("xpl_pixel_diamond", "菱形像素化", "Pixelate Effects",
+         "菱形像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_diamond/xpl_pixel_diamond.frag.spv");
+    CARD("xpl_pixel_hexagon", "六边形像素化", "Pixelate Effects",
+         "六边形像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_hexagon/xpl_pixel_hexagon.frag.spv");
+    CARD("xpl_pixel_hexagon_grid", "六边形网格", "Pixelate Effects",
+         "六边形网格效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_hexagon_grid/xpl_pixel_hexagon_grid.frag.spv");
+    CARD("xpl_pixel_leaf", "叶片像素化", "Pixelate Effects",
+         "叶片像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_leaf/xpl_pixel_leaf.frag.spv");
+    CARD("xpl_pixel_led", "LED 像素化", "Pixelate Effects",
+         "LED 像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_led/xpl_pixel_led.frag.spv");
+    CARD("xpl_pixel_quad", "方形像素化", "Pixelate Effects",
+         "方形像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_quad/xpl_pixel_quad.frag.spv");
+    CARD("xpl_pixel_sector", "扇形像素化", "Pixelate Effects",
+         "扇形像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_sector/xpl_pixel_sector.frag.spv");
+    CARD("xpl_pixel_triangle", "三角形像素化", "Pixelate Effects",
+         "三角形像素化效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_pixel_triangle/xpl_pixel_triangle.frag.spv");
+    CARD("xpl_vignette_aurora", "极光暗角", "Vignette Effects",
+         "极光暗角效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_vignette_aurora/xpl_vignette_aurora.frag.spv");
+    CARD("xpl_vignette_old_tv", "老电视暗角", "Vignette Effects",
+         "老电视暗角效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_vignette_old_tv/xpl_vignette_old_tv.frag.spv");
+    CARD("xpl_vignette_old_tv_v2", "老电视暗角 V2", "Vignette Effects",
+         "老电视暗角 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_vignette_old_tv_v2/xpl_vignette_old_tv_v2.frag.spv");
+    CARD("xpl_vignette_rapid", "快速暗角", "Vignette Effects",
+         "快速暗角效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_vignette_rapid/xpl_vignette_rapid.frag.spv");
+    CARD("xpl_vignette_rapid_v2", "快速暗角 V2", "Vignette Effects",
+         "快速暗角 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_vignette_rapid_v2/xpl_vignette_rapid_v2.frag.spv");
+    CARD("xpl_sharpen_v1", "锐化 V1", "Image Processing",
+         "锐化 V1效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_sharpen_v1/xpl_sharpen_v1.frag.spv");
+    CARD("xpl_sharpen_v2", "锐化 V2", "Image Processing",
+         "锐化 V2效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_sharpen_v2/xpl_sharpen_v2.frag.spv");
+    CARD("xpl_sharpen_v3", "锐化 V3", "Image Processing",
+         "锐化 V3效果 - 自动迁移自 X-PostProcessing-Library",
+         "effects/xpl_sharpen_v3/xpl_sharpen_v3.frag.spv");
+
     printf("[CoverFlowScene] Registered %zu effect cards\n", m_cards.size());
+
+    // Load effect.json params for each card
+    int loadedCount = 0;
+    for (auto& card : m_cards) {
+        try {
+            std::string jsonPath = shaderDir + "/effects/" + card.id + "/effect.json";
+            EffectCard loaded = LoadEffectFromJson(jsonPath);
+            if (!loaded.params.empty()) {
+                card.params = std::move(loaded.params);
+                loadedCount++;
+            }
+        } catch (...) {}
+    }
+    printf("[CoverFlowScene] Loaded effect.json params for %d/%zu cards\n", loadedCount, m_cards.size());
+
+    // Build Dynamic / Static index lists (based on actual shader uTime usage)
+    // Dynamic: effects that use uTime for animation (6 orig + 17 xpl_glitch)
+    // Static:  all others
+    for (int i = 0; i < (int)m_cards.size(); i++) {
+        const auto& id = m_cards[i].id;
+        if (id == "water_ripple" || id == "vhs" || id == "noise" ||
+            id == "glitch" || id == "crt" || id == "kaleidoscope" ||
+            id == "xpl_glitch_analog_noise" || id == "xpl_glitch_digital_stripe" ||
+            id == "xpl_glitch_image_block_v1" || id == "xpl_glitch_image_block_v2" ||
+            id == "xpl_glitch_image_block_v3" || id == "xpl_glitch_image_block_v4" ||
+            id == "xpl_glitch_line_block" ||
+            id == "xpl_glitch_rgb_split_v1" || id == "xpl_glitch_rgb_split_v2" ||
+            id == "xpl_glitch_rgb_split_v3" || id == "xpl_glitch_rgb_split_v4" || id == "xpl_glitch_rgb_split_v5" ||
+            id == "xpl_glitch_scan_line_jitter" || id == "xpl_glitch_screen_jump" ||
+            id == "xpl_glitch_screen_shake" || id == "xpl_glitch_tile_jitter" || id == "xpl_glitch_wave_jitter"
+           || id.substr(0,4) == "xpl_") {
+            m_dynamicIndices.push_back(i);
+        } else {
+            m_staticIndices.push_back(i);
+        }
+    }
+    printf("[CoverFlowScene] Dynamic: %zu, Static: %zu effects\n",
+           m_dynamicIndices.size(), m_staticIndices.size());
 }
 
 #undef CARD
@@ -148,6 +408,18 @@ void CoverFlowScene::OnEnter()
     m_fpsLastTime    = std::chrono::high_resolution_clock::now();
     m_fpsFrameCount  = 0;
     m_fpsDisplay     = 0.0f;
+
+    // Default to Dynamic + Blur Effects for visible animation
+    m_currentCategory = EffectCategory::Dynamic;
+    m_activeCategory  = "Blur Effects";
+    m_filteredIndices.clear();
+    for (int idx : m_dynamicIndices)
+        if (m_cards[idx].category == "Blur Effects")
+            m_filteredIndices.push_back(idx);
+    if (!m_filteredIndices.empty())
+        m_selectedIndex = m_filteredIndices[0];
+    else if (!m_dynamicIndices.empty())
+        m_selectedIndex = m_dynamicIndices[0];
 
     printf("[CoverFlowScene] Entered with %zu cards, selected=%d\n",
            m_cards.size(), m_selectedIndex);
@@ -254,11 +526,20 @@ void CoverFlowScene::OnUpdate(float dt)
         }
     }
 
-    // ---- Keyboard navigation ----
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft))
-        SelectCard(m_selectedIndex - 1);
-    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight))
-        SelectCard(m_selectedIndex + 1);
+    // ---- Keyboard navigation (within filtered pool) ----
+    int curPos = -1;
+    for (int p = 0; p < (int)m_filteredIndices.size(); p++)
+        if (m_filteredIndices[p] == m_selectedIndex) { curPos = p; break; }
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadLeft)) {
+        curPos = curPos - 1;
+        if (curPos < 0) curPos = (int)m_filteredIndices.size() - 1;
+        if (!m_filteredIndices.empty()) SelectCard(m_filteredIndices[curPos]);
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight)) {
+        curPos = curPos + 1;
+        if (curPos >= (int)m_filteredIndices.size()) curPos = 0;
+        if (!m_filteredIndices.empty()) SelectCard(m_filteredIndices[curPos]);
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter))
         OpenSelectedEffect();
     if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -266,12 +547,11 @@ void CoverFlowScene::OnUpdate(float dt)
         m_wantsReturn = true;
     }
 
-    // ---- F1-F8: Quick effect selection ----
+    // ---- F1-F8: Quick effect selection (within filtered pool) ----
     for (int k = 0; k < 8; k++) {
         if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_F1 + k))) {
-            int targetIdx = k; // F1=0, F2=1, ... F8=7
-            if (targetIdx < (int)m_cards.size()) {
-                SelectCard(targetIdx);
+            if (k < (int)m_filteredIndices.size()) {
+                SelectCard(m_filteredIndices[k]);
             }
         }
     }
@@ -289,283 +569,370 @@ void CoverFlowScene::OnUpdate(float dt)
         CycleImage(+1);
     }
 
-    // ---- Mouse wheel ----
+    // ---- Mouse wheel (within filtered pool) ----
     float wheel = io.MouseWheel;
-    if (wheel != 0.0f)
-        SelectCard(m_selectedIndex - static_cast<int>(wheel));
+    if (wheel != 0.0f && !m_filteredIndices.empty()) {
+        int newPos = curPos - static_cast<int>(wheel);
+        while (newPos < 0) newPos += (int)m_filteredIndices.size();
+        while (newPos >= (int)m_filteredIndices.size()) newPos -= (int)m_filteredIndices.size();
+        SelectCard(m_filteredIndices[newPos]);
+    }
 
-    // ---- Mouse drag to scroll cards ----
-    const float cardW   = 280.0f;
-    const float spacing = 80.0f;
-    const float cardUnit = cardW + spacing; // distance between adjacent card centers
-
+    // ---- Mouse drag to swipe between effects (within filtered pool) ----
     if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
         float dx = io.MouseDelta.x;
         if (!m_dragging) {
             m_dragging = true;
             m_dragStartX = io.MousePos.x;
-            m_dragBaseOff = m_scrollOffset;
         }
-        // Convert pixel drag to card index offset
-        float offset = m_dragBaseOff - dx / cardUnit;
-        // Clamp
-        int idx = m_selectedIndex + static_cast<int>(std::round(offset));
-        if (idx < 0) idx = 0;
-        if (idx >= (int)m_cards.size()) idx = (int)m_cards.size() - 1;
-        if (idx != m_selectedIndex) {
-            SelectCard(idx);
-            m_scrollOffset = offset - static_cast<float>(idx - m_selectedIndex);
+        const float swipeThreshold = 100.0f;
+        float totalDx = io.MousePos.x - m_dragStartX;
+        if (std::abs(totalDx) > swipeThreshold && !m_filteredIndices.empty()) {
+            int newPos = curPos - (totalDx > 0 ? 1 : -1);
+            while (newPos < 0) newPos += (int)m_filteredIndices.size();
+            while (newPos >= (int)m_filteredIndices.size()) newPos -= (int)m_filteredIndices.size();
+            SelectCard(m_filteredIndices[newPos]);
+            m_dragStartX = io.MousePos.x; // reset for next swipe
         }
     } else {
         m_dragging = false;
     }
 }
 
-void CoverFlowScene::OnRender(IRenderBackend* /*backend*/)
+void CoverFlowScene::OnRender(IRenderBackend* backend)
 {
-    // Update thumbnail time/frame counters
+    if (!backend) return;
+
+    // Always refresh visible thumbnails with updated time (enables animation)
+    RenderVisibleThumbnails();
+
+    if (m_selectedIndex < 0 || m_selectedIndex >= (int)m_thumbnailStates.size()) return;
+    const auto& state = m_thumbnailStates[m_selectedIndex];
+    if (state.fragShader.id == INVALID_SHADER.id) return;
+
     static auto lastTime = std::chrono::high_resolution_clock::now();
     auto now = std::chrono::high_resolution_clock::now();
     float dt = std::chrono::duration<float>(now - lastTime).count();
     lastTime = now;
-    m_thumbElapsedTime += dt;
-    m_thumbFrameCount++;
+    m_effectTime += dt;
+    m_effectFrameCount++;
 
-    // ---- Window resize: rebuild thumbnails at new scale ----
-    ImGuiIO& io = ImGui::GetIO();
-    float w = io.DisplaySize.x, h = io.DisplaySize.y;
-    if (w > 1 && h > 1 && (std::abs(w - m_lastWindowW) > 4.0f || std::abs(h - m_lastWindowH) > 4.0f)) {
-        m_lastWindowW = w;
-        m_lastWindowH = h;
-        // Scale thumbnail FBO to match new card size (maintain 16:9 thumb ratio)
-        float cardH = h * 0.53f;
-        float cardW = cardH * 0.737f;
-        int prevTW = m_thumbWidth, prevTH = m_thumbHeight;
-        m_thumbWidth  = std::max(128, (int)(cardW * 0.9f));
-        m_thumbHeight = std::max(72,  (int)(cardH * 0.38f));
-        if (m_thumbInitialized && (m_thumbWidth != prevTW || m_thumbHeight != prevTH)) {
-            // Clean up old thumb textures and rebuild
-            for (auto& state : m_thumbnailStates) {
-                if (state.thumbTex.id != INVALID_TEXTURE.id) {
-                    m_backend->DestroyTexture(state.thumbTex);
-                    state.thumbTex = INVALID_TEXTURE;
-                }
-            }
-            m_thumbnailStates.clear();
-            m_thumbIds.clear();
-            m_thumbInitialized = false;
-            InitializeThumbnails();
+    int fbWidth = 0, fbHeight = 0;
+    backend->GetFramebufferSize(fbWidth, fbHeight);
+    if (fbWidth != m_immersiveTexW || fbHeight != m_immersiveTexH) {
+        if (m_immersiveTex.id != INVALID_TEXTURE.id)
+            backend->DestroyTexture(m_immersiveTex);
+        m_immersiveTex = backend->CreateTexture(fbWidth, fbHeight, TextureFormat::RGBA8, nullptr);
+        m_immersiveTexW = fbWidth;
+        m_immersiveTexH = fbHeight;
+        m_immersiveImTexID = nullptr;
+    }
+
+    TextureHandle input = m_inputTex;
+    if (m_selectedIndex < (int)m_inputTexCache.size() &&
+        m_inputTexCache[m_selectedIndex].id != INVALID_TEXTURE.id)
+        input = m_inputTexCache[m_selectedIndex];
+
+    const auto& cardParams = m_cards[m_selectedIndex].params;
+    std::vector<float> uniformFloats;
+    std::vector<int32_t> uniformInts;
+    for (const auto& p : cardParams) {
+        switch (p.type) {
+        case ParamType::Float: uniformFloats.push_back(p.defaultVal[0]); break;
+        case ParamType::Int:
+        case ParamType::Bool: uniformInts.push_back(static_cast<int32_t>(p.defaultVal[0])); break;
+        case ParamType::Float2: uniformFloats.push_back(p.defaultVal[0]); uniformFloats.push_back(p.defaultVal[1]); break;
+        case ParamType::Float3:
+        case ParamType::Color: uniformFloats.push_back(p.defaultVal[0]); uniformFloats.push_back(p.defaultVal[1]); uniformFloats.push_back(p.defaultVal[2]); break;
+        case ParamType::Float4: uniformFloats.push_back(p.defaultVal[0]); uniformFloats.push_back(p.defaultVal[1]); uniformFloats.push_back(p.defaultVal[2]); uniformFloats.push_back(p.defaultVal[3]); break;
         }
     }
 
-    // Render visible card thumbnails every frame
-    RenderVisibleThumbnails();
+    ShaderParams params;
+    params.inputTextures.push_back(input);
+    params.uniformFloats  = uniformFloats;
+    params.uniformInts    = uniformInts;
+    params.viewportWidth  = fbWidth;
+    params.viewportHeight = fbHeight;
+    params.time           = m_effectTime;
+    params.frameCount     = m_effectFrameCount;
+
+    backend->BeginRenderToTexture(m_immersiveTex);
+    backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
+    backend->EndRenderToTexture();
+    m_immersiveImTexID = backend->GetImTextureID(m_immersiveTex);
 }
 
 void CoverFlowScene::OnImGui()
 {
     ImGuiIO& io = ImGui::GetIO();
-    float w = io.DisplaySize.x;
-    float h = io.DisplaySize.y;
-    if (w > 0 && h > 0) {
+    float w = io.DisplaySize.x, h = io.DisplaySize.y;
+    if (w <= 0 || h <= 0) return;
+
+    auto& LM = LanguageManager::Instance();
+    const float cx = w * 0.5f;
+    ImFont* font = ImGui::GetFont();
+
+    // Build filtered indices: Dynamic/Static -> category -> cards
+    const auto& basePool = (m_currentCategory == EffectCategory::Dynamic)
+        ? m_dynamicIndices : m_staticIndices;
+    m_filteredIndices.clear();
+    for (int idx : basePool) {
+        if (m_activeCategory == "Process Effects" || m_cards[idx].category == m_activeCategory)
+            m_filteredIndices.push_back(idx);
+    }
+    // Isolation guard: if filtering by category yields nothing in current pool,
+    // silently revert to "Process Effects" (show all from current pool)
+    if (m_filteredIndices.empty() && !basePool.empty()) {
+        m_activeCategory = "Process Effects";
+        for (int idx : basePool)
+            m_filteredIndices.push_back(idx);
+    }
+    // AUTO_TEST: bypass Dynamic/Static isolation to screenshot all cards
+    if (getenv("AUTO_TEST_CARDS")) {
+        m_filteredIndices.clear();
+        for (int i = 0; i < (int)m_cards.size(); i++)
+            m_filteredIndices.push_back(i);
+    }
+    int filteredPos = 0;
+    int filteredTotal = (int)m_filteredIndices.size();
+    if (filteredTotal > 0) {
+        for (int p = 0; p < filteredTotal; p++)
+            if (m_filteredIndices[p] == m_selectedIndex) { filteredPos = p; break; }
+        if (m_filteredIndices[filteredPos] != m_selectedIndex) {
+            filteredPos = 0;
+            m_selectedIndex = m_filteredIndices[0];
+        }
+    }
+
+    if (m_immersiveImTexID) {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(w, h));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255));
+        ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
+        ImGui::Begin("##ImmersiveBg", nullptr,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoInputs);
+        ImDrawList* bgdl = ImGui::GetWindowDrawList();
+        bgdl->AddImage(m_immersiveImTexID, ImVec2(0, 0), ImVec2(w, h),
+            ImVec2(0, 1), ImVec2(1, 0), IM_COL32(255, 255, 255, 255));
+        ImGui::End();
+        ImGui::PopStyleColor(2);
     }
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.09f, 0.12f, 1.0f));
 
-    ImGui::Begin("##CoverFlow", nullptr,
+    ImDrawList* fg = ImGui::GetForegroundDrawList();
+
+    auto fgShadowText = [&](float size, ImVec2 pos, ImU32 col, const char* text) {
+        ImU32 sh = IM_COL32(0, 0, 0, 180);
+        fg->AddText(font, size, ImVec2(pos.x - 2, pos.y - 2), sh, text);
+        fg->AddText(font, size, ImVec2(pos.x + 2, pos.y - 2), sh, text);
+        fg->AddText(font, size, ImVec2(pos.x - 2, pos.y + 2), sh, text);
+        fg->AddText(font, size, ImVec2(pos.x + 2, pos.y + 2), sh, text);
+        fg->AddText(font, size, ImVec2(pos.x, pos.y + 3), sh, text);
+        fg->AddText(font, size, pos, col, text);
+    };
+
+    // ==== Category tabs — top-left, pinned ====
+    struct CatEntry { const char* key; std::string name; };
+    CatEntry cats[] = {
+        {"Process Effects",     LM.CategoryProcess()},
+        {"Blur Effects",        LM.CategoryBlur()},
+        {"Pixelate Effects",    LM.CategoryPixelate()},
+        {"Edge Detection",      LM.CategoryEdge()},
+        {"Glitch Effects",      LM.CategoryGlitch()},
+        {"Color Adjustment",    LM.CategoryColorAdj()},
+        {"Vignette Effects",    LM.CategoryVignette()},
+        {"Image Processing",    LM.CategoryImageProc()},
+    };
+    const int nCats = sizeof(cats) / sizeof(cats[0]);
+    float tabH = h * 0.033f, tabY = h * 0.008f, tabFS = h * 0.014f;
+    float tabX = w * 0.015f;
+
+    struct TR { float x0, y0, x1, y1; const char* key; } tr[nCats];
+    for (int i = 0; i < nCats; i++) {
+        float tW = ImGui::CalcTextSize(cats[i].name.c_str()).x + 24.0f;
+        bool sel = (cats[i].key == m_activeCategory);
+        tr[i] = {tabX, tabY, tabX + tW, tabY + tabH, cats[i].key};
+        ImU32 bg = sel ? IM_COL32(74, 91, 207, 85) : IM_COL32(28, 31, 48, 100);
+        fg->AddRectFilled(ImVec2(tabX, tabY), ImVec2(tabX + tW, tabY + tabH), bg, 4.0f);
+        if (sel) fg->AddRect(ImVec2(tabX, tabY), ImVec2(tabX + tW, tabY + tabH), IM_COL32(107,124,232,180), 4.0f);
+        ImU32 tc = sel ? IM_COL32(220, 225, 255, 255) : IM_COL32(150, 160, 190, 200);
+        ImVec2 ts = ImGui::CalcTextSize(cats[i].name.c_str());
+        fgShadowText(tabFS, ImVec2(tabX + (tW - ts.x) * 0.5f, tabY + (tabH - ts.y) * 0.5f), tc, cats[i].name.c_str());
+        tabX += tW + 6.0f;
+    }
+
+    // ==== Segmented Control (Dynamic/Static) — centered below category tabs ====
+    {
+        const float segW = 220.0f, segH = 38.0f, segR = 19.0f;
+        float segX = cx - segW * 0.5f;
+        float segY = h * 0.048f;
+        const char* dynLabel = (LM.GetLanguage() == Language::Chinese) ? u8"动态" : "Dynamic";
+        const char* staLabel = (LM.GetLanguage() == Language::Chinese) ? u8"静态" : "Static";
+
+        fg->AddRectFilled(ImVec2(segX, segY), ImVec2(segX + segW, segY + segH),
+            IM_COL32(30, 30, 40, 200), segR);
+
+        float halfW = segW * 0.5f;
+        bool isDyn = (m_currentCategory == EffectCategory::Dynamic);
+
+        if (isDyn)
+            fg->AddRectFilled(ImVec2(segX, segY), ImVec2(segX + halfW, segY + segH),
+                IM_COL32(255, 255, 255, 230), segR, ImDrawFlags_RoundCornersLeft);
+        else
+            fg->AddRectFilled(ImVec2(segX + halfW, segY), ImVec2(segX + segW, segY + segH),
+                IM_COL32(255, 255, 255, 230), segR, ImDrawFlags_RoundCornersRight);
+
+        float labelSize = h * 0.018f;
+        ImVec2 dynSz = ImGui::CalcTextSize(dynLabel);
+        ImVec2 staSz = ImGui::CalcTextSize(staLabel);
+        fg->AddText(font, labelSize,
+            ImVec2(segX + halfW * 0.5f - dynSz.x * 0.5f, segY + segH * 0.5f - dynSz.y * 0.5f),
+            isDyn ? IM_COL32(0, 0, 0, 230) : IM_COL32(255, 255, 255, 160), dynLabel);
+        fg->AddText(font, labelSize,
+            ImVec2(segX + halfW + halfW * 0.5f - staSz.x * 0.5f, segY + segH * 0.5f - staSz.y * 0.5f),
+            !isDyn ? IM_COL32(0, 0, 0, 230) : IM_COL32(255, 255, 255, 160), staLabel);
+    }
+
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(w, h));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
+    ImGui::Begin("##ImmersiveUI", nullptr,
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoSavedSettings);
 
-    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImGui::SetCursorScreenPos(ImVec2(w - 110.0f, h * 0.012f));
+    if (ImGui::Button(LM.LanguageButton(), ImVec2(90, 28)))
+        LM.ToggleLanguage();
 
-    // ---- Title ----
-    {
-        auto& LM = LanguageManager::Instance();
-        const char* title = LM.Title();
-        char subtitle[256];
-        const char* srcLabel = m_captureActive ? LM.ScreenCaptureLabel()
-                              : (!m_imagePool.empty() ? m_imagePool[m_currentImageIndex].c_str() : LM.StaticImageLabel());
-        // Extract just the filename
-        const char* justFile = strrchr(srcLabel, '/');
-        if (justFile) justFile++; else { justFile = strrchr(srcLabel, '\\'); if (justFile) justFile++; else justFile = srcLabel; }
-        snprintf(subtitle, sizeof(subtitle), LM.InputInfoFormat(),
-                 justFile, m_fpsDisplay);
-        ImVec2 ts = ImGui::CalcTextSize(title);
-        ImVec2 ss = ImGui::CalcTextSize(subtitle);
-        dl->AddText(ImGui::GetFont(), h * 0.039f,
-            ImVec2(w / 2.0f - ts.x / 2.0f, h * 0.042f),
-            IM_COL32(220, 220, 255, 255), title);
-        dl->AddText(ImGui::GetFont(), h * 0.022f,
-            ImVec2(w / 2.0f - ss.x / 2.0f, h * 0.090f),
-            IM_COL32(140, 140, 160, 220), subtitle);
-    }
-
-    // ---- Language toggle button (top-right corner) ----
-    {
-        auto& LM = LanguageManager::Instance();
-        ImGui::SetCursorScreenPos(ImVec2(w - 120.0f, h * 0.028f));
-        if (ImGui::Button(LM.LanguageButton(), ImVec2(100, 30))) {
-            LM.ToggleLanguage();
-        }
-    }
-
-    // ---- Card dimensions (proportional to window, maintaining original ratio) ----
-    const float cardH   = h * 0.53f;       // was 380 / 720
-    const float cardW   = cardH * 0.737f;  // was 280 / 380
-    const float spacing = cardW * 0.286f;  // was 80 / 280
-    const float centerX = w / 2.0f;
-    const float centerY = h / 2.0f + h * 0.028f;
-
-    // ---- Page dots ----
-    {
-        const float dotR = 4.0f, dotSp = 14.0f;
-        const int maxD = 18;
-        int ds = std::max(0, m_selectedIndex - 8);
-        int de = std::min((int)m_cards.size(), ds + maxD);
-        float dx = centerX - (de - ds - 1) * dotSp / 2.0f;
-        float dy = centerY - cardH / 2.0f - h * 0.035f;
-        for (int i = ds; i < de; i++) {
-            dl->AddCircleFilled(ImVec2(dx, dy), dotR,
-                (i == m_selectedIndex) ? IM_COL32(180,180,255,255) : IM_COL32(80,80,100,150));
-            dx += dotSp;
-        }
-    }
-
-    // ---- Cards ----
-    int vr = 3; // visible range on each side
-    for (int i = (int)m_cards.size() - 1; i >= 0; i--) {
-        // Only render cards in visible range
-        if (i < m_selectedIndex - vr || i > m_selectedIndex + vr) continue;
-
-        float off  = (float)(i - m_selectedIndex) + m_scrollOffset - m_targetOffset;
-        float x    = centerX + off * (cardW + spacing);
-        float scl  = 1.0f / (1.0f + std::fabs(off) * 0.3f);
-        float alpha = 1.0f - std::fabs(off) * 0.35f;
-        if (alpha < 0.0f) alpha = 0.0f;
-
-        float w2 = cardW * scl, h2 = cardH * scl;
-        float x0 = x - w2/2, y0 = centerY - h2/2;
-        float x1 = x + w2/2, y1 = centerY + h2/2;
-
-        int ai = (int)(alpha * 255);
-
-        // ---- Thumbnail image ----
-        bool hasThumb = i < (int)m_thumbIds.size() && m_thumbIds[i] != nullptr;
-        ImU32 bg, bd;
-        if (i == m_selectedIndex) {
-            bg = IM_COL32(50,55,80,ai); bd = IM_COL32(160,160,240,ai);
-        } else {
-            bg = IM_COL32(35,38,50,ai); bd = IM_COL32(80,80,110,(int)(alpha*200));
-        }
-
-        float r = 10.0f * scl;
-
-        if (hasThumb && alpha > 0.1f) {
-            // Draw thumbnail image first (tint with white, alpha controls visibility)
-            dl->AddImageRounded(m_thumbIds[i],
-                ImVec2(x0, y0), ImVec2(x1, y1),
-                ImVec2(0, 1), ImVec2(1, 0),
-                IM_COL32(255, 255, 255, ai), r);
-        } else {
-            dl->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), bg, r);
-        }
-        dl->AddRect(ImVec2(x0, y0), ImVec2(x1, y1), bd, r, 0, 2.0f);
-
-        if (alpha > 0.25f) {
-            const auto& card = m_cards[i];
-            float cx = x;
-
-            // ---- Card click area (InvisibleButton) ----
-            ImGui::SetCursorScreenPos(ImVec2(x0, y0));
-            ImGui::InvisibleButton(("##card_" + std::to_string(i)).c_str(), ImVec2(w2, h2));
-            if (ImGui::IsItemClicked()) {
-                // Click any card to open its detail page directly
-                SelectCard(i);
-                OpenSelectedEffect();
+    for (int i = 0; i < nCats; i++) {
+        ImGui::SetCursorScreenPos(ImVec2(tr[i].x0, tr[i].y0));
+        ImGui::InvisibleButton(("##cfcat" + std::to_string(i)).c_str(), ImVec2(tr[i].x1 - tr[i].x0, tr[i].y1 - tr[i].y0));
+        if (ImGui::IsItemClicked()) {
+            m_activeCategory = tr[i].key;
+            const auto& pool = (m_currentCategory == EffectCategory::Dynamic)
+                ? m_dynamicIndices : m_staticIndices;
+            m_filteredIndices.clear();
+            for (int idx : pool)
+                if (m_activeCategory == "Process Effects" || m_cards[idx].category == m_activeCategory)
+                    m_filteredIndices.push_back(idx);
+            // Isolation: if category has no cards in current pool, revert to "Process Effects"
+            if (m_filteredIndices.empty()) {
+                m_activeCategory = "Process Effects";
+                for (int idx : pool)
+                    m_filteredIndices.push_back(idx);
             }
-
-            // ---- Dark overlay at bottom of card for text readability ----
-            float overlayH = 140.0f * scl;
-            dl->AddRectFilledMultiColor(
-                ImVec2(x0, y1 - overlayH), ImVec2(x1, y1),
-                IM_COL32(0,0,0,0),
-                IM_COL32(0,0,0,0),
-                IM_COL32(20,22,30,(int)(alpha*220)),
-                IM_COL32(20,22,30,(int)(alpha*220)));
-
-            // ---- Category tag ----
-            float cy = y1 - overlayH + 15.0f * scl;
-            {
-                const char* catStr = LanguageManager::Instance().TranslateCategory(card.category);
-                ImVec2 cs = ImGui::CalcTextSize(catStr);
-                float tw = cs.x + 12.0f, th = cs.y + 6.0f;
-                dl->AddRectFilled(ImVec2(x0 + 10.0f*scl, cy - 2.0f), ImVec2(x0 + 10.0f*scl + tw, cy + th + 2.0f),
-                    IM_COL32(60,65,100,(int)(alpha*220)), 4.0f);
-                dl->AddText(ImGui::GetFont(), 11.0f * scl,
-                    ImVec2(x0 + 16.0f*scl, cy),
-                    IM_COL32(160,170,220,(int)(alpha*255)), catStr);
-            }
-
-            // ---- Name ----
-            cy = y1 - overlayH + 38.0f * scl;
-            {
-                const char* nameStr = LanguageManager::Instance().CardName(card.id);
-                dl->AddText(ImGui::GetFont(), 18.0f * scl,
-                    ImVec2(x0 + 14.0f*scl, cy),
-                    IM_COL32(255, 255, 255, (int)(alpha*255)), nameStr);
-            }
-
-            // ---- Index ----
-            if (i == m_selectedIndex) {
-                char buf[32];
-                snprintf(buf, sizeof(buf), "%d / %zu", i+1, m_cards.size());
-                ImVec2 isz = ImGui::CalcTextSize(buf);
-                dl->AddText(ImGui::GetFont(), h * 0.0167f,
-                    ImVec2(cx - isz.x/2, y1 - h * 0.022f), IM_COL32(140,140,180,200), buf);
-            }
+            m_selectedIndex = m_filteredIndices.empty() ? 0 : m_filteredIndices[0];
         }
     }
 
-    // ---- Nav hint ----
+    // Segmented Control buttons (centered)
     {
-        const char* hint = LanguageManager::Instance().BottomHelp();
-        ImVec2 hs = ImGui::CalcTextSize(hint);
-        dl->AddText(ImGui::GetFont(), h * 0.0195f,
-            ImVec2(centerX - hs.x/2, centerY + cardH/2 + h * 0.069f),
-            IM_COL32(150,150,170,160), hint);
+        const float segW = 220.0f, segH = 38.0f;
+        float segX = cx - segW * 0.5f;
+        float segY = h * 0.048f;
+        ImGui::SetCursorScreenPos(ImVec2(segX, segY));
+        ImGui::InvisibleButton("##segDyn", ImVec2(segW * 0.5f, segH));
+        if (ImGui::IsItemClicked()) {
+            m_currentCategory = EffectCategory::Dynamic;
+            m_activeCategory = "Process Effects";
+            const auto& pool = m_dynamicIndices;
+            m_selectedIndex = pool.empty() ? 0 : pool[0];
+        }
+        ImGui::SetCursorScreenPos(ImVec2(segX + segW * 0.5f, segY));
+        ImGui::InvisibleButton("##segSta", ImVec2(segW * 0.5f, segH));
+        if (ImGui::IsItemClicked()) {
+            m_currentCategory = EffectCategory::Static;
+            m_activeCategory = "Process Effects";
+            const auto& pool = m_staticIndices;
+            m_selectedIndex = pool.empty() ? 0 : pool[0];
+        }
     }
 
-    // ---- Category legend ----
-    {
-        auto& LM = LanguageManager::Instance();
-        char leg[256];
-        snprintf(leg, sizeof(leg), "%s | %s | %s | %s | %s | %s | %s | %s",
-            LM.CategorySimple(), LM.CategoryLighting(), LM.CategoryFilter(), LM.CategoryStylize(),
-            LM.CategoryColor(), LM.CategoryDistort(), LM.CategoryProcedural(), LM.CategoryRetro());
-        ImVec2 ls = ImGui::CalcTextSize(leg);
-        dl->AddText(ImGui::GetFont(), h * 0.0167f,
-            ImVec2(centerX - ls.x/2, h - h * 0.048f), IM_COL32(100,100,120,130), leg);
+    ImGui::SetCursorScreenPos(ImVec2(0, 0));
+    ImGui::InvisibleButton("##clickOpen", ImVec2(w, h));
+    if (m_effectFrameCount > 15 && ImGui::IsItemClicked()) {
+        ImVec2 mp = io.MousePos;
+        bool onSeg = (mp.x >= cx - 110 && mp.x <= cx + 110 && mp.y >= h * 0.048f && mp.y <= h * 0.048f + 38);
+        bool onTab = false;
+        for (int i = 0; i < nCats; i++)
+            if (mp.x >= tr[i].x0 && mp.x <= tr[i].x1 && mp.y >= tr[i].y0 - 5 && mp.y <= tr[i].y1 + 5) { onTab = true; break; }
+        bool onLang = (mp.x >= w - 120 && mp.x <= w - 10 && mp.y < h * 0.06f);
+        if (!onSeg && !onTab && !onLang && !m_cards.empty()) OpenSelectedEffect();
     }
 
     ImGui::End();
-    ImGui::PopStyleColor();
-    
-    // ---- Card screenshot mode ----
+    ImGui::PopStyleColor(2);
+
+    // ==== Left-aligned vertical info bar ──
+    const float LX = w * 0.04f;  // left margin
+
+    // Effect name — large, prominent
+    {
+        const auto& card = m_cards[m_selectedIndex];
+        const char* ns = LM.CardName(card.id);
+        float nsSize = h * 0.06f;
+        fgShadowText(nsSize, ImVec2(LX, h * 0.78f), IM_COL32(245, 250, 255, 245), ns);
+    }
+    // Description — single line, muted
+    {
+        const auto& card = m_cards[m_selectedIndex];
+        const char* ds = LM.CardDesc(card.id);
+        float dsSize = h * 0.022f;
+        // truncate if too wide
+        char line[384];
+        snprintf(line, sizeof(line), "%s", ds);
+        float maxW = w * 0.65f;
+        ImVec2 sz = ImGui::CalcTextSize(line);
+        int cut = (int)strlen(line);
+        while (cut > 0 && sz.x > maxW) {
+            cut--; sz = ImGui::CalcTextSize(line, line + cut, false);
+        }
+        if (cut < (int)strlen(line)) snprintf(line, sizeof(line), "%.*s...", cut, ds);
+        fgShadowText(dsSize, ImVec2(LX, h * 0.78f + h * 0.06f * 1.3f),
+                     IM_COL32(200, 205, 215, 160), line);
+    }
+    // Page dots — left aligned row
+    {
+        const float dr = 3.0f, gs = 10.0f;
+        float dy = h * 0.89f;
+        if (filteredTotal > 0) {
+            for (int i = 0; i < filteredTotal; i++) {
+                fg->AddCircleFilled(ImVec2(LX + i * gs, dy), dr,
+                    i == filteredPos ? IM_COL32(74, 91, 207, 255) : IM_COL32(74, 91, 207, 55));
+            }
+        }
+    }
+    // Page number — right below dots
+    {
+        char buf[64]; snprintf(buf, sizeof(buf), "%d / %d", filteredPos + 1, filteredTotal);
+        fgShadowText(h * 0.02f, ImVec2(LX, h * 0.91f), IM_COL32(220, 225, 240, 150), buf);
+    }
+    // Bottom help — near bottom edge
+    {
+        const char* hh = LM.BottomHelp();
+        fgShadowText(h * 0.017f, ImVec2(LX, h * 0.955f), IM_COL32(140, 145, 165, 130), hh);
+    }
+    // Left / Right arrows — right edge, same vertical band as name
+    if (filteredTotal > 1) {
+        fgShadowText(h * 0.05f, ImVec2(w * 0.93f, h * 0.78f), IM_COL32(255, 255, 255, 60), "<");
+        ImVec2 gsz = ImGui::CalcTextSize(">");
+        fgShadowText(h * 0.05f, ImVec2(w * 0.97f - gsz.x, h * 0.78f), IM_COL32(255, 255, 255, 60), ">");
+    }
+
     if (getenv("AUTO_TEST_CARDS") && !getenv("AUTO_TEST_UI") && !getenv("AUTO_TEST_DETAILS")) {
         g_cardScreenshotFrame++;
-        
-        // Take screenshot after a few frames of showing the card
         if (g_cardScreenshotNeedsShot && g_cardScreenshotFrame >= 5) {
             char path[256];
             snprintf(path, sizeof(path), "e:/AI/graph/hight-post-proc/screenshots/card_%02d.ppm", g_cardScreenshotIndex - 1);
             ScreenshotRequest::Request(path);
             g_cardScreenshotNeedsShot = false;
         }
-        
-        // Move to next card
-        if (g_cardScreenshotFrame >= 30) { // 30 frames per card
+        if (g_cardScreenshotFrame >= 30) {
             g_cardScreenshotFrame = 0;
             if (g_cardScreenshotIndex < (int)m_cards.size()) {
                 SelectCard(g_cardScreenshotIndex);
@@ -578,14 +945,11 @@ void CoverFlowScene::OnImGui()
             }
         }
     }
-    
-    // ---- Detail page screenshot mode ----
     if (getenv("AUTO_TEST_DETAILS") && !getenv("AUTO_TEST_UI")) {
         static int detailCardIndex = 0;
         static int frameWait = 0;
-        
         frameWait++;
-        if (frameWait >= 30) { // Wait between opening details
+        if (frameWait >= 30) {
             frameWait = 0;
             if (detailCardIndex < (int)m_cards.size()) {
                 SelectCard(detailCardIndex);
@@ -914,6 +1278,13 @@ void CoverFlowScene::RenderVisibleThumbnails()
 {
     if (!m_thumbInitialized || !m_backend) return;
 
+    // Update thumbnail time every frame
+    static auto thumbLastTime = std::chrono::high_resolution_clock::now();
+    auto thumbNow = std::chrono::high_resolution_clock::now();
+    m_thumbElapsedTime += std::chrono::duration<float>(thumbNow - thumbLastTime).count();
+    m_thumbFrameCount++;
+    thumbLastTime = thumbNow;
+
     const int vr = 3;
 
     for (int i = m_selectedIndex - vr; i <= m_selectedIndex + vr; i++) {
@@ -930,7 +1301,22 @@ void CoverFlowScene::RenderVisibleThumbnails()
         m_backend->BeginRenderToTexture(state.thumbTex);
         ShaderParams params;
         params.inputTextures.push_back(input);
-        params.uniformFloats  = {4.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        // Build per-effect uniform values from effect.json params
+        std::vector<float> uf;
+        std::vector<int32_t> ui;
+        for (const auto& p : m_cards[i].params) {
+            switch (p.type) {
+            case ParamType::Float: uf.push_back(p.defaultVal[0]); break;
+            case ParamType::Int:
+            case ParamType::Bool: ui.push_back(static_cast<int32_t>(p.defaultVal[0])); break;
+            case ParamType::Float2: uf.push_back(p.defaultVal[0]); uf.push_back(p.defaultVal[1]); break;
+            case ParamType::Float3:
+            case ParamType::Color: uf.push_back(p.defaultVal[0]); uf.push_back(p.defaultVal[1]); uf.push_back(p.defaultVal[2]); break;
+            case ParamType::Float4: uf.push_back(p.defaultVal[0]); uf.push_back(p.defaultVal[1]); uf.push_back(p.defaultVal[2]); uf.push_back(p.defaultVal[3]); break;
+            }
+        }
+        params.uniformFloats  = uf;
+        params.uniformInts    = ui;
         params.viewportWidth  = m_thumbWidth;
         params.viewportHeight = m_thumbHeight;
         params.time           = m_thumbElapsedTime;

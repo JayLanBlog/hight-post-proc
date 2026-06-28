@@ -1,0 +1,19 @@
+{
+  "name": "漂白旁路",
+  "name_cn": "漂白旁路",
+  "category": "Color Adjustment",
+  "category_cn": "Color Adjustment",
+  "description": "漂白旁路：暗部加深亮部提亮",
+  "description_cn": "漂白旁路：暗部加深亮部提亮",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "强度",
+      "type": "Float",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "ui_type": "slider"
+    }
+  ]
+}

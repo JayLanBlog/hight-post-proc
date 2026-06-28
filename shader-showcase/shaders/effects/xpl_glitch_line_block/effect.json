@@ -1,0 +1,70 @@
+{
+  "name": "行块错位",
+  "name_cn": "行块错位",
+  "category": "Glitch Effects",
+  "category_cn": "故障效果",
+  "description": "Complex rhythmic line block displacement with YUV chrominance distortion.",
+  "description_cn": "节律性行块水平位移 + YUV 色度畸变，产生有节奏的画面撕裂和颜色失真，最复杂的故障效果。",
+  "params": [
+    {
+      "name": "uParamFloat0",
+      "label": "Frequency",
+      "label_cn": "频率",
+      "type": "float",
+      "min": 0,
+      "max": 25,
+      "default": 3.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat1",
+      "label": "Speed",
+      "label_cn": "速度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.8,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat2",
+      "label": "Amount",
+      "label_cn": "强度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat3",
+      "label": "Offset",
+      "label_cn": "偏移",
+      "type": "float",
+      "min": 0,
+      "max": 13,
+      "default": 1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat4",
+      "label": "Lines Width",
+      "label_cn": "线宽",
+      "type": "float",
+      "min": 0.1,
+      "max": 10,
+      "default": 1,
+      "ui": "slider"
+    },
+    {
+      "name": "uParamFloat5",
+      "label": "Alpha",
+      "label_cn": "透明度",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "ui": "slider"
+    }
+  ]
+}
