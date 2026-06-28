@@ -540,45 +540,281 @@
 [Vulkan] Pipeline created (id=7)
 [Vulkan] Texture created (id=173, 1920x1200, format=0)
 [Vulkan] Pipeline created (id=8)
-[CoverFlowScene] Selected card 144: 漫反射+纹理
-[CardScreenshot] Selected card 144: 漫反射+纹理
+[CoverFlowScene] Selected card 95: 凹凸+边缘光
+[CardScreenshot] Selected card 95: 凹凸+边缘光
 [Vulkan] Pipeline created (id=9)
 [Vulkan] Pipeline created (id=10)
 [Vulkan] Pipeline created (id=11)
-[Vulkan] Pipeline created (id=12)
-[Vulkan] Pipeline created (id=13)
-[Vulkan] Pipeline created (id=14)
-[Vulkan] Pipeline created (id=15)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_95.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_95.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_95.ppm
+[CoverFlowScene] Selected card 96: 基础单色
+[CardScreenshot] Selected card 96: 基础单色
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_96.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_96.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_96.ppm
+[CoverFlowScene] Selected card 97: 材质颜色+光照
+[CardScreenshot] Selected card 97: 材质颜色+光照
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_97.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_97.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_97.ppm
+[CoverFlowScene] Selected card 98: 可调漫反射
+[CardScreenshot] Selected card 98: 可调漫反射
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_98.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_98.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_98.ppm
+[CoverFlowScene] Selected card 99: 完备光照Beta
+[CardScreenshot] Selected card 99: 完备光照Beta
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_99.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_99.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_99.ppm
+[CoverFlowScene] Selected card 100: 纹理载入
+[CardScreenshot] Selected card 100: 纹理载入
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_100.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_100.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_100.ppm
+[CoverFlowScene] Selected card 101: 完备光照正式
+[CardScreenshot] Selected card 101: 完备光照正式
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_101.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_101.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_101.ppm
+[CoverFlowScene] Selected card 102: Shader框架示例
+[CardScreenshot] Selected card 102: Shader框架示例
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_102.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_102.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_102.ppm
+[CoverFlowScene] Selected card 103: Alpha纹理混合
+[CardScreenshot] Selected card 103: Alpha纹理混合
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_103.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_103.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_103.ppm
+[CoverFlowScene] Selected card 104: Alpha+自发光
+[CardScreenshot] Selected card 104: Alpha+自发光
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_104.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_104.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_104.ppm
+[CoverFlowScene] Selected card 105: 可调色混合
+[CardScreenshot] Selected card 105: 可调色混合
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_105.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_105.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_105.ppm
+[CoverFlowScene] Selected card 106: 顶点光照+Alpha
+[CardScreenshot] Selected card 106: 顶点光照+Alpha
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_106.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_106.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_106.ppm
+[CoverFlowScene] Selected card 107: 顶点光+自发光
+[CardScreenshot] Selected card 107: 顶点光+自发光
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_107.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_107.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_107.ppm
+[CoverFlowScene] Selected card 108: 剔除背面
+[CardScreenshot] Selected card 108: 剔除背面
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_108.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_108.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_108.ppm
+[CoverFlowScene] Selected card 109: 剔除背面V2
+[CardScreenshot] Selected card 109: 剔除背面V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_109.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_109.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_109.ppm
+[CoverFlowScene] Selected card 110: 剔除玻璃效果
+[CardScreenshot] Selected card 110: 剔除玻璃效果
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_110.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_110.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_110.ppm
+[CoverFlowScene] Selected card 111: Alpha测试
+[CardScreenshot] Selected card 111: Alpha测试
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_111.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_111.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_111.ppm
+[CoverFlowScene] Selected card 112: 顶点光+透明
+[CardScreenshot] Selected card 112: 顶点光+透明
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_112.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_112.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_112.ppm
+[CoverFlowScene] Selected card 113: 植被Shader
+[CardScreenshot] Selected card 113: 植被Shader
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_113.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_113.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_113.ppm
+[CoverFlowScene] Selected card 114: 固定功能Shader
+[CardScreenshot] Selected card 114: 固定功能Shader
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_114.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_114.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_114.ppm
+[CoverFlowScene] Selected card 115: 表面Shader示例
+[CardScreenshot] Selected card 115: 表面Shader示例
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_115.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_115.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_115.ppm
+[CoverFlowScene] Selected card 116: 可编程Shader
+[CardScreenshot] Selected card 116: 可编程Shader
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_116.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_116.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_116.ppm
+[CoverFlowScene] Selected card 117: 纹理载入
+[CardScreenshot] Selected card 117: 纹理载入
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_117.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_117.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_117.ppm
+[CoverFlowScene] Selected card 118: 基本Blend
+[CardScreenshot] Selected card 118: 基本Blend
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_118.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_118.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_118.ppm
+[CoverFlowScene] Selected card 119: Blend+颜色
+[CardScreenshot] Selected card 119: Blend+颜色
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_119.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_119.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_119.ppm
+[CoverFlowScene] Selected card 120: Blend+顶点光
+[CardScreenshot] Selected card 120: Blend+顶点光
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_120.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_120.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_120.ppm
+[CoverFlowScene] Selected card 121: 玻璃效果V2
+[CardScreenshot] Selected card 121: 玻璃效果V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_121.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_121.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_121.ppm
+[CoverFlowScene] Selected card 122: 玻璃效果V3
+[CardScreenshot] Selected card 122: 玻璃效果V3
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_122.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_122.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_122.ppm
+[CoverFlowScene] Selected card 123: 基本Surface
+[CardScreenshot] Selected card 123: 基本Surface
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_123.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_123.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_123.ppm
+[CoverFlowScene] Selected card 124: 颜色可调
+[CardScreenshot] Selected card 124: 颜色可调
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_124.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_124.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_124.ppm
+[CoverFlowScene] Selected card 125: 纹理载入
+[CardScreenshot] Selected card 125: 纹理载入
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_125.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_125.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_125.ppm
+[CoverFlowScene] Selected card 126: 凹凸纹理
+[CardScreenshot] Selected card 126: 凹凸纹理
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_126.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_126.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_126.ppm
+[CoverFlowScene] Selected card 127: 纹理+颜色
+[CardScreenshot] Selected card 127: 纹理+颜色
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_127.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_127.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_127.ppm
+[CoverFlowScene] Selected card 128: 凹凸+边缘光
+[CardScreenshot] Selected card 128: 凹凸+边缘光
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_128.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_128.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_128.ppm
+[CoverFlowScene] Selected card 129: 凹凸+边缘+色
+[CardScreenshot] Selected card 129: 凹凸+边缘+色
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_129.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_129.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_129.ppm
+[CoverFlowScene] Selected card 130: 细节纹理
+[CardScreenshot] Selected card 130: 细节纹理
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_130.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_130.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_130.ppm
+[CoverFlowScene] Selected card 131: 完整Surface
+[CardScreenshot] Selected card 131: 完整Surface
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_131.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_131.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_131.ppm
+[CoverFlowScene] Selected card 132: 漫反射光照
+[CardScreenshot] Selected card 132: 漫反射光照
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_132.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_132.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_132.ppm
+[CoverFlowScene] Selected card 133: 自定义高光
+[CardScreenshot] Selected card 133: 自定义高光
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_133.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_133.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_133.ppm
+[CoverFlowScene] Selected card 134: 自制Lambert
+[CardScreenshot] Selected card 134: 自制Lambert
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_134.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_134.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_134.ppm
+[CoverFlowScene] Selected card 135: 半Lambert
+[CardScreenshot] Selected card 135: 半Lambert
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_135.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_135.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_135.ppm
+[CoverFlowScene] Selected card 136: 卡通渐变光照
+[CardScreenshot] Selected card 136: 卡通渐变光照
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_136.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_136.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_136.ppm
+[CoverFlowScene] Selected card 137: 卡通渐变V2
+[CardScreenshot] Selected card 137: 卡通渐变V2
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_137.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_137.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_137.ppm
+[CoverFlowScene] Selected card 138: 单色Shader
+[CardScreenshot] Selected card 138: 单色Shader
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_138.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_138.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_138.ppm
+[CoverFlowScene] Selected card 139: 单色可调
+[CardScreenshot] Selected card 139: 单色可调
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_139.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_139.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_139.ppm
+[CoverFlowScene] Selected card 140: RGB Cube
+[CardScreenshot] Selected card 140: RGB Cube
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_140.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_140.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_140.ppm
+[CoverFlowScene] Selected card 141: 可调RGB Cube
+[CardScreenshot] Selected card 141: 可调RGB Cube
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_141.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_141.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_141.ppm
+[CoverFlowScene] Selected card 142: 三色RGB Cube
+[CardScreenshot] Selected card 142: 三色RGB Cube
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_142.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_142.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_142.ppm
+[CoverFlowScene] Selected card 143: 漫反射(Lambert)
+[CardScreenshot] Selected card 143: 漫反射(Lambert)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_143.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_143.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_143.ppm
+[CoverFlowScene] Selected card 144: 漫反射+纹理
+[CardScreenshot] Selected card 144: 漫反射+纹理
 [Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_144.ppm
 [Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_144.ppm
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_144.ppm
 [CoverFlowScene] Selected card 145: 单色透明
 [CardScreenshot] Selected card 145: 单色透明
-[Vulkan] Pipeline created (id=16)
 [Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_145.ppm
 [Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_145.ppm
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_145.ppm
 [CoverFlowScene] Selected card 146: 颜色可调透明
 [CardScreenshot] Selected card 146: 颜色可调透明
-[Vulkan] Pipeline created (id=17)
 [Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_146.ppm
 [Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_146.ppm
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_146.ppm
 [CoverFlowScene] Selected card 147: 双面透明
 [CardScreenshot] Selected card 147: 双面透明
-[Vulkan] Pipeline created (id=18)
 [Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_147.ppm
 [Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_147.ppm
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_147.ppm
 [CoverFlowScene] Selected card 148: 镜面高光
 [CardScreenshot] Selected card 148: 镜面高光
-[Vulkan] Pipeline created (id=19)
 [Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_148.ppm
 [Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_148.ppm
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_148.ppm
 [CoverFlowScene] Selected card 149: 镜面高光+纹理
 [CardScreenshot] Selected card 149: 镜面高光+纹理
-[Vulkan] Pipeline created (id=20)
 [Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_149.ppm
 [Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_149.ppm
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_149.ppm
@@ -599,7 +835,7 @@
 [Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_152.ppm
 [CardScreenshot] All 153 cards captured
 [Application] Scene requested exit with no replacement; shutting down
-[Application] Main loop exited: m_running=0, m_window=00000255550AA750, shouldClose=0
+[Application] Main loop exited: m_running=0, m_window=00000248F5E31300, shouldClose=0
 [CoverFlowScene] Exiting
 [Vulkan] Shader destroyed (id=2)
 [Vulkan] Shader destroyed (id=1)

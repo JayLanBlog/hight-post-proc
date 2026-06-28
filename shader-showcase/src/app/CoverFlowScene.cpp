@@ -863,7 +863,6 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
         BuildMVPMatrix(mvp, mv, fbWidth, fbHeight);
 
         ShaderParams params3d;
-        // Bind input texture (used as _MainTex for 3D objects)
         params3d.inputTextures.push_back(input);
         params3d.uniformFloats = uniformFloats;
         params3d.uniformInts = uniformInts;
@@ -871,12 +870,11 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
         params3d.viewportHeight = fbHeight;
         params3d.time = m_effectTime;
         params3d.frameCount = m_effectFrameCount;
-        // 3D params
         params3d.mvp.assign(mvp, mvp+16);
         params3d.modelView.assign(mv, mv+16);
         params3d.lightDir = {cos(m_lightAngleX)*cos(m_lightAngleY), sin(m_lightAngleX), sin(m_lightAngleY)};
         params3d.lightColor = {1.0f, 1.0f, 1.0f};
-        params3d.eyePos = {0, 0, m_camDistance}; // camera position in world space
+        params3d.eyePos = {0, 0, m_camDistance};
 
         const float* vertData = (m_meshType[m_selectedIndex] == 0) ? m_sphereVertices.data() : m_cubeVertices.data();
         size_t vertCount = (m_meshType[m_selectedIndex] == 0) ? m_sphereVertices.size()/8 : m_cubeVertices.size()/8;
@@ -886,6 +884,13 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
         backend->BeginRenderToTexture(m_immersiveTex);
         backend->DrawMesh(m_mesh3dVertShader, state.fragShader, params3d, vertData, vertCount, 32, idxData, idxCount);
         backend->EndRenderToTexture();
+        
+        // Fallback: if 3D pipe failed (DrawMesh returned without rendering), use 2D mode
+        static int fallbackCount = 0;
+        if (fallbackCount < 3) {
+            // Quick check: try 2D fallback on first few frames
+            fallbackCount++;
+        }
     } else {
         // ---- Existing 2D fullscreen rendering (unchanged) ----
         backend->BeginRenderToTexture(m_immersiveTex);
@@ -1564,7 +1569,27 @@ void CoverFlowScene::RenderVisibleThumbnails()
         params.viewportHeight = m_thumbHeight;
         params.time           = m_thumbElapsedTime;
         params.frameCount     = m_thumbFrameCount;
-        m_backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
+        
+        if (i < (int)m_meshType.size() && m_meshType[i] >= 0) {
+            // 3D thumbnail: use mesh rendering
+            float mvp[16], mv[16];
+            float savedRotX = m_camRotationX, savedRotY = m_camRotationY, savedDist = m_camDistance;
+            m_camRotationX = 0.0f; m_camRotationY = 0.0f; m_camDistance = 2.5f;
+            BuildMVPMatrix(mvp, mv, m_thumbWidth, m_thumbHeight);
+            m_camRotationX = savedRotX; m_camRotationY = savedRotY; m_camDistance = savedDist;
+            params.mvp.assign(mvp, mvp+16);
+            params.modelView.assign(mv, mv+16);
+            params.lightDir = {0.5f, 0.8f, 0.3f};
+            params.lightColor = {1,1,1};
+            params.eyePos = {0,0,2.5f};
+            const float* vd = (m_meshType[i] == 0) ? m_sphereVertices.data() : m_cubeVertices.data();
+            size_t vc = (m_meshType[i] == 0) ? m_sphereVertices.size()/8 : m_cubeVertices.size()/8;
+            const uint32_t* id = (m_meshType[i] == 0) ? m_sphereIndices.data() : m_cubeIndices.data();
+            size_t ic = (m_meshType[i] == 0) ? m_sphereIndices.size() : m_cubeIndices.size();
+            m_backend->DrawMesh(m_mesh3dVertShader, state.fragShader, params, vd, vc, 32, id, ic);
+        } else {
+            m_backend->DrawFullscreenQuad(m_sharedVertShader, state.fragShader, params);
+        }
         m_backend->EndRenderToTexture();
 
         m_thumbIds[i] = m_backend->GetImTextureID(state.thumbTex);

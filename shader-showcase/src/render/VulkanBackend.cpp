@@ -1456,8 +1456,10 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 
     VkResult pipeResult = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline);
     if (pipeResult != VK_SUCCESS) {
-        fprintf(stderr, "[Vulkan] vkCreateGraphicsPipelines failed: %d\n", pipeResult);
-        m_pipelineCache[cacheKey] = PipelineHandle{0}; // cache failure
+        fprintf(stderr, "[Vulkan] vkCreateGraphicsPipelines failed: %d (vert=%d frag=%d vtxInput=%d)\n",
+                pipeResult, desc.vertShader.id, desc.fragShader.id, desc.useVertexInput);
+        // Cache failure to avoid repeated attempts
+        m_pipelineCache[cacheKey] = PipelineHandle{0};
         return PipelineHandle{0};
     }
 
@@ -1757,16 +1759,16 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
             { float r[2] = {static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight)}; memcpy(uboData + 24, r, 8); }
             { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
 
-            // MVP at offset 40-103 (mat4 = 64 bytes)
-            if (!params.mvp.empty()) memcpy(uboData + 40, params.mvp.data(), 64);
-            // ModelView at offset 104-167 (mat4 = 64 bytes)
-            if (!params.modelView.empty()) memcpy(uboData + 104, params.modelView.data(), 64);
-            // LightDir at offset 168-179 (vec3 = 12 bytes)
-            if (!params.lightDir.empty()) memcpy(uboData + 168, params.lightDir.data(), 12);
-            // LightColor at offset 184-195 (vec3 = 12 bytes, padded to 16)
-            if (!params.lightColor.empty()) memcpy(uboData + 184, params.lightColor.data(), 12);
-            // EyePos at offset 200-211 (vec3 = 12 bytes, padded to 16)
-            if (!params.eyePos.empty()) memcpy(uboData + 200, params.eyePos.data(), 12);
+            // std140 layout (224 bytes):
+            // float[6]@0-23, vec2@24-31, float@32-35, float@36-39
+            // [pad 8]@40-47 (mat4 needs align 16)
+            // mat4 MVP@48-111, mat4 ModelView@112-175
+            // vec3 LightDir@176-191 (align 16), vec3 LightColor@192-207 (align 16), vec3 EyePos@208-223 (align 16)
+            if (!params.mvp.empty()) memcpy(uboData + 48, params.mvp.data(), 64);
+            if (!params.modelView.empty()) memcpy(uboData + 112, params.modelView.data(), 64);
+            if (!params.lightDir.empty()) memcpy(uboData + 176, params.lightDir.data(), 12);
+            if (!params.lightColor.empty()) memcpy(uboData + 192, params.lightColor.data(), 12);
+            if (!params.eyePos.empty()) memcpy(uboData + 208, params.eyePos.data(), 12);
 
             void* mapped = nullptr;
             VK_CHECK(vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped));
