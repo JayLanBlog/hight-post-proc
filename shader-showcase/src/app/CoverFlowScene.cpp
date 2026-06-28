@@ -46,7 +46,7 @@ CoverFlowScene::~CoverFlowScene()
 }
 
 #define CARD(id, name, cat, desc, frag, ...) \
-    add(id, name, cat, desc, frag, -1)
+    add(id, name, cat, desc, frag, ##__VA_ARGS__)
 
 void CoverFlowScene::RegisterCards()
 {
@@ -61,7 +61,7 @@ void CoverFlowScene::RegisterCards()
     m_cards.reserve(160);
 
     auto add = [&](const char* id, const char* name, const char* category,
-                   const char* desc, const char* fragRelPath, int meshType) {
+                   const char* desc, const char* fragRelPath, int meshType = -1) {
         EffectCard c;
         c.id = id; c.name = name; c.category = category; c.description = desc;
         if (meshType >= 0) {
