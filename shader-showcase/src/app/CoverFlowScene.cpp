@@ -862,8 +862,25 @@ void CoverFlowScene::OnRender(IRenderBackend* backend)
         float mvp[16], mv[16];
         BuildMVPMatrix(mvp, mv, fbWidth, fbHeight);
 
+        // Lazy-create default checkerboard texture (used as _MainTex for 3D objects)
+        static TextureHandle s_defaultTex = INVALID_TEXTURE;
+        if (s_defaultTex.id == INVALID_TEXTURE.id) {
+            const int TW = 64, TH = 64;
+            std::vector<uint8_t> px(TW * TH * 4);
+            for (int y = 0; y < TH; y++)
+                for (int x = 0; x < TW; x++) {
+                    int idx = (y * TW + x) * 4;
+                    bool ck = ((x / 8 + y / 8) & 1) == 0;
+                    px[idx+0] = ck ? 200 : 60;
+                    px[idx+1] = ck ? 180 : 80;
+                    px[idx+2] = ck ? 220 : 50;
+                    px[idx+3] = 255;
+                }
+            s_defaultTex = backend->CreateTexture(TW, TH, TextureFormat::RGBA8, px.data());
+        }
+
         ShaderParams params3d;
-        params3d.inputTextures.push_back(input);
+        params3d.inputTextures.push_back(s_defaultTex);  // checkerboard as fallback
         params3d.uniformFloats = uniformFloats;
         params3d.uniformInts = uniformInts;
         params3d.viewportWidth = fbWidth;

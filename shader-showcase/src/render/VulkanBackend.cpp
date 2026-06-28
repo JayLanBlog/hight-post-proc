@@ -1620,21 +1620,6 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         uboWrite.pBufferInfo = &bufferInfo;
         writes.push_back(uboWrite);
 
-        // SSBO (binding=2): vertex data
-        VkDescriptorBufferInfo ssboInfo{};
-        ssboInfo.buffer = vb;
-        ssboInfo.offset = 0;
-        ssboInfo.range = vbSize;
-        VkWriteDescriptorSet ssboWrite{};
-        ssboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        ssboWrite.dstSet = pipeIt->second->descSet;
-        ssboWrite.dstBinding = 2;
-        ssboWrite.dstArrayElement = 0;
-        ssboWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        ssboWrite.descriptorCount = 1;
-        ssboWrite.pBufferInfo = &ssboInfo;
-        writes.push_back(ssboWrite);
-
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1826,6 +1811,21 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         uboWrite.descriptorCount = 1;
         uboWrite.pBufferInfo = &bufferInfo;
         writes.push_back(uboWrite);
+
+        // SSBO (binding=2) — vertex data buffer for mesh3d.vert
+        VkDescriptorBufferInfo mesh_ssboInfo{};
+        mesh_ssboInfo.buffer = vb;
+        mesh_ssboInfo.offset = 0;
+        mesh_ssboInfo.range = vbSize;
+        VkWriteDescriptorSet mesh_ssboWrite{};
+        mesh_ssboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        mesh_ssboWrite.dstSet = pipeIt->second->descSet;
+        mesh_ssboWrite.dstBinding = 2;
+        mesh_ssboWrite.dstArrayElement = 0;
+        mesh_ssboWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        mesh_ssboWrite.descriptorCount = 1;
+        mesh_ssboWrite.pBufferInfo = &mesh_ssboInfo;
+        writes.push_back(mesh_ssboWrite);
 
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 

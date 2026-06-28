@@ -1,0 +1,1 @@
+[Vulkan] VK_CHECK failed at E:\AI\graph\hight-post-proc\shader-showcase\src\render\VulkanBackend.cpp:431: -1000000001

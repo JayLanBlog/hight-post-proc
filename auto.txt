@@ -1,0 +1,6 @@
+[main] Working directory set to: E:\AI\graph\hight-post-proc\shader-showcase
+[Application] AUTO_TEST_CARDS: forcing Vulkan backend
+[Vulkan] Instance created
+[Vulkan] Surface created (Win32 native)
+[Vulkan] Physical device: NVIDIA GeForce RTX 3060 Laptop GPU
+[Vulkan] Logical device created (graphics queue: 0, present queue: 0)
