@@ -1276,11 +1276,9 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
         return {0};
     }
 
-    // Cache key: vert shader + frag shader + render pass + vertex input mode
-    VkRenderPass renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
+    // Cache key: vert shader + frag shader + vertex input mode
+    VkRenderPass renderPass = m_renderPass;  // always use swapchain render pass
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
-    // Also factor in render pass to avoid incompatibility
-    cacheKey ^= (uint64_t)renderPass;
     cacheKey ^= (desc.useVertexInput ? (1ULL << 60) : 0);
 
     // Check cache
@@ -1444,8 +1442,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipeline->layout;
-    // Use current render pass (swapchain or render-to-texture)
-    pipelineInfo.renderPass = m_currentRenderPass != VK_NULL_HANDLE ? m_currentRenderPass : m_renderPass;
+    pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
     VkResult pipeResult = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline);

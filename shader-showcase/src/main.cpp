@@ -300,6 +300,12 @@ int main(int argc, char* argv[]) {
             c->AddImageToPool(assetDir + "/test.jpg");
             if (autoTest) c->EnableAutoTest(80);
             app.SetScene(std::move(c));
+        } else if (getenv("AUTO_TEST_AUS3D")) {
+            printf("[main] AUTO_TEST_AUS3D mode: launching AUS3DScene directly\n");
+            auto s = std::make_unique<AUS3DScene>();
+            s->SetBackend(backend);
+            s->SetApplication(&app);
+            app.SetScene(std::move(s));
         } else {
             app.SetScene(std::move(gallery));
         }
