@@ -1,5 +1,5 @@
 #version 460
-// Vol.16 CarPaint — procedural metallic matcap
+// CarPaint — blue metallic with distinct specular + fresnel
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
 layout(std140, binding=1) uniform Params {
@@ -13,25 +13,24 @@ bool hit(vec3 ro,vec3 rd,float r,out float t){
 void main(){
     vec3 eye=uEyePos,fwd=normalize(-eye),rt=normalize(cross(fwd,vec3(0,1,0))),up=cross(rt,fwd);
     float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
-    vec3 rd=normalize(fwd+uv.x*rt*0.7+uv.y*up*0.7);
+    vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
-    vec3 P=eye+rd*t;vec3 N=normalize(P);
-    // Matcap UV from normal in view space
-    vec3 mrt=normalize(cross(vec3(0,1,0),normalize(-eye)));
-    vec3 mup=normalize(cross(normalize(-eye),mrt));
-    vec2 mc=vec2(dot(N,mrt)*0.5+0.5,dot(N,mup)*0.5+0.5);
-    // Procedural metallic car paint: R=reflection gradient, G=flakes, B=gloss band
-    float spec=pow(max(dot(N,normalize(-eye)),0.0),P0*50.0+8.0);
-    // Horizontal gradient (reflection horizon)
-    float horiz=smoothstep(0.3,0.7,mc.y)*smoothstep(0.3,0.7,1.0-mc.y);
-    // Color: deep blue metallic with specular highlight
-    vec3 base=vec3(0.05,0.1,0.3);
-    vec3 reflectCol=vec3(0.2,0.35,0.7);
-    vec3 col=mix(base,reflectCol,horiz*0.7);
-    // Bright specular spot near center
-    col+=vec3(1.0,0.9,0.7)*spec*0.6;
-    // Fake metallic flakes
-    float flake=texture(uInputTex,mc*3.0+uTime*0.01).r;
-    col+=flake*0.05;
+    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);vec3 L_=normalize(uLightDir);
+    vec3 H=normalize(L_+V);
+    float specPow=P0*80.0+16.0;
+    float spec=pow(max(dot(N,H),0.0),specPow);
+    float fresnel=pow(1.0-abs(dot(N,V)),3.0);
+    float facing=dot(N,normalize(-eye));
+    // Brighter blue base -- deep blue center, lighter blue at edges
+    vec3 base=mix(vec3(0.05,0.10,0.30),vec3(0.10,0.22,0.55),facing);
+    // Warm specular highlight
+    vec3 col=base+vec3(1.0,0.9,0.7)*spec*1.0+vec3(0.3,0.5,1.0)*fresnel*0.6;
+    // Procedural flake sparkle
+    vec2 mc=vec2(dot(N,rt)*0.5+0.5,dot(N,up)*0.5+0.5);
+    float flake=texture(uInputTex,mc*10.0+uTime*0.03).r;
+    col+=flake*0.08;
+    // Subtle diffuse from light
+    float ndl=dot(N,L_)*0.5+0.5;
+    col*=0.6+0.4*ndl;
     outColor=vec4(col,1);
 }

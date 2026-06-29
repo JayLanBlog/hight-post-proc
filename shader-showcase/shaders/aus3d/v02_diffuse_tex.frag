@@ -1,5 +1,4 @@
 #version 460
-// Vol.02 Diffuse + texture
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
 layout(std140, binding=1) uniform Params {
@@ -13,11 +12,17 @@ bool hit(vec3 ro,vec3 rd,float r,out float t){
 void main(){
     vec3 eye=uEyePos,fwd=normalize(-eye),rt=normalize(cross(fwd,vec3(0,1,0))),up=cross(rt,fwd);
     float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
-    vec3 rd=normalize(fwd+uv.x*rt*0.7+uv.y*up*0.7);
+    vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
+    // Spherical UV for texture lookup
     vec2 suv=vec2(atan(P.z,P.x)*0.1591549+0.5,acos(clamp(P.y,-1.0,1.0))*0.3183099);
     vec3 tex=texture(uInputTex,suv).rgb;
-    float ndl=max(dot(N,L),0.0);
+    // Add grid lines on sphere surface for visual distinction
+    float gridX=fract(suv.x*8.0);float gridY=fract(suv.y*8.0);
+    float grid=smoothstep(0.02,0.05,gridX)*smoothstep(0.02,0.05,gridY)
+             *smoothstep(0.02,0.05,1.0-gridX)*smoothstep(0.02,0.05,1.0-gridY);
+    tex=mix(vec3(0.1),tex,grid*0.5+0.5);
+    float ndl=dot(N,L)*0.5+0.5;
     outColor=vec4(tex*ndl*P0*uLightColor,1);
 }

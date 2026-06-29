@@ -40,10 +40,10 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("DIAG_UBO相机","UBO验证-眼位置着色", "aus3d/diag_ubo.frag.spv");
     add("DIAG_Light发光","光照方向验证",     "aus3d/diag_light.frag.spv");
     add("TEST纯白",  "最小管线-无绑定", "aus3d/test_white.frag.spv");
-    add("TEST后处理","复用simple_test",   "effects/simple_test/simple_test.frag.spv", {1.0f},{"亮度"});
+    add("TEST后处理","灰度化后处理3D球", "aus3d/diag_post.frag.spv", {1.0f},{"亮度"});
     add("TEST单色",  "有UBO无纹理",     "aus3d/v02_solid.frag.spv", {0.8f,0.3f,0.1f},{"R","G","B"});
     add("凹凸边缘光","Vol.01 Rim+Bump",  "aus3d/v01_rim_bump.frag.spv", {3,0,1,1},{"强度","R","G","B"},{0.5f,0,0,0},{8,1,1,1});
-    add("基础单色",  "Vol.02 Solid",      "aus3d/v02_solid.frag.spv", {0.8f,0.3f,0.1f},{"R","G","B"});
+    add("基础单色",  "Vol.02 Solid(绿)",  "aus3d/v02_solid.frag.spv", {0.2f,0.7f,0.3f},{"R","G","B"});
     add("漫反射纹理","Vol.02 DiffuseTex", "aus3d/v02_diffuse_tex.frag.spv", {1},{"亮度"});
     add("卡通渐变",  "Vol.07 Toon",       "aus3d/v07_toon.frag.spv", {4},{"级数"},{2},{10});
     add("半兰伯特",  "Vol.07 HalfLambert","aus3d/v07_halflambert.frag.spv", {1},{"亮度"});
