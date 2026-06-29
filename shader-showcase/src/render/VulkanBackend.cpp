@@ -1462,7 +1462,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 
     // --- Create per-pipeline UBO and descriptor set (reused every frame) ---
     auto& pp = m_pipelines[id];
-    const size_t UBO_SIZE = desc.useVertexInput ? 224 : 48; // 3D needs 224, fullscreen needs 48
+    const size_t UBO_SIZE = 224;  // std140: 6f+vec2+2f+pad8+mat4+mat4+3x vec3(16 each)
     CreateBuffer(UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  pp->uboBuffer, pp->uboMemory);
@@ -1555,17 +1555,36 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     // Bind pre-allocated descriptor set (UBO is pipeline-owned, texture is per-frame)
     auto pipeIt = m_pipelines.find(pipeHandle.id);
     if (pipeIt != m_pipelines.end() && pipeIt->second->descSet != VK_NULL_HANDLE) {
-        const size_t UBO_SIZE = 48;
+        const size_t UBO_SIZE = 224;  // std140: 6f + vec2 + 2f + pad8 + mat4 + mat4 + 3× vec3(16)
 
         // --- Update UBO data via map/memcpy/unmap (HOST_COHERENT, no flush needed) ---
         {
             uint8_t uboData[UBO_SIZE] = {};
+            // P0-P5: 6 floats at offset 0-23
             for (size_t i = 0; i < std::min(params.uniformFloats.size(), size_t(6)); i++) {
                 float v = params.uniformFloats[i];
                 memcpy(uboData + i * 4, &v, sizeof(float));
             }
+            // uResolution: vec2 at offset 24
             { float r[2] = { static_cast<float>(params.viewportWidth), static_cast<float>(params.viewportHeight) }; memcpy(uboData + 24, r, 8); }
+            // uTime, uFrameCount: at offset 32, 36
             { memcpy(uboData + 32, &params.time, 4); float fc = static_cast<float>(params.frameCount); memcpy(uboData + 36, &fc, 4); }
+            // padding to align mat4 at offset 48 (8 bytes of pad)
+            // uMVP: mat4 at offset 48 (64 bytes)
+            if (params.mvp.size() >= 16)
+                memcpy(uboData + 48, params.mvp.data(), 64);
+            // uModelView: mat4 at offset 112 (64 bytes)
+            if (params.modelView.size() >= 16)
+                memcpy(uboData + 112, params.modelView.data(), 64);
+            // uLightDir: vec3 at offset 176
+            if (params.lightDir.size() >= 3)
+                memcpy(uboData + 176, params.lightDir.data(), 12);
+            // uLightColor: vec3 at offset 192
+            if (params.lightColor.size() >= 3)
+                memcpy(uboData + 192, params.lightColor.data(), 12);
+            // uEyePos: vec3 at offset 208
+            if (params.eyePos.size() >= 3)
+                memcpy(uboData + 208, params.eyePos.data(), 12);
 
             void* mapped = nullptr;
             vkMapMemory(m_device, pipeIt->second->uboMemory, 0, UBO_SIZE, 0, &mapped);

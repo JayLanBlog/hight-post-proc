@@ -49,7 +49,7 @@ static std::vector<AUS3DEffect> BuildEffects() {
     return out;
 }
 
-AUS3DScene::AUS3DScene() { m_effects=BuildEffects(); m_totalEffects=(int)m_effects.size(); m_currentIndex=1; }
+AUS3DScene::AUS3DScene() { m_effects=BuildEffects(); m_totalEffects=(int)m_effects.size(); }
 AUS3DScene::~AUS3DScene()=default;
 
 void AUS3DScene::OnEnter() {
