@@ -151,6 +151,8 @@ set(SRC_FILES
     src/app/Application.h
     src/app/CoverFlowScene.cpp
     src/app/CoverFlowScene.h
+    src/app/AUS3DScene.cpp
+    src/app/AUS3DScene.h
     src/app/CoverFlowState.h
     src/app/EffectDetailScene.cpp
     src/app/EffectDetailScene.h

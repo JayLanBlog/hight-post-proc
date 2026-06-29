@@ -3,6 +3,7 @@
 
 #include "app/Application.h"
 #include "app/CoverFlowScene.h"
+#include "app/AUS3DScene.h"
 #include "app/SceneRegistry.h"
 #include "app/SceneGalleryScene.h"
 #include "render/IRenderBackend.h"
@@ -264,6 +265,22 @@ int main(int argc, char* argv[]) {
                 if (autoTest) c->EnableAutoTest(80);
                 printf("[main] Factory: CoverFlowScene created\n");
                 return c;
+            },
+            true
+        });
+
+        // Register AUS 3D Object Shader page (separate from post-processing)
+        SceneRegistry::Instance().Register({
+            "aus-3d",
+            "AUS 3D物体",
+            "AUS 3D",
+            "58 种 3D 物体着色器：卡通、高光、边缘光、车漆…",
+            "assets/images/00_grayscale_landscape.jpg",
+            [be, &app]() -> std::unique_ptr<Scene> {
+                auto s = std::make_unique<AUS3DScene>();
+                s->SetBackend(be);
+                s->SetApplication(&app);
+                return s;
             },
             true
         });

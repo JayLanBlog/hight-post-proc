@@ -1160,7 +1160,7 @@ void* VulkanBackend::GetImTextureID(TextureHandle handle) {
 // Pipeline Helpers
 // ============================================================================
 VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
-    VkDescriptorSetLayoutBinding bindings[3] = {};
+    VkDescriptorSetLayoutBinding bindings[2] = {};
     // binding=0: combined image sampler
     bindings[0].binding = 0;
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1171,15 +1171,10 @@ VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
     bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     bindings[1].descriptorCount = 1;
     bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    // binding=2: SSBO for vertex data (used by mesh3d.vert)
-    bindings[2].binding = 2;
-    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    bindings[2].descriptorCount = 1;
-    bindings[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 3;
+    layoutInfo.bindingCount = 2;
     layoutInfo.pBindings = bindings;
     VkDescriptorSetLayout descriptorSetLayout;
     VK_CHECK(vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &descriptorSetLayout));
@@ -1189,8 +1184,7 @@ VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
 VkDescriptorPool VulkanBackend::CreateDescriptorPool(uint32_t maxSets) {
     VkDescriptorPoolSize poolSizes[] = {
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxSets },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxSets }
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets }
     };
 
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -1656,7 +1650,7 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
     desc.width = params.viewportWidth;
     desc.height = params.viewportHeight;
     desc.blendEnable = false;
-    desc.useVertexInput = false;  // SSBO mode
+    desc.useVertexInput = true;
 
     PipelineHandle pipeHandle = CreatePipeline(desc);
     if (pipeHandle.id == 0) return;
@@ -1687,7 +1681,7 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         VkBufferCreateInfo ci{};
         ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         ci.size = vbSize;
-        ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VK_CHECK(vkCreateBuffer(m_device, &ci, nullptr, &vb));
 
@@ -1737,7 +1731,9 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         vkUnmapMemory(m_device, ibMem);
     }
 
-    // --- Bind index buffer (vertices via SSBO) ---
+    // --- Bind vertex and index buffers ---
+    VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vb, offsets);
     vkCmdBindIndexBuffer(m_commandBuffer, ib, 0, VK_INDEX_TYPE_UINT32);
 
     // --- Update UBO (224 bytes) and bind descriptor set ---
@@ -1811,21 +1807,6 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         uboWrite.descriptorCount = 1;
         uboWrite.pBufferInfo = &bufferInfo;
         writes.push_back(uboWrite);
-
-        // SSBO (binding=2) — vertex data buffer for mesh3d.vert
-        VkDescriptorBufferInfo mesh_ssboInfo{};
-        mesh_ssboInfo.buffer = vb;
-        mesh_ssboInfo.offset = 0;
-        mesh_ssboInfo.range = vbSize;
-        VkWriteDescriptorSet mesh_ssboWrite{};
-        mesh_ssboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        mesh_ssboWrite.dstSet = pipeIt->second->descSet;
-        mesh_ssboWrite.dstBinding = 2;
-        mesh_ssboWrite.dstArrayElement = 0;
-        mesh_ssboWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        mesh_ssboWrite.descriptorCount = 1;
-        mesh_ssboWrite.pBufferInfo = &mesh_ssboInfo;
-        writes.push_back(mesh_ssboWrite);
 
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 

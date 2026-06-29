@@ -181,3 +181,37 @@ add_custom_target(CopyEffectJsons ALL
     DEPENDS CompileShaders
     COMMENT "Copying effect.json files to build shaders directory"
 )
+
+# -------------------------------------------------------------------
+# AUS 3D shaders (ray-marched sphere) — compiled once, not per-effect
+# -------------------------------------------------------------------
+file(GLOB AUS3D_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/aus3d/*.frag")
+set(AUS3D_SPV_LIST)
+foreach(AUS3D_SRC ${AUS3D_SOURCES})
+    get_filename_component(AUS3D_NAME ${AUS3D_SRC} NAME_WE)
+    set(AUS3D_SPV "${SHADER_OUTPUT_DIR}/aus3d/${AUS3D_NAME}.frag.spv")
+    add_custom_command(
+        OUTPUT ${AUS3D_SPV}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}/aus3d"
+        COMMAND ${GLSLANG_VALIDATOR} -V "${AUS3D_SRC}" -o "${AUS3D_SPV}"
+        DEPENDS ${AUS3D_SRC}
+        COMMENT "Compiling ${AUS3D_NAME}.frag -> SPIR-V"
+    )
+    list(APPEND AUS3D_SPV_LIST ${AUS3D_SPV})
+endforeach()
+
+# AUS 3D shared vertex shader
+set(AUS3D_VERT_SRC "${CMAKE_CURRENT_SOURCE_DIR}/aus3d/aus3d_shared.vert")
+set(AUS3D_VERT_SPV "${SHADER_OUTPUT_DIR}/aus3d/aus3d_shared.vert.spv")
+add_custom_command(
+    OUTPUT ${AUS3D_VERT_SPV}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}/aus3d"
+    COMMAND ${GLSLANG_VALIDATOR} -V "${AUS3D_VERT_SRC}" -o "${AUS3D_VERT_SPV}"
+    DEPENDS ${AUS3D_VERT_SRC}
+    COMMENT "Compiling aus3d_shared.vert -> SPIR-V"
+)
+
+add_custom_target(CompileAUS3DShaders ALL
+    DEPENDS ${AUS3D_VERT_SPV} ${AUS3D_SPV_LIST}
+    COMMENT "Compiling AUS 3D shaders"
+)
