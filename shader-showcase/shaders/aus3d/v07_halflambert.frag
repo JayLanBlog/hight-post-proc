@@ -1,5 +1,5 @@
 #version 460
-// AUS 3D ray-marched sphere shader template
+// Vol.07 半兰伯特光照 (fixed)
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
 layout(std140, binding=1) uniform Params {
@@ -10,16 +10,13 @@ bool hit(vec3 ro,vec3 rd,float r,out float t){
     float b=dot(ro,rd),c=dot(ro,ro)-r*r,h=b*b-c;
     if(h<0.0)return false;h=sqrt(h);t=-b-h;return t>0.001;
 }
-vec3 bg=vec3(0.05,0.05,0.08);
-
 void main(){
     vec3 eye=uEyePos,fwd=normalize(-eye),rt=normalize(cross(fwd,vec3(0,1,0))),up=cross(rt,fwd);
     float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
     vec3 rd=normalize(fwd+uv.x*rt*0.7+uv.y*up*0.7);
-    float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(bg,1);return;}
-    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);vec3 L=normalize(uLightDir);
-    vec2 suv=vec2(atan(P.z,P.x)*0.1591549+0.5,acos(clamp(P.y,-1.0,1.0))*0.3183099);
-    vec3 tex=texture(uInputTex,suv).rgb;
-    float NdotL=max(dot(N,L),0.0);
-// EFFECT_CODE belowfloat hLambert=dot(N,L)*0.5+0.5;vec3 col=vec3(1.0,0.85,0.7)*hLambert*P0*uLightColor;outColor=vec4(col,1);
+    float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.05,0.05,0.08,1);return;}
+    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
+    float hLambert=dot(N,L)*0.5+0.5;
+    vec3 col=vec3(1.0,0.85,0.7)*hLambert*P0*uLightColor;
+    outColor=vec4(col,1);
 }

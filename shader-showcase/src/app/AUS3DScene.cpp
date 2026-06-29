@@ -35,6 +35,10 @@ static std::vector<AUS3DEffect> BuildEffects() {
         e.paramMin=std::move(mi); e.paramMax=std::move(ma);
         out.push_back(std::move(e));
     };
+    // === Diagnostic shaders first (verify pipeline end-to-end) ===
+    add("DIAG_UV梯度","UV坐标验证-四角着色","aus3d/diag_uv.frag.spv");
+    add("DIAG_UBO相机","UBO验证-眼位置着色", "aus3d/diag_ubo.frag.spv");
+    add("DIAG_Light发光","光照方向验证",     "aus3d/diag_light.frag.spv");
     add("TEST纯白",  "最小管线-无绑定", "aus3d/test_white.frag.spv");
     add("TEST后处理","复用simple_test",   "effects/simple_test/simple_test.frag.spv", {1.0f},{"亮度"});
     add("TEST单色",  "有UBO无纹理",     "aus3d/v02_solid.frag.spv", {0.8f,0.3f,0.1f},{"R","G","B"});
@@ -102,12 +106,39 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     float cz=m_camRadius*cosf(m_camPhi)*cosf(m_camTheta);
     float id[16]={1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
     ShaderParams p;
+    // Use actual framebuffer size, not default 1280x720
+    { int fw=1280,fh=720; be->GetFramebufferSize(fw,fh); p.viewportWidth=fw; p.viewportHeight=fh; }
     p.inputTextures.push_back(m_defaultTex);
     p.uniformFloats=fx.defaultValues;
-    p.eyePos={cx,cy,cz}; p.lightDir={0.5f,0.8f,0.3f}; p.lightColor={1,1,1};
+    p.eyePos={cx,cy,cz}; p.lightDir={0.3f,1.0f,0.5f}; p.lightColor={1,1,1};
     p.mvp.assign(id,id+16); p.modelView.assign(id,id+16);
     be->Clear(0.05f,0.05f,0.08f,1);
     be->DrawFullscreenQuad(m_sharedVert,fx.fragShader,p);
+
+    // AUTO-TEST: screenshot each effect once pipeline has settled
+    if (getenv("AUTO_TEST_AUS3D")) {
+        static int s_screenshotFrame = 0;
+        static std::string s_screenshotBase = getenv("AUS3D_SCREENSHOT_DIR") 
+            ? std::string(getenv("AUS3D_SCREENSHOT_DIR")) 
+            : "e:/AI/graph/hight-post-proc/screenshots";
+        s_screenshotFrame++;
+        if (s_screenshotFrame == 15) {  // wait 15 frames for pipeline to settle
+            char path[256];
+            snprintf(path, sizeof(path), "%s/card_aus3d_%02d.ppm", s_screenshotBase.c_str(), m_currentIndex);
+            ScreenshotRequest::Request(path);
+        }
+        if (s_screenshotFrame >= 25) {  // move to next effect
+            s_screenshotFrame = 0;
+            if (m_currentIndex + 1 < m_totalEffects) {
+                NavigateTo(m_currentIndex + 1);
+            } else {
+                printf("[AUS3D] All effects screenshotted, exiting\n");
+                // Unset env to exit auto mode
+                putenv("AUTO_TEST_AUS3D=");
+                m_wantsReturn = true;
+            }
+        }
+    }
 }
 
 void AUS3DScene::OnImGui() {

@@ -56,7 +56,7 @@
 [main] Test videos directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/videos/
 [main] AUTO_TEST_AUS3D mode: launching AUS3DScene directly
 [Application] SetScene: entering new scene
-[AUS3D] OnEnter - 11 effects
+[AUS3D] OnEnter - 14 effects
 [Vulkan] Vertex shader created (id=1)
 [Vulkan] Fragment shader created (id=2)
 [Vulkan] Fragment shader created (id=3)
@@ -69,7 +69,70 @@
 [Vulkan] Fragment shader created (id=10)
 [Vulkan] Fragment shader created (id=11)
 [Vulkan] Fragment shader created (id=12)
+[Vulkan] Fragment shader created (id=13)
+[Vulkan] Fragment shader created (id=14)
+[Vulkan] Fragment shader created (id=15)
 [Application] SetScene: new scene entered OK
 [main] SceneGalleryScene started (autoTest=0)
 [Vulkan] Texture created (id=20, 64x64, format=0)
 [Vulkan] Pipeline created (id=1)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_00.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_00.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_00.ppm
+[Vulkan] Pipeline created (id=2)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_01.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_01.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_01.ppm
+[Vulkan] Pipeline created (id=3)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_02.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_02.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_02.ppm
+[Vulkan] Pipeline created (id=4)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_03.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_03.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_03.ppm
+[Vulkan] Pipeline created (id=5)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_04.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_04.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_04.ppm
+[Vulkan] Pipeline created (id=6)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_05.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_05.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_05.ppm
+[Vulkan] Pipeline created (id=7)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_06.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_06.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_06.ppm
+[Vulkan] Pipeline created (id=8)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_07.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_07.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_07.ppm
+[Vulkan] Pipeline created (id=9)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_08.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_08.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_08.ppm
+[Vulkan] Pipeline created (id=10)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_09.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_09.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_09.ppm
+[Vulkan] Pipeline created (id=11)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_10.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_10.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_10.ppm
+[Vulkan] Pipeline created (id=12)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_11.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_11.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_11.ppm
+[Vulkan] Pipeline created (id=13)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_12.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_12.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_12.ppm
+[Vulkan] Pipeline created (id=14)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_13.ppm
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_13.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_13.ppm
+[AUS3D] All effects screenshotted, exiting
+[Application] Scene requested return to gallery
+[AUS3D] OnExit
+[Vulkan] Texture created (id=21, 800x533, format=0)
+[Vulkan] Texture created (id=22, 800x533, format=0)
