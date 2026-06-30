@@ -52,7 +52,20 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("凹凸边缘光","Vol.01 Rim+Bump",  "aus3d/v01_rim_bump.frag.spv", {3,0,1,1},{"强度","R","G","B"},{0.5f,0,0,0},{8,1,1,1});
     add("基础单色",  "Vol.02 Solid(绿)",  "aus3d/v02_solid.frag.spv", {0.2f,0.7f,0.3f},{"R","G","B"});
     add("漫反射纹理","Vol.02 DiffuseTex", "aus3d/v02_diffuse_tex.frag.spv", {1},{"亮度"});
-    add("卡通渐变",  "Vol.07 Toon",       "aus3d/v07_toon.frag.spv", {4},{"级数"},{2},{10});
+    // 卡通渐变: Ramp纹理
+    {
+        AUS3DEffect fx;
+        fx.name = "卡通渐变";
+        fx.description = "Ramp纹理采样替代色阶if/else";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v07_toon.frag.spv";  // 保留旧路径用于单Pass
+        fx.auxTextures = {"ramp_5"};  // 5色阶渐变 (程序化生成)
+        fx.defaultValues = {4};
+        fx.paramLabels = {"级数"};
+        fx.paramMin = {2};
+        fx.paramMax = {10};
+        out.push_back(fx);
+    }
     add("半兰伯特",  "Vol.07 HalfLambert","aus3d/v07_halflambert.frag.spv", {1},{"亮度"});
     add("镜面高光",  "Vol.07 Specular",   "aus3d/v07_specular.frag.spv", {0.6f,32},{"强度","光泽"},{0,1},{1,128});
     add("边缘发光",  "Vol.14 Rim",        "aus3d/v14_rim.frag.spv", {3,0,1,1},{"强度","R","G","B"});
@@ -275,7 +288,18 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     // Load auxiliary textures for this effect
     if (!fx.auxTextures.empty()) {
         for (auto& texPath : fx.auxTextures) {
-            TextureHandle tex = m_texManager->LoadTexture(texPath);
+            TextureHandle tex = {0};
+            if (texPath.find("ramp_") == 0) {
+                // Programmatic ramp texture: "ramp_N" where N is number of bands
+                int bands = std::stoi(texPath.substr(5));
+                tex = m_texManager->GenerateRampTexture(bands);
+            } else if (texPath.find("noise_") == 0) {
+                // Programmatic noise texture: "noise_N" where N is size
+                int size = std::stoi(texPath.substr(6));
+                tex = m_texManager->GenerateNoiseTexture(size);
+            } else {
+                tex = m_texManager->LoadTexture(texPath);
+            }
             if (tex.id != 0) {
                 p.auxTextures.push_back(tex);
             }
