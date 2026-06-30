@@ -35,11 +35,22 @@ class TextureManager {
 public:
     TextureManager(IRenderBackend* backend) : m_backend(backend) {}
     
+    ~TextureManager() {
+        for (auto& [key, handle] : m_cache) {
+            if (handle.id != 0) {
+                m_backend->DestroyTexture(handle);
+            }
+        }
+        m_cache.clear();
+    }
+    
     TextureHandle LoadTexture(const std::string& path) {
         auto it = m_cache.find(path);
         if (it != m_cache.end()) return it->second;
         TextureHandle tex = m_backend->CreateTextureFromFile(path);
-        m_cache[path] = tex;
+        if (tex.id != 0) {
+            m_cache[path] = tex;
+        }
         return tex;
     }
     
