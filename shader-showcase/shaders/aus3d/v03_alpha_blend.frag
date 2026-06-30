@@ -2,6 +2,7 @@
 // Vol.03-7 Alpha Texture Blend: two procedural textures blended on sphere
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
+layout(binding=2) uniform sampler2D uAuxTex; // Alpha/混合纹理
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
     vec3 uLightDir; float _p0; vec3 uLightColor; float _p1; vec3 uEyePos; float _p2;
@@ -22,5 +23,7 @@ void main(){
     vec3 tex1=texture(uInputTex,suv*3.0).rgb;
     vec3 tex2=vec3(noise(suv*8.0+P0),noise(suv*8.0+P0+1.5),noise(suv*8.0+P0+3.0));
     float ndl=dot(N,L)*0.5+0.5;
-    outColor=vec4(mix(tex1,tex2,0.5)*ndl*uLightColor,1);
+    float texAlpha=texture(uAuxTex,vUV).a;
+    float alpha=P0*texAlpha;
+    outColor=vec4(mix(tex1,tex2,0.5)*ndl*uLightColor,alpha);
 }

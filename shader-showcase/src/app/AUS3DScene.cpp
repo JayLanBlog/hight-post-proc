@@ -49,7 +49,20 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("TEST纯白",  "最小管线-无绑定", "aus3d/test_white.frag.spv");
     add("TEST后处理","灰度化后处理3D球", "aus3d/diag_post.frag.spv", {1.0f},{"亮度"});
     add("TEST单色",  "有UBO无纹理",     "aus3d/v02_solid.frag.spv", {0.8f,0.3f,0.1f},{"R","G","B"});
-    add("凹凸边缘光","Vol.01 Rim+Bump",  "aus3d/v01_rim_bump.frag.spv", {3,0,1,1},{"强度","R","G","B"},{0.5f,0,0,0},{8,1,1,1});
+    // 凹凸边缘光: 噪声纹理法线扰动
+    {
+        AUS3DEffect fx;
+        fx.name = "凹凸边缘光";
+        fx.description = "Vol.01 Rim+Bump with noise texture";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v01_rim_bump.frag.spv";
+        fx.auxTextures = {"noise_64"};
+        fx.defaultValues = {3,0,1,1};
+        fx.paramLabels = {"强度","R","G","B"};
+        fx.paramMin = {0.5f,0,0,0};
+        fx.paramMax = {8,1,1,1};
+        out.push_back(fx);
+    }
     add("基础单色",  "Vol.02 Solid(绿)",  "aus3d/v02_solid.frag.spv", {0.2f,0.7f,0.3f},{"R","G","B"});
     add("漫反射纹理","Vol.02 DiffuseTex", "aus3d/v02_diffuse_tex.frag.spv", {1},{"亮度"});
     // 卡通渐变: Ramp纹理
@@ -69,7 +82,18 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("半兰伯特",  "Vol.07 HalfLambert","aus3d/v07_halflambert.frag.spv", {1},{"亮度"});
     add("镜面高光",  "Vol.07 Specular",   "aus3d/v07_specular.frag.spv", {0.6f,32},{"强度","光泽"},{0,1},{1,128});
     add("边缘发光",  "Vol.14 Rim",        "aus3d/v14_rim.frag.spv", {3,0,1,1},{"强度","R","G","B"});
-    add("车漆MatCap","Vol.16 CarPaint",   "aus3d/v16_carpaint.frag.spv", {0.8f},{"反射"});
+    // 车漆MatCap: MatCap纹理采样
+    {
+        AUS3DEffect fx;
+        fx.name = "车漆MatCap";
+        fx.description = "Vol.16 CarPaint with MatCap texture";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v16_carpaint.frag.spv";
+        fx.auxTextures = {"noise_64"}; // 程序化噪声作为MatCap
+        fx.defaultValues = {0.8f};
+        fx.paramLabels = {"反射"};
+        out.push_back(fx);
+    }
     // --- Vol.12 可编程Shader初步 ---
     add("简单基础色","Vol.12 SimpleShader", "aus3d/v12_simple.frag.spv", {0.4f,0.7f,1.0f},{"R","G","B"});
     add("变色偏移",  "Vol.12 ColorChange",  "aus3d/v12_color_change.frag.spv", {0.0f},{"偏移"});
@@ -85,13 +109,44 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("玻璃球体",  "Vol.04 Glass",        "aus3d/v04_glass.frag.spv", {0.5f},{"透明度"});
     add("Alpha裁剪", "Vol.04 AlphaTest",    "aus3d/v04_alpha_test.frag.spv", {0.5f},{"阈值"},{0.1f},{0.9f});
     // --- Vol.03 纹理混合 ---
-    add("纹理混合",  "Vol.03 AlphaBlend",   "aus3d/v03_alpha_blend.frag.spv", {0.5f},{"混合度"});
+    // Alpha混合纹理
+    {
+        AUS3DEffect fx;
+        fx.name = "纹理混合";
+        fx.description = "Vol.03 AlphaBlend with texture";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v03_alpha_blend.frag.spv";
+        fx.auxTextures = {"noise_64"};
+        fx.defaultValues = {0.5f};
+        fx.paramLabels = {"混合度"};
+        out.push_back(fx);
+    }
     add("自发光球",  "Vol.03 Emissive",     "aus3d/v03_emissive.frag.spv", {0.0f,0.5f,1.0f,0.3f},{"R","G","B","强度"});
     add("纹理全组合","Vol.03 FullCombo",    "aus3d/v03_full_combo.frag.spv", {0.0f,0.5f,1.0f,0.3f},{"R","G","B","强度"});
     // --- Vol.05 混合模式+玻璃 ---
     add("乘法混合",  "Vol.05 BlendMultiply", "aus3d/v05_blend_multiply.frag.spv");
-    add("玻璃v2",    "Vol.05 Glass v2",      "aus3d/v05_glass_v2.frag.spv", {0.3f,0.6f,1.0f},{"R","G","B"});
-    add("玻璃v3",    "Vol.05 Glass v3",      "aus3d/v05_glass_v3.frag.spv", {0.3f,0.6f,1.0f,0.6f},{"R","G","B","透明度"});
+    // 玻璃v2: use3DGeometry=true (保留光追球体)
+    {
+        AUS3DEffect fx;
+        fx.name = "玻璃v2";
+        fx.description = "Vol.05 Glass v2 with cubemap reflection";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v05_glass_v2.frag.spv";
+        fx.defaultValues = {0.3f,0.6f,1.0f};
+        fx.paramLabels = {"R","G","B"};
+        out.push_back(fx);
+    }
+    // 玻璃v3: use3DGeometry=true (保留光追球体)
+    {
+        AUS3DEffect fx;
+        fx.name = "玻璃v3";
+        fx.description = "Vol.05 Glass v3 with cubemap reflection";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v05_glass_v3.frag.spv";
+        fx.defaultValues = {0.3f,0.6f,1.0f,0.6f};
+        fx.paramLabels = {"R","G","B","透明度"};
+        out.push_back(fx);
+    }
     // --- 后处理特效 ---
     // 径向模糊: 后处理
     {
@@ -180,7 +235,16 @@ static std::vector<AUS3DEffect> BuildEffects() {
     // --- Vol.05 可编程Shader ---
     add("可编程管线","Vol.05 Programmable", "aus3d/v05_programmable.frag.spv", {0.8f,0.3f,0.2f,32.0f,0.5f},{"R","G","B","光泽","高光"},{0,0,0,1,0},{1,1,1,128,1});
     // --- Vol.06 SurfaceShader概念 ---
-    add("细节纹理",  "Vol.06 DetailTex",    "aus3d/v06_detail_tex.frag.spv");
+    // 细节纹理: 噪声叠加
+    {
+        AUS3DEffect fx;
+        fx.name = "细节纹理";
+        fx.description = "Vol.06 DetailTex with noise overlay";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v06_detail_tex.frag.spv";
+        fx.auxTextures = {"noise_64"};
+        out.push_back(fx);
+    }
     add("凹凸全组合","Vol.06 FullCombo",    "aus3d/v06_full_combo.frag.spv", {0.6f,0.3f,0.6f,0.26f,3.0f},{"R","G","B","边缘色","强度"});
     return out;
 }

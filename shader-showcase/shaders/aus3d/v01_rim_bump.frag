@@ -1,6 +1,7 @@
 #version 460
 // Vol.01 Bump+Rim — rough stone with cracks
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
+layout(binding=2) uniform sampler2D uAuxTex; // 噪声纹理
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
     vec3 uLightDir; float _p0; vec3 uLightColor; float _p1; vec3 uEyePos; float _p2;
@@ -27,6 +28,10 @@ void main(){
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.04,0.03,0.06,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);vec3 V=normalize(eye-P);
+    // Bump perturbation from noise texture
+    vec2 bumpUV=vec2(atan(N.z,N.x),asin(N.y))*vec2(0.5/3.14159,1.0/3.14159)+0.5;
+    vec3 bump=texture(uAuxTex,bumpUV).rgb*2.0-1.0;
+    N=normalize(N+bump*P0*0.15);
     vec2 suv=vec2(atan(P.z,P.x)*0.1591549+0.5,acos(clamp(P.y,-1.0,1.0))*0.3183099);
     vec2 bp=suv*8.0;
     

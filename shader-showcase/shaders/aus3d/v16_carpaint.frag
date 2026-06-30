@@ -2,6 +2,7 @@
 // CarPaint — smooth metallic auto paint
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
+layout(binding=2) uniform sampler2D uAuxTex; // MatCap纹理
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
     vec3 uLightDir; float _p0; vec3 uLightColor; float _p1; vec3 uEyePos; float _p2;
@@ -55,5 +56,10 @@ void main(){
     float wrap=dot(N,L)*0.35+0.65;
 
     vec3 col=(base+rimCol+coatCol)*wrap+specCol+flake;
+    // MatCap纹理采样增强
+    float NdotV=abs(dot(N,V));
+    vec2 matcapUV=vec2(NdotV*0.5+0.5,ndl*0.5+0.5);
+    vec3 matcapColor=texture(uAuxTex,matcapUV).rgb;
+    col=mix(col,matcapColor,0.3); // 30% MatCap混合
     outColor=vec4(col*uLightColor,1);
 }

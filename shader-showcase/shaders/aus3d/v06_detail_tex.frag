@@ -1,6 +1,7 @@
 #version 460
 // Vol.06-31 DetailTexture: two-scale procedural texture overlay
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
+layout(binding=2) uniform sampler2D uAuxTex; // 细节纹理
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
     vec3 uLightDir; float _p0; vec3 uLightColor; float _p1; vec3 uEyePos; float _p2;
@@ -22,6 +23,8 @@ void main(){
     vec3 baseTex=tex(suv,4.0);         // main texture
     vec3 detailTex=tex(suv,16.0)*2.0;  // detail texture (×2 amplify)
     vec3 col=baseTex*detailTex;
+    vec3 detail=texture(uAuxTex,suv*5.0).rgb;
+    col*=(detail*1.5+0.5); // 细节叠加
     float ndl=dot(N,L)*0.5+0.5;
     outColor=vec4(col*ndl*uLightColor,1);
 }
