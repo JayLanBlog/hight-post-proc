@@ -1281,6 +1281,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
     cacheKey ^= (desc.useVertexInput ? (1ULL << 60) : 0);
     cacheKey ^= (desc.blendEnable ? (1ULL << 59) : 0);
+    cacheKey ^= (uint64_t(renderPass) >> 3);  // pointer as hash (shift to drop alignment bits)
 
     // Check cache
     auto cacheIt = m_pipelineCache.find(cacheKey);
