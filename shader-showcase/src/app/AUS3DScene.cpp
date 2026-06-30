@@ -81,7 +81,24 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("玻璃v3",    "Vol.05 Glass v3",      "aus3d/v05_glass_v3.frag.spv", {0.3f,0.6f,1.0f,0.6f},{"R","G","B","透明度"});
     // --- 后处理特效 ---
     add("径向模糊",  "Vol.08 RadialBlur",   "aus3d/v08_radial_blur.frag.spv", {0.5f,8},{"强度","采样"},{0,1},{2,32});
-    add("水幕特效",  "Vol.09 WaterDrop",    "aus3d/v09_water_drop.frag.spv", {1.0f,1.0f},{"速度","强度"});
+    // 水幕特效: 3Pass多Pass渲染
+    {
+        AUS3DEffect fx;
+        fx.name = "水幕特效";
+        fx.description = "水滴纹理多层采样+UV偏移折射+背景涟漪";
+        fx.use3DGeometry = false;
+        fx.passes = {
+            {"aus3d/v09_pass0_drop.frag.spv", 0, 0, false},       // Pass0: 水滴纹理→UV偏移
+            {"aus3d/v09_pass1_sphere.frag.spv", 0, 0, false},     // Pass1: 偏移UV球体渲染
+            {"aus3d/v09_pass2_composite.frag.spv", 0, 0, true},   // Pass2: 输出到屏幕
+        };
+        fx.auxTextures = {"assets/textures/aus3d/water_drop.png"};
+        fx.defaultValues = {1.0f, 1.0f}; // speed, distortion
+        fx.paramLabels = {"速度", "扭曲强度"};
+        fx.paramMin = {0.0f, 0.0f};
+        fx.paramMax = {2.0f, 2.0f};
+        out.push_back(fx);
+    }
     add("油画特效",  "Vol.10 OilPaint",     "aus3d/v10_oil_paint.frag.spv", {0.5f,1.0f},{"半径","强度"},{0.1f,0.2f},{1.0f,3.0f});
     add("像素化",    "Vol.11 Pixelate",     "aus3d/v11_pixelate.frag.spv", {0.5f,1.0f},{"像素数","比例"},{0.1f,0.5f},{1.0f,2.0f});
     add("高斯模糊",  "Vol.15 GaussianBlur", "aus3d/v15_gaussian_blur.frag.spv", {1.0f},{"强度"},{0.1f},{5.0f});
