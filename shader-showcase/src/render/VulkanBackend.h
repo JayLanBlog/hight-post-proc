@@ -157,6 +157,7 @@ private:
     // ============================================================================
     uint32_t m_currentImageIndex = 0;
     bool m_isRecording = false;
+    float m_clearColor[4] = {0.05f, 0.05f, 0.08f, 1.0f};  // stored by Clear(), used in BeginFrame
 
     // ============================================================================
     // Resource Management

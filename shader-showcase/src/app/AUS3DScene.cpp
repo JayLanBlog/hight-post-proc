@@ -19,6 +19,10 @@ static std::vector<uint32_t> ReadSPIRV(const char* relPath) {
         size_t sz = f.tellg(); f.seekg(0);
         std::vector<uint32_t> data((sz+3)/4);
         f.read((char*)data.data(), sz);
+        // DIAG: print first 4 words (magic + version) to identify SPV version
+        fprintf(stderr,"[AUS3D] ReadSPIRV OK: %s (%zu bytes, first4=0x%08x 0x%08x 0x%08x 0x%08x)\n",
+            path.c_str(), sz, data.size()>=1?data[0]:0, data.size()>=2?data[1]:0,
+            data.size()>=3?data[2]:0, data.size()>=4?data[3]:0);
         return data;
     }
     fprintf(stderr,"[AUS3D] ReadSPIRV failed: %s\n",relPath);
@@ -36,6 +40,9 @@ static std::vector<AUS3DEffect> BuildEffects() {
         out.push_back(std::move(e));
     };
     // === Diagnostic shaders first (verify pipeline end-to-end) ===
+    add("DIAG_纯红","管线验证-纯红无光追", "aus3d/diag_red.frag.spv");
+    add("DIAG_UV原始","UV坐标验证-直接着色", "aus3d/diag_uv_raw.frag.spv");
+    add("DIAG_眼位","UBO验证-眼位直接着色", "aus3d/diag_eyepos_raw.frag.spv");
     add("DIAG_UV梯度","UV坐标验证-四角着色","aus3d/diag_uv.frag.spv");
     add("DIAG_UBO相机","UBO验证-眼位置着色", "aus3d/diag_ubo.frag.spv");
     add("DIAG_Light发光","光照方向验证",     "aus3d/diag_light.frag.spv");
@@ -50,6 +57,43 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("镜面高光",  "Vol.07 Specular",   "aus3d/v07_specular.frag.spv", {0.6f,32},{"强度","光泽"},{0,1},{1,128});
     add("边缘发光",  "Vol.14 Rim",        "aus3d/v14_rim.frag.spv", {3,0,1,1},{"强度","R","G","B"});
     add("车漆MatCap","Vol.16 CarPaint",   "aus3d/v16_carpaint.frag.spv", {0.8f},{"反射"});
+    // --- Vol.12 可编程Shader初步 ---
+    add("简单基础色","Vol.12 SimpleShader", "aus3d/v12_simple.frag.spv", {0.4f,0.7f,1.0f},{"R","G","B"});
+    add("变色偏移",  "Vol.12 ColorChange",  "aus3d/v12_color_change.frag.spv", {0.0f},{"偏移"});
+    add("标准漫反射","Vol.12 Diffuse",      "aus3d/v12_diffuse.frag.spv", {1.0f,0.8f,0.6f},{"R","G","B"});
+    add("棋盘纹理",  "Vol.12 DiffuseTex",   "aus3d/v12_diffuse_tex.frag.spv", {1.0f,0.8f,0.3f},{"密度","R","G"});
+    add("RGB立方体",  "Vol.12 RGB Cube",    "aus3d/v12_rgb_cube.frag.spv");
+    add("透明立方体", "Vol.13 Alpha Cube",  "aus3d/v13_alpha_cube.frag.spv", {0.35f},{"透明度"});
+    add("双面立方体", "Vol.13 TwoSide",     "aus3d/v13_twoside_cube.frag.spv", {0.9f},{"透明度"});
+    // --- Vol.13 透明Shader ---
+    add("透明球体",  "Vol.13 SimpleAlpha",  "aus3d/v13_simple_alpha.frag.spv", {0.5f},{"透明度"});
+    add("可调色透明","Vol.13 ColorAlpha",   "aus3d/v13_color_alpha.frag.spv", {0.9f,0.1f,0.1f,0.5f},{"R","G","B","透明度"});
+    // --- Vol.04 剔除/深度/Alpha测试 ---
+    add("玻璃球体",  "Vol.04 Glass",        "aus3d/v04_glass.frag.spv", {0.5f},{"透明度"});
+    add("Alpha裁剪", "Vol.04 AlphaTest",    "aus3d/v04_alpha_test.frag.spv", {0.5f},{"阈值"},{0.1f},{0.9f});
+    // --- Vol.03 纹理混合 ---
+    add("纹理混合",  "Vol.03 AlphaBlend",   "aus3d/v03_alpha_blend.frag.spv", {0.5f},{"混合度"});
+    add("自发光球",  "Vol.03 Emissive",     "aus3d/v03_emissive.frag.spv", {0.0f,0.5f,1.0f,0.3f},{"R","G","B","强度"});
+    add("纹理全组合","Vol.03 FullCombo",    "aus3d/v03_full_combo.frag.spv", {0.0f,0.5f,1.0f,0.3f},{"R","G","B","强度"});
+    // --- Vol.05 混合模式+玻璃 ---
+    add("乘法混合",  "Vol.05 BlendMultiply", "aus3d/v05_blend_multiply.frag.spv");
+    add("玻璃v2",    "Vol.05 Glass v2",      "aus3d/v05_glass_v2.frag.spv", {0.3f,0.6f,1.0f},{"R","G","B"});
+    add("玻璃v3",    "Vol.05 Glass v3",      "aus3d/v05_glass_v3.frag.spv", {0.3f,0.6f,1.0f,0.6f},{"R","G","B","透明度"});
+    // --- 后处理特效 ---
+    add("径向模糊",  "Vol.08 RadialBlur",   "aus3d/v08_radial_blur.frag.spv", {0.5f,8},{"强度","采样"},{0,1},{2,32});
+    add("水幕特效",  "Vol.09 WaterDrop",    "aus3d/v09_water_drop.frag.spv", {1.0f,1.0f},{"速度","强度"});
+    add("油画特效",  "Vol.10 OilPaint",     "aus3d/v10_oil_paint.frag.spv", {0.5f,1.0f},{"半径","强度"},{0.1f,0.2f},{1.0f,3.0f});
+    add("像素化",    "Vol.11 Pixelate",     "aus3d/v11_pixelate.frag.spv", {0.5f,1.0f},{"像素数","比例"},{0.1f,0.5f},{1.0f,2.0f});
+    add("高斯模糊",  "Vol.15 GaussianBlur", "aus3d/v15_gaussian_blur.frag.spv", {1.0f},{"强度"},{0.1f},{5.0f});
+    // --- Vol.04 剔除/背面 ---
+    add("背面渲染",  "Vol.04 CullFront",    "aus3d/v04_cull_front.frag.spv");
+    add("顶点透明",  "Vol.04 VertexAlpha",  "aus3d/v04_vertex_alpha.frag.spv", {0.3f,0.2f,0.8f,1.0f},{"阈值","R","G","B"},{0.0f,0,0,0},{0.9f,1,1,1});
+    add("植被效果",  "Vol.04 Vegetation",   "aus3d/v04_vegetation.frag.spv", {0.2f},{"裁剪阈值"},{0.0f},{0.9f});
+    // --- Vol.05 可编程Shader ---
+    add("可编程管线","Vol.05 Programmable", "aus3d/v05_programmable.frag.spv", {0.8f,0.3f,0.2f,32.0f,0.5f},{"R","G","B","光泽","高光"},{0,0,0,1,0},{1,1,1,128,1});
+    // --- Vol.06 SurfaceShader概念 ---
+    add("细节纹理",  "Vol.06 DetailTex",    "aus3d/v06_detail_tex.frag.spv");
+    add("凹凸全组合","Vol.06 FullCombo",    "aus3d/v06_full_combo.frag.spv", {0.6f,0.3f,0.6f,0.26f,3.0f},{"R","G","B","边缘色","强度"});
     return out;
 }
 
@@ -58,8 +102,12 @@ AUS3DScene::~AUS3DScene()=default;
 
 void AUS3DScene::OnEnter() {
     printf("[AUS3D] OnEnter - %d effects\n",m_totalEffects);
+    if (getenv("AUS3D_START_INDEX")) { m_currentIndex = atoi(getenv("AUS3D_START_INDEX")); printf("[AUS3D] start index=%d\n",m_currentIndex); }
     m_fpsLastTime=std::chrono::high_resolution_clock::now();
     LoadShaders();
+    // NOTE: LoadShaders pre-loads the vertex shader only;
+    // fragment shaders are loaded on first OnRender() pass
+    for(auto&fx:m_effects) { fx.fragShader = {0}; } // force lazy load
 }
 void AUS3DScene::OnExit() { printf("[AUS3D] OnExit\n"); }
 
@@ -94,7 +142,12 @@ void AUS3DScene::OnUpdate(float) {
 void AUS3DScene::OnRender(IRenderBackend* be) {
     if(!be||m_currentIndex>=m_totalEffects)return;
     auto&fx=m_effects[m_currentIndex];
-    if(!m_sharedVert.id||!fx.fragShader.id)return;
+    if(!m_sharedVert.id)return;
+    if(!fx.fragShader.id) {
+        auto fd = ReadSPIRV(fx.fragShaderPath.c_str());
+        if(!fd.empty()) fx.fragShader = be->CreateFragmentShader(fd.data(), fd.size());
+        if(!fx.fragShader.id) return; // keep retrying each frame
+    }
     if(!m_defaultTex.id){
         const int TW=64,TH=64;
         std::vector<uint8_t> px(TW*TH*4);
@@ -112,6 +165,10 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     p.uniformFloats=fx.defaultValues;
     p.eyePos={cx,cy,cz}; p.lightDir={0.3f,1.0f,0.5f}; p.lightColor={1,1,1};
     p.mvp.assign(id,id+16); p.modelView.assign(id,id+16);
+    // Enable alpha blending for transparent effects
+    if (fx.name.find("透明") != std::string::npos || fx.name.find("玻璃") != std::string::npos
+        || fx.name.find("Alpha") != std::string::npos || fx.name.find("顶点") != std::string::npos
+        || fx.name.find("植被") != std::string::npos) p.blendEnable = true;
     be->Clear(0.05f,0.05f,0.08f,1);
     be->DrawFullscreenQuad(m_sharedVert,fx.fragShader,p);
 

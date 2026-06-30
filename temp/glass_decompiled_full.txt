@@ -1,0 +1,89 @@
+#version 460
+
+layout(binding = 1, std140) uniform Params
+{
+    float P0;
+    float P1;
+    float P2;
+    float P3;
+    float P4;
+    float P5;
+    vec2 uRes;
+    float uTime;
+    float uFC;
+    mat4 m0;
+    mat4 m1;
+    vec3 uLightDir;
+    float _p0;
+    vec3 uLightColor;
+    float _p1;
+    vec3 uEyePos;
+    float _p2;
+} _60;
+
+layout(location = 0) in vec2 vUV;
+layout(location = 0) out vec4 outColor;
+
+bool hit(vec3 ro, vec3 rd, float r, inout float t)
+{
+    float b = dot(ro, rd);
+    float c = dot(ro, ro) - (r * r);
+    float h = (b * b) - c;
+    if (h < 0.0)
+    {
+        return false;
+    }
+    h = sqrt(h);
+    t = (-b) - h;
+    return t > 0.001000000047497451305389404296875;
+}
+
+void main()
+{
+    vec3 eye = _60.uEyePos;
+    vec3 fwd = normalize(-eye);
+    vec3 rt = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+    vec3 up = cross(rt, fwd);
+    float ar = _60.uRes.x / _60.uRes.y;
+    vec2 uv = (vUV - vec2(0.5)) * 2.0;
+    uv.x *= ar;
+    vec3 rd = normalize((fwd + ((rt * uv.x) * 0.550000011920928955078125)) + ((up * uv.y) * 0.550000011920928955078125));
+    vec3 param = eye;
+    vec3 param_1 = rd;
+    float param_2 = 1.0;
+    float param_3;
+    bool _129 = hit(param, param_1, param_2, param_3);
+    float t1 = param_3;
+    if (!_129)
+    {
+        outColor = vec4(0.0199999995529651641845703125, 0.0199999995529651641845703125, 0.039999999105930328369140625, 1.0);
+        return;
+    }
+    float b = dot(eye, rd);
+    float c = dot(eye, eye) - 1.0;
+    float t2 = (-b) + sqrt((b * b) - c);
+    vec3 L = normalize(_60.uLightDir);
+    float alpha = clamp(1.0 - _60.P0, 0.0500000007450580596923828125, 0.949999988079071044921875);
+    vec3 P1 = eye + (rd * max(t1, 0.001000000047497451305389404296875));
+    vec3 N1 = normalize(P1);
+    vec3 V = normalize(eye - P1);
+    float NdV = abs(dot(N1, V));
+    float F0 = 0.039999999105930328369140625;
+    float fresnel = F0 + ((1.0 - F0) * pow(1.0 - NdV, 5.0));
+    vec3 Rfl = reflect(-V, N1);
+    vec3 skyTop = vec3(0.550000011920928955078125, 0.7200000286102294921875, 0.949999988079071044921875);
+    vec3 skyHorizon = vec3(0.819999992847442626953125, 0.86000001430511474609375, 0.920000016689300537109375);
+    vec3 ground = vec3(0.119999997317790985107421875, 0.1599999964237213134765625, 0.2199999988079071044921875);
+    float skyT = smoothstep(-0.20000000298023223876953125, 0.300000011920928955078125, Rfl.y);
+    vec3 envRefl = mix(ground, mix(skyHorizon, skyTop, vec3(skyT)), vec3(smoothstep(-0.07999999821186065673828125, 0.119999997317790985107421875, Rfl.y)));
+    vec3 P2 = eye + (rd * t2);
+    vec3 N2 = -normalize(P2);
+    float ndl2 = (abs(dot(N2, L)) * 0.5) + 0.5;
+    vec3 backCol = vec3(0.039999999105930328369140625, 0.0599999986588954925537109375, 0.100000001490116119384765625) * ndl2;
+    vec3 H = normalize(L + V);
+    float spec = pow(max(dot(N1, H), 0.0), 8.0);
+    vec3 col = mix(backCol, envRefl, vec3(fresnel));
+    col += ((vec3(1.0) * spec) * 0.60000002384185791015625);
+    outColor = vec4(col * _60.uLightColor, alpha);
+}
+

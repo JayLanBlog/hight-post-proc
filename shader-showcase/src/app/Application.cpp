@@ -120,11 +120,15 @@ void Application::InitBackend(BackendType type)
 
     if (!m_window) {
         glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        if (type == BackendType::Vulkan) {
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        } else {
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        }
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         // Get primary monitor for centering
@@ -145,9 +149,9 @@ void Application::InitBackend(BackendType type)
         glfwSetDropCallback(m_window, DropCallback);
     }
 
-    // ---- Make GL context current (both backends share the window) ---------
-    glfwMakeContextCurrent(m_window);
+    // ---- Make GL context current (only for OpenGL backend) ---------
     if (type == BackendType::OpenGL) {
+        glfwMakeContextCurrent(m_window);
         glfwSwapInterval(1);
     }
 

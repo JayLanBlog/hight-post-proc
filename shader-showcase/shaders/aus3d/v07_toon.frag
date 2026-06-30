@@ -1,4 +1,7 @@
 #version 460
+// Vol.07 Toon: Cel shading with discrete color bands
+// P0: number of bands (2-10, default 4)
+// Uses sphere Y-coordinate for guaranteed visible banding
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
@@ -10,14 +13,28 @@ bool hit(vec3 ro,vec3 rd,float r,out float t){
 }
 void main(){
     vec3 eye=uEyePos,fwd=normalize(-eye),rt=normalize(cross(fwd,vec3(0,1,0))),up=cross(rt,fwd);
-    float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
+    float ar=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=ar;
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
-    float ndl=dot(N,L);
-    int lv=int(max(P0,2.0));float toon=floor(max(ndl*0.5+0.5,0.0)*float(lv))/float(lv);
-    vec3 a0=vec3(0.08,0.06,0.15);vec3 a1=vec3(0.25,0.15,0.10);
-    vec3 a2=vec3(0.50,0.35,0.25);vec3 a3=vec3(0.75,0.60,0.40);vec3 a4=vec3(1.0,0.90,0.70);
-    vec3 col=toon<0.2?a0:toon<0.4?a1:toon<0.6?a2:toon<0.8?a3:a4;
-    outColor=vec4(col*uLightColor,1);
+    
+    // Use sphere Y-coordinate (full -1 to 1 range) for guaranteed visible banding
+    float ndl = (P.y + 1.0) * 0.5; // 0 to 1, top to bottom
+    
+    int numBands = max(int(P0), 3); // P0=4 gives 4 bands, min 3
+    float banded = floor(ndl * float(numBands)) / float(numBands);
+    int idx = int(banded * float(numBands));
+    idx = clamp(idx, 0, numBands - 1);
+    
+    // 5 dramatic cel-shading colors
+    vec3 colors[5];
+    colors[0] = vec3(0.15, 0.08, 0.45);  // Dark purple
+    colors[1] = vec3(0.20, 0.35, 0.80);  // Blue
+    colors[2] = vec3(0.25, 0.75, 0.55);  // Teal-green
+    colors[3] = vec3(0.95, 0.55, 0.15);  // Orange
+    colors[4] = vec3(0.97, 0.93, 0.70);  // Warm cream
+    
+    vec3 color = colors[idx % 5];
+    
+    outColor = vec4(color * uLightColor, 1.0);
 }

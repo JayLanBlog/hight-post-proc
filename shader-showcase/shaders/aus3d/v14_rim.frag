@@ -18,6 +18,7 @@ void main(){
     float g0=pow(max(rim,0.001),P0);
     float g1=pow(max(rim,0.001),P0*0.5);
     float g2=pow(max(rim,0.001),2.0);
-    vec3 col=vec3(P1,P2,P3)*(g0*0.7+g1*0.2+g2*0.3);
-    outColor=vec4(col,1);
+    vec3 rimCol=vec3(P1,P2,P3)*(g0*0.7+g1*0.2+g2*0.3);
+    vec3 baseCol=vec3(P1,P2,P3)*0.08; // dark base color at center
+    outColor=vec4(baseCol+rimCol*uLightColor,1);
 }

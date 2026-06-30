@@ -1,5 +1,5 @@
 #version 460
-// CarPaint — blue metallic with distinct specular + fresnel
+// CarPaint — smooth metallic auto paint
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
 layout(std140, binding=1) uniform Params {
@@ -12,25 +12,48 @@ bool hit(vec3 ro,vec3 rd,float r,out float t){
 }
 void main(){
     vec3 eye=uEyePos,fwd=normalize(-eye),rt=normalize(cross(fwd,vec3(0,1,0))),up=cross(rt,fwd);
-    float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
+    float ar=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=ar;
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
-    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);vec3 L_=normalize(uLightDir);
-    vec3 H=normalize(L_+V);
-    float specPow=P0*80.0+16.0;
-    float spec=pow(max(dot(N,H),0.0),specPow);
-    float fresnel=pow(1.0-abs(dot(N,V)),3.0);
-    float facing=dot(N,normalize(-eye));
-    // Brighter blue base -- deep blue center, lighter blue at edges
-    vec3 base=mix(vec3(0.05,0.10,0.30),vec3(0.10,0.22,0.55),facing);
-    // Warm specular highlight
-    vec3 col=base+vec3(1.0,0.9,0.7)*spec*1.0+vec3(0.3,0.5,1.0)*fresnel*0.6;
-    // Procedural flake sparkle
-    vec2 mc=vec2(dot(N,rt)*0.5+0.5,dot(N,up)*0.5+0.5);
-    float flake=texture(uInputTex,mc*10.0+uTime*0.03).r;
-    col+=flake*0.08;
-    // Subtle diffuse from light
-    float ndl=dot(N,L_)*0.5+0.5;
-    col*=0.6+0.4*ndl;
-    outColor=vec4(col,1);
+    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);vec3 L=normalize(uLightDir);
+    vec3 H=normalize(L+V);
+
+    float ndl=dot(N,L)*0.5+0.5;
+    float nh=dot(N,H);
+
+    // 1. Smooth metallic gradient base — no hard cut
+    vec3 dark=vec3(0.06,0.10,0.24);
+    vec3 mid=vec3(0.10,0.20,0.48);
+    vec3 lit=vec3(0.18,0.30,0.60);
+    vec3 base=mix(dark,mid,smoothstep(0.3,0.7,ndl));
+    base=mix(base,lit,smoothstep(0.6,0.95,ndl));
+
+    // 2. Soft specular — wide gaussian-like falloff
+    float specSoft=pow(max(nh,0.0),P0*30.0+8.0);
+    vec3 specCol=vec3(1.0,0.96,0.88)*specSoft*0.5;
+
+    // 3. Broad clearcoat sheen
+    float coat=pow(max(nh,0.0),P0*4.0+2.0)*0.12;
+    vec3 coatCol=vec3(0.25,0.48,0.78)*coat;
+
+    // 4. Fresnel rim — smooth deep blue
+    float fres=pow(1.0-max(dot(N,V),0.0),3.5);
+    vec3 rimCol=vec3(0.18,0.38,0.72)*fres*0.4;
+
+    // 5. Sparse fine flakes — larger cells, softer threshold
+    vec2 fc=vec2(dot(N,rt),dot(N,up))*0.5+0.5;
+    float f1=texture(uInputTex,fc*10.0+uTime*0.012).r;
+    float f2=texture(uInputTex,fc*17.0-uTime*0.008).r;
+    float flakeRaw=(f1+f2)*0.5;
+    float flake=smoothstep(0.55,0.75,flakeRaw)*0.08;
+
+    // 6. Fake top-sky reflection
+    float env=dot(N,vec3(0,1,0))*0.5+0.5;
+    base=mix(base,base*vec3(0.7,0.8,1.1),env*0.12);
+
+    // 7. Gentle light wrap
+    float wrap=dot(N,L)*0.35+0.65;
+
+    vec3 col=(base+rimCol+coatCol)*wrap+specCol+flake;
+    outColor=vec4(col*uLightColor,1);
 }

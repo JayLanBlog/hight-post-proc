@@ -807,7 +807,7 @@ void VulkanBackend::BeginFrame() {
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapchainExtent;
 
-    VkClearValue clearColor = {{{0.12f, 0.16f, 0.24f, 1.0f}}};
+    VkClearValue clearColor = {{{m_clearColor[0], m_clearColor[1], m_clearColor[2], m_clearColor[3]}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
@@ -1280,6 +1280,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     VkRenderPass renderPass = m_renderPass;  // always use swapchain render pass
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
     cacheKey ^= (desc.useVertexInput ? (1ULL << 60) : 0);
+    cacheKey ^= (desc.blendEnable ? (1ULL << 59) : 0);
 
     // Check cache
     auto cacheIt = m_pipelineCache.find(cacheKey);
@@ -1529,7 +1530,7 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     desc.fragShader = frag;
     desc.width = params.viewportWidth;
     desc.height = params.viewportHeight;
-    desc.blendEnable = false;
+    desc.blendEnable = params.blendEnable;
 
     PipelineHandle pipeHandle = CreatePipeline(desc);
     if (pipeHandle.id == 0) return;
@@ -1954,9 +1955,8 @@ void VulkanBackend::SetViewport(int x, int y, int width, int height) {
 }
 
 void VulkanBackend::Clear(float r, float g, float b, float a) {
-    // In Vulkan, clear is done at render pass begin
-    // This is a placeholder - actual clear happens in BeginFrame or BeginRenderToTexture
-    (void)r; (void)g; (void)b; (void)a;
+    m_clearColor[0] = r; m_clearColor[1] = g;
+    m_clearColor[2] = b; m_clearColor[3] = a;
 }
 
 // ============================================================================
@@ -2112,14 +2112,42 @@ int VulkanBackend::GetMaxTextureSize() const {
 // ============================================================================
 bool VulkanBackend::SaveScreenshot(const char* path) {
     // For Vulkan, read back swapchain image via staging buffer
-    if (!m_device || !path) return false;
+    if (!m_device || !path || !m_isRecording) return false;
     
-    // End current frame recording, submit, wait idle
-    EndFrame();
-    BeginFrame();
-    
-    // Now read back from swapchain
+    // Capture current image BEFORE presentation (after present, app loses ownership)
     VkImage srcImage = m_swapchainImages[m_currentImageIndex];
+    uint32_t captureIndex = m_currentImageIndex;
+    
+    // 1. End render pass and command buffer
+    if (m_imguiRenderPending) {
+        ImDrawData* drawData = ImGui::GetDrawData();
+        if (drawData && drawData->CmdListsCount > 0)
+            ImGui_ImplVulkan_RenderDrawData(drawData, m_commandBuffer);
+        m_imguiRenderPending = false;
+    }
+    vkCmdEndRenderPass(m_commandBuffer);
+    m_currentRenderPass = VK_NULL_HANDLE;
+    m_currentFramebuffer = VK_NULL_HANDLE;
+    VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
+    m_isRecording = false;
+    
+    // 2. Submit rendering
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &m_commandBuffer;
+    VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphore};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+    VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence));
+    
+    // 3. Wait for GPU to finish rendering (DON'T reset fence — leave signaled for next BeginFrame)
+    vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
     VkFormat fmt = m_swapchainFormat;
     uint32_t w = m_swapchainExtent.width, h = m_swapchainExtent.height;
     if (w == 0 || h == 0) return false;
@@ -2187,8 +2215,15 @@ bool VulkanBackend::SaveScreenshot(const char* path) {
     // Read back and save
     void* mapped;
     vkMapMemory(m_device, stageMem, 0, bufSize, 0, &mapped);
-    std::vector<uint8_t> pixels(w * h * 3);
     uint8_t* src = (uint8_t*)mapped;
+    // DEBUG: dump first 4 pixels + center pixel raw (BGRA)
+    printf("[Vulkan] Raw pixels[0..3]: ");
+    for (int i = 0; i < 4; i++) {
+        printf("(%d,%d,%d,%d) ", src[i*4], src[i*4+1], src[i*4+2], src[i*4+3]);
+    }
+    { size_t cx = (h/2)*w + w/2; printf(" center=(%d,%d,%d,%d)", src[cx*4], src[cx*4+1], src[cx*4+2], src[cx*4+3]); }
+    printf("\n");
+    std::vector<uint8_t> pixels(w * h * 3);
     for (uint32_t y = 0; y < h; y++)
         for (uint32_t x = 0; x < w; x++) {
             size_t off_src = (y * w + x) * 4;
@@ -2210,6 +2245,24 @@ bool VulkanBackend::SaveScreenshot(const char* path) {
     vkFreeCommandBuffers(m_device, m_commandPool, 1, &cb);
     vkDestroyBuffer(m_device, stageBuf, nullptr);
     vkFreeMemory(m_device, stageMem, nullptr);
+    
+    // 4. Present the image (now that we've captured it)
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkSemaphore presentWaitSem[] = {m_renderFinishedSemaphore};
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = presentWaitSem;
+    VkSwapchainKHR swapChains[] = {m_swapchain};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &captureIndex;
+    VkResult presult = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+    if (presult == VK_ERROR_OUT_OF_DATE_KHR || presult == VK_SUBOPTIMAL_KHR || m_framebufferResized)
+        RecreateSwapchain();
+    
+    // NOTE: Don't call BeginFrame() here — MainLoop will call it next iteration
+    // m_inFlightFence is left signaled so BeginFrame won't block
+    
     return fp != nullptr;
 }
 uint32_t VulkanBackend::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {

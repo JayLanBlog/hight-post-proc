@@ -1,0 +1,481 @@
+[main] Working directory set to: E:\AI\graph\hight-post-proc\shader-showcase
+[Vulkan] Instance created
+[Vulkan] Surface created (Win32 native)
+[Vulkan] Physical device: NVIDIA GeForce RTX 3060 Laptop GPU
+[Vulkan] Logical device created (graphics queue: 0, present queue: 0)
+[Vulkan] Swapchain created (1920x1200, 3 images)
+[Vulkan] Render pass created
+[Vulkan] Framebuffers created (3)
+[Vulkan] Command pool created
+[Vulkan] Command buffer allocated
+[Vulkan] Sync objects created
+[Vulkan] Initialized successfully (1920x1200)
+[Vulkan] Initializing ImGui Vulkan backend...
+[Vulkan] ImGui Vulkan backend initialized successfully
+[Application] Backend initialized: Vulkan 1.2 (SPIR-V)
+[main] Loaded image: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/test.jpg (1920 x 1280)
+[Vulkan] Texture created (id=1, 1920x1280, format=0)
+[main] Test images directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/
+[main] Loaded test image for effect 0: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/00_grayscale_landscape.jpg (800 x 533)
+[Vulkan] Texture created (id=2, 800x533, format=0)
+[main] Loaded test image for effect 1: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/01_bloom_citynight.jpg (800 x 486)
+[Vulkan] Texture created (id=3, 800x486, format=0)
+[main] Loaded test image for effect 2: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/02_blur_brickwall.jpg (800 x 1200)
+[Vulkan] Texture created (id=4, 800x1200, format=0)
+[main] Loaded test image for effect 3: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/03_sharpen_architecture.jpg (800 x 533)
+[Vulkan] Texture created (id=5, 800x533, format=0)
+[main] Loaded test image for effect 4: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/04_edge_building.jpg (800 x 533)
+[Vulkan] Texture created (id=6, 800x533, format=0)
+[main] Loaded test image for effect 5: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/05_emboss_metal.jpg (800 x 533)
+[Vulkan] Texture created (id=7, 800x533, format=0)
+[main] Loaded test image for effect 6: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/06_pixelate_portrait.jpg (800 x 1000)
+[Vulkan] Texture created (id=8, 800x1000, format=0)
+[main] Loaded test image for effect 7: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/07_vignette_flower.jpg (800 x 532)
+[Vulkan] Texture created (id=9, 800x532, format=0)
+[main] Loaded test image for effect 8: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/08_chromatic_leaves.jpg (800 x 1422)
+[Vulkan] Texture created (id=10, 800x1422, format=0)
+[main] Loaded test image for effect 9: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/09_colorgrading_food.jpg (800 x 533)
+[Vulkan] Texture created (id=11, 800x533, format=0)
+[main] Loaded test image for effect 10: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/10_noise_sky.jpg (800 x 1030)
+[Vulkan] Texture created (id=12, 800x1030, format=0)
+[main] Loaded test image for effect 11: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/11_kaleidoscope_mandala.jpg (800 x 533)
+[Vulkan] Texture created (id=13, 800x533, format=0)
+[main] Loaded test image for effect 12: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/12_glitch_tech.jpg (800 x 533)
+[Vulkan] Texture created (id=14, 800x533, format=0)
+[main] Loaded test image for effect 13: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/13_toon_cartoon.jpg (800 x 1135)
+[Vulkan] Texture created (id=15, 800x1135, format=0)
+[main] Loaded test image for effect 14: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/14_vhs_retro.jpg (800 x 533)
+[Vulkan] Texture created (id=16, 800x533, format=0)
+[main] Loaded test image for effect 15: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/15_crt_screen.jpg (800 x 533)
+[Vulkan] Texture created (id=17, 800x533, format=0)
+[main] Loaded test image for effect 16: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/16_water_lake.jpg (800 x 601)
+[Vulkan] Texture created (id=18, 800x601, format=0)
+[main] Loaded test image for effect 17: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/images/17_lens_wideangle.jpg (800 x 534)
+[Vulkan] Texture created (id=19, 800x534, format=0)
+[main] All 18 input textures cached
+[main] Test videos directory: E:\AI\graph\hight-post-proc\shader-showcase\build\bin\Release/../../../assets/videos/
+[main] AUTO_TEST_AUS3D mode: launching AUS3DScene directly
+[Application] SetScene: entering new scene
+[AUS3D] OnEnter - 45 effects
+[AUS3D] ReadSPIRV OK: shaders/common/fullscreen_vk.vert.spv (1348 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000034)
+[Vulkan] Vertex shader created (id=1)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_red.frag.spv (432 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000010)
+[Vulkan] Fragment shader created (id=2)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_uv_raw.frag.spv (488 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000013)
+[Vulkan] Fragment shader created (id=3)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_eyepos_raw.frag.spv (1544 bytes, first4=0x07230203 0x00010000 0x0008000b 0x0000001f)
+[Vulkan] Fragment shader created (id=4)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_uv.frag.spv (5664 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d8)
+[Vulkan] Fragment shader created (id=5)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_ubo.frag.spv (4868 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b6)
+[Vulkan] Fragment shader created (id=6)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_light.frag.spv (5372 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000cd)
+[Vulkan] Fragment shader created (id=7)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/test_white.frag.spv (4584 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000ab)
+[Vulkan] Fragment shader created (id=8)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_post.frag.spv (5696 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000dd)
+[Vulkan] Fragment shader created (id=9)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v02_solid.frag.spv (4668 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b0)
+[Vulkan] Fragment shader created (id=10)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v01_rim_bump.frag.spv (11920 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000001f2)
+[Vulkan] Fragment shader created (id=11)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v02_solid.frag.spv (4668 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b0)
+[Vulkan] Fragment shader created (id=12)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v02_diffuse_tex.frag.spv (6076 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000ec)
+[Vulkan] Fragment shader created (id=13)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v07_toon.frag.spv (5880 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000ed)
+[Vulkan] Fragment shader created (id=14)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v07_halflambert.frag.spv (4696 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b1)
+[Vulkan] Fragment shader created (id=15)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v07_specular.frag.spv (5280 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000cb)
+[Vulkan] Fragment shader created (id=16)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v14_rim.frag.spv (5676 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000de)
+[Vulkan] Fragment shader created (id=17)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v16_carpaint.frag.spv (8600 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000160)
+[Vulkan] Fragment shader created (id=18)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_simple.frag.spv (4176 bytes, first4=0x07230203 0x00010000 0x0008000b 0x0000009a)
+[Vulkan] Fragment shader created (id=19)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_color_change.frag.spv (4372 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000a1)
+[Vulkan] Fragment shader created (id=20)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_diffuse.frag.spv (4924 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000bb)
+[Vulkan] Fragment shader created (id=21)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_diffuse_tex.frag.spv (5872 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000e6)
+[Vulkan] Fragment shader created (id=22)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_rgb_cube.frag.spv (7248 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000124)
+[Vulkan] Fragment shader created (id=23)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_alpha_cube.frag.spv (8064 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000145)
+[Vulkan] Fragment shader created (id=24)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_twoside_cube.frag.spv (6968 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000116)
+[Vulkan] Fragment shader created (id=25)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_simple_alpha.frag.spv (4792 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b5)
+[Vulkan] Fragment shader created (id=26)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_color_alpha.frag.spv (4916 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000bc)
+[Vulkan] Fragment shader created (id=27)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_glass.frag.spv (6884 bytes, first4=0x07230203 0x00010000 0x0008000b 0x0000010e)
+[Vulkan] Fragment shader created (id=28)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_alpha_test.frag.spv (5416 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d2)
+[Vulkan] Fragment shader created (id=29)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v03_alpha_blend.frag.spv (7364 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000129)
+[Vulkan] Fragment shader created (id=30)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v03_emissive.frag.spv (5544 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d7)
+[Vulkan] Fragment shader created (id=31)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v03_full_combo.frag.spv (6456 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000100)
+[Vulkan] Fragment shader created (id=32)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_blend_multiply.frag.spv (5344 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000cc)
+[Vulkan] Fragment shader created (id=33)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_glass_v2.frag.spv (6640 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000102)
+[Vulkan] Fragment shader created (id=34)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_glass_v3.frag.spv (6748 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000109)
+[Vulkan] Fragment shader created (id=35)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v08_radial_blur.frag.spv (6236 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000f6)
+[Vulkan] Fragment shader created (id=36)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v09_water_drop.frag.spv (7864 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000143)
+[Vulkan] Fragment shader created (id=37)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v10_oil_paint.frag.spv (7236 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000121)
+[Vulkan] Fragment shader created (id=38)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v11_pixelate.frag.spv (5644 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000de)
+[Vulkan] Fragment shader created (id=39)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v15_gaussian_blur.frag.spv (7668 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000134)
+[Vulkan] Fragment shader created (id=40)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_cull_front.frag.spv (4680 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b0)
+[Vulkan] Fragment shader created (id=41)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_vertex_alpha.frag.spv (5524 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d8)
+[Vulkan] Fragment shader created (id=42)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_vegetation.frag.spv (5804 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000e3)
+[Vulkan] Fragment shader created (id=43)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_programmable.frag.spv (5816 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000e4)
+[Vulkan] Fragment shader created (id=44)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v06_detail_tex.frag.spv (7652 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000136)
+[Vulkan] Fragment shader created (id=45)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v06_full_combo.frag.spv (10676 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000001bb)
+[Vulkan] Fragment shader created (id=46)
+[Application] SetScene: new scene entered OK
+[main] SceneGalleryScene started (autoTest=0)
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_red.frag.spv (432 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000010)
+[Vulkan] Fragment shader created (id=47)
+[Vulkan] Texture created (id=20, 64x64, format=0)
+[Vulkan] Pipeline created (id=1)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_00.ppm
+[Vulkan] Raw pixels[0..3]: (0,0,255,255) (0,0,255,255) (0,0,255,255) (0,0,255,255)  center=(0,0,255,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_00.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_00.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_uv_raw.frag.spv (488 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000013)
+[Vulkan] Fragment shader created (id=48)
+[Vulkan] Pipeline created (id=2)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_01.ppm
+[Vulkan] Raw pixels[0..3]: (0,0,0,255) (0,0,0,255) (0,0,0,255) (0,0,0,255)  center=(0,128,128,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_01.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_01.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_eyepos_raw.frag.spv (1544 bytes, first4=0x07230203 0x00010000 0x0008000b 0x0000001f)
+[Vulkan] Fragment shader created (id=49)
+[Vulkan] Pipeline created (id=3)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_02.ppm
+[Vulkan] Raw pixels[0..3]: (88,86,91,255) (88,86,91,255) (88,86,91,255) (88,86,91,255)  center=(88,86,91,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_02.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_02.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_uv.frag.spv (5664 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d8)
+[Vulkan] Fragment shader created (id=50)
+[Vulkan] Pipeline created (id=4)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_03.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(68,63,64,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_03.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_03.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_ubo.frag.spv (4868 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b6)
+[Vulkan] Fragment shader created (id=51)
+[Vulkan] Pipeline created (id=5)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_04.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(127,229,255,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_04.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_04.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_light.frag.spv (5372 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000cd)
+[Vulkan] Fragment shader created (id=52)
+[Vulkan] Pipeline created (id=6)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_05.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(157,233,255,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_05.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_05.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/test_white.frag.spv (4584 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000ab)
+[Vulkan] Fragment shader created (id=53)
+[Vulkan] Pipeline created (id=7)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_06.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(241,241,241,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_06.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_06.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/diag_post.frag.spv (5696 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000dd)
+[Vulkan] Fragment shader created (id=54)
+[Vulkan] Pipeline created (id=8)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_07.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(136,158,165,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_07.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_07.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v02_solid.frag.spv (4668 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b0)
+[Vulkan] Fragment shader created (id=55)
+[Vulkan] Pipeline created (id=9)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_08.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(24,72,193,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_08.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_08.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v01_rim_bump.frag.spv (11920 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000001f2)
+[Vulkan] Fragment shader created (id=56)
+[Vulkan] Pipeline created (id=10)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_09.ppm
+[Vulkan] Raw pixels[0..3]: (15,8,10,255) (15,8,10,255) (15,8,10,255) (15,8,10,255)  center=(69,82,90,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_09.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_09.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v02_solid.frag.spv (4668 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b0)
+[Vulkan] Fragment shader created (id=57)
+[Vulkan] Pipeline created (id=11)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_10.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(72,169,48,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_10.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_10.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v02_diffuse_tex.frag.spv (6076 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000ec)
+[Vulkan] Fragment shader created (id=58)
+[Vulkan] Pipeline created (id=12)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_11.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(96,90,92,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_11.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_11.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v07_toon.frag.spv (5880 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000ed)
+[Vulkan] Fragment shader created (id=59)
+[Vulkan] Pipeline created (id=13)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_12.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(115,51,25,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_12.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_12.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v07_halflambert.frag.spv (4696 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b1)
+[Vulkan] Fragment shader created (id=60)
+[Vulkan] Pipeline created (id=14)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_13.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(169,205,241,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_13.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_13.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v07_specular.frag.spv (5280 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000cb)
+[Vulkan] Fragment shader created (id=61)
+[Vulkan] Pipeline created (id=15)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_14.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(219,243,255,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_14.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_14.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v14_rim.frag.spv (5676 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000de)
+[Vulkan] Fragment shader created (id=62)
+[Vulkan] Pipeline created (id=16)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_15.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(20,20,0,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_15.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_15.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v16_carpaint.frag.spv (8600 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000160)
+[Vulkan] Fragment shader created (id=63)
+[Vulkan] Pipeline created (id=17)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_16.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(234,154,121,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_16.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_16.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_simple.frag.spv (4176 bytes, first4=0x07230203 0x00010000 0x0008000b 0x0000009a)
+[Vulkan] Fragment shader created (id=64)
+[Vulkan] Pipeline created (id=18)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_17.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(255,178,102,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_17.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_17.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_color_change.frag.spv (4372 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000a1)
+[Vulkan] Fragment shader created (id=65)
+[Vulkan] Pipeline created (id=19)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_18.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(146,144,151,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_18.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_18.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_diffuse.frag.spv (4924 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000bb)
+[Vulkan] Fragment shader created (id=66)
+[Vulkan] Pipeline created (id=20)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_19.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(174,207,252,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_19.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_19.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_diffuse_tex.frag.spv (5872 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000e6)
+[Vulkan] Fragment shader created (id=67)
+[Vulkan] Pipeline created (id=21)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_20.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(80,80,119,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_20.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_20.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v12_rgb_cube.frag.spv (7248 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000124)
+[Vulkan] Fragment shader created (id=68)
+[Vulkan] Pipeline created (id=22)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_21.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(18,37,184,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_21.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_21.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_alpha_cube.frag.spv (8064 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000145)
+[Vulkan] Fragment shader created (id=69)
+[Vulkan] Pipeline created (id=23)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_22.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(131,77,31,166)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_22.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_22.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_twoside_cube.frag.spv (6968 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000116)
+[Vulkan] Fragment shader created (id=70)
+[Vulkan] Pipeline created (id=24)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_23.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(170,76,38,229)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_23.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_23.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_simple_alpha.frag.spv (4792 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b5)
+[Vulkan] Fragment shader created (id=71)
+[Vulkan] Pipeline created (id=25)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_24.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(22,127,42,127)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_24.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_24.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v13_color_alpha.frag.spv (4916 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000bc)
+[Vulkan] Fragment shader created (id=72)
+[Vulkan] Pipeline created (id=26)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_25.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(22,18,115,127)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_25.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_25.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_glass.frag.spv (6884 bytes, first4=0x07230203 0x00010000 0x0008000b 0x0000010e)
+[Vulkan] Fragment shader created (id=73)
+[Vulkan] Pipeline created (id=27)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_26.ppm
+[Vulkan] Raw pixels[0..3]: (20,13,13,255) (20,13,13,255) (20,13,13,255) (20,13,13,255)  center=(80,59,43,72)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_26.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_26.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_alpha_test.frag.spv (5416 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d2)
+[Vulkan] Fragment shader created (id=74)
+[Vulkan] Pipeline created (id=28)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_27.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(20,13,13,0)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_27.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_27.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v03_alpha_blend.frag.spv (7364 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000129)
+[Vulkan] Fragment shader created (id=75)
+[Vulkan] Pipeline created (id=29)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_28.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(196,138,155,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_28.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_28.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v03_emissive.frag.spv (5544 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d7)
+[Vulkan] Fragment shader created (id=76)
+[Vulkan] Pipeline created (id=30)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_29.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(245,195,160,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_29.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_29.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v03_full_combo.frag.spv (6456 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000100)
+[Vulkan] Fragment shader created (id=77)
+[Vulkan] Pipeline created (id=31)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_30.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(203,222,169,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_30.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_30.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_blend_multiply.frag.spv (5344 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000cc)
+[Vulkan] Fragment shader created (id=78)
+[Vulkan] Pipeline created (id=32)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_31.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(135,63,80,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_31.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_31.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_glass_v2.frag.spv (6640 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000102)
+[Vulkan] Fragment shader created (id=79)
+[Vulkan] Pipeline created (id=33)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_32.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(59,39,26,140)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_32.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_32.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_glass_v3.frag.spv (6748 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000109)
+[Vulkan] Fragment shader created (id=80)
+[Vulkan] Pipeline created (id=34)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_33.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(166,103,58,158)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_33.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_33.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v08_radial_blur.frag.spv (6236 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000f6)
+[Vulkan] Fragment shader created (id=81)
+[Vulkan] Pipeline created (id=35)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_34.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(193,96,48,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_34.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_34.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v09_water_drop.frag.spv (7864 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000143)
+[Vulkan] Fragment shader created (id=82)
+[Vulkan] Pipeline created (id=36)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_35.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(48,96,217,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_35.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_35.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v10_oil_paint.frag.spv (7236 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000121)
+[Vulkan] Fragment shader created (id=83)
+[Vulkan] Pipeline created (id=37)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_36.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(27,138,64,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_36.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_36.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v11_pixelate.frag.spv (5644 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000de)
+[Vulkan] Fragment shader created (id=84)
+[Vulkan] Pipeline created (id=38)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_37.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(73,98,220,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_37.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_37.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v15_gaussian_blur.frag.spv (7668 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000134)
+[Vulkan] Fragment shader created (id=85)
+[Vulkan] Pipeline created (id=39)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_38.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(72,96,217,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_38.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_38.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_cull_front.frag.spv (4680 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000b0)
+[Vulkan] Fragment shader created (id=86)
+[Vulkan] Pipeline created (id=40)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_39.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(48,96,193,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_39.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_39.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_vertex_alpha.frag.spv (5524 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000d8)
+[Vulkan] Fragment shader created (id=87)
+[Vulkan] Pipeline created (id=41)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_40.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(241,193,48,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_40.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_40.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v04_vegetation.frag.spv (5804 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000e3)
+[Vulkan] Fragment shader created (id=88)
+[Vulkan] Pipeline created (id=42)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_41.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(22,155,45,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_41.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_41.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v05_programmable.frag.spv (5816 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000000e4)
+[Vulkan] Fragment shader created (id=89)
+[Vulkan] Pipeline created (id=43)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_42.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(94,121,253,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_42.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_42.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v06_detail_tex.frag.spv (7652 bytes, first4=0x07230203 0x00010000 0x0008000b 0x00000136)
+[Vulkan] Fragment shader created (id=90)
+[Vulkan] Pipeline created (id=44)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_43.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(200,184,109,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_43.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_43.ppm
+[AUS3D] ReadSPIRV OK: shaders/aus3d/v06_full_combo.frag.spv (10676 bytes, first4=0x07230203 0x00010000 0x0008000b 0x000001bb)
+[Vulkan] Fragment shader created (id=91)
+[Vulkan] Pipeline created (id=45)
+[Application] Processing screenshot request: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_44.ppm
+[Vulkan] Raw pixels[0..3]: (10,5,5,255) (10,5,5,255) (10,5,5,255) (10,5,5,255)  center=(112,57,73,255)
+[Vulkan] Screenshot saved to e:/AI/graph/hight-post-proc/screenshots/card_aus3d_44.ppm
+[Application] Screenshot saved: e:/AI/graph/hight-post-proc/screenshots/card_aus3d_44.ppm
+[AUS3D] All effects screenshotted, exiting
+[Application] Scene requested return to gallery
+[AUS3D] OnExit
+[Vulkan] Texture created (id=21, 800x533, format=0)
+[Vulkan] Texture created (id=22, 800x533, format=0)
+[Application] Main loop exited: m_running=1, m_window=000002A5B54B5E60, shouldClose=1
+[Vulkan] Texture queued for deferred destroy (id=21)
+[Vulkan] Texture queued for deferred destroy (id=22)
+[Vulkan] Shutting down ImGui Vulkan backend...
+[Vulkan] ImGui Vulkan backend shutdown complete
+[Vulkan] Shutting down...
+[Vulkan] Shutdown complete

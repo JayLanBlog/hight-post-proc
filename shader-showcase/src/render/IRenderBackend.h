@@ -37,6 +37,8 @@ struct ShaderParams {
     std::vector<float> lightDir;      // vec3 (3 floats)
     std::vector<float> lightColor;    // vec3 (3 floats)
     std::vector<float> eyePos;        // vec3 (3 floats)
+
+    bool blendEnable = false;      // enables alpha blending (for transparent effects)
 };
 
 // ---------------------------------------------------------------------------
