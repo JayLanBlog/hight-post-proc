@@ -1063,11 +1063,11 @@ TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat 
 }
 
 TextureHandle VulkanBackend::CreateTextureFromFile(const std::string& path) {
-    int width, height, channels;
-    unsigned char* pixels = stbi_load(path.c_str(), &width, &height, &channels, 4); // force RGBA
+    int width, height;
+    unsigned char* pixels = stbi_load(path.c_str(), &width, &height, NULL, 4); // force RGBA
     if (!pixels) {
         fprintf(stderr, "[Vulkan] Failed to load texture: %s\n", path.c_str());
-        return {0};
+        return INVALID_TEXTURE;
     }
 
     TextureHandle handle = CreateTexture(width, height, TextureFormat::RGBA8, pixels);
