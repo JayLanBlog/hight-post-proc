@@ -1184,7 +1184,7 @@ void* VulkanBackend::GetImTextureID(TextureHandle handle) {
 // Pipeline Helpers
 // ============================================================================
 VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
-    VkDescriptorSetLayoutBinding bindings[2] = {};
+    VkDescriptorSetLayoutBinding bindings[3] = {};
     // binding=0: combined image sampler
     bindings[0].binding = 0;
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1195,10 +1195,15 @@ VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
     bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     bindings[1].descriptorCount = 1;
     bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    // binding=2: uAuxTex (auxiliary texture, e.g. droplet texture, ramp texture)
+    bindings[2].binding = 2;
+    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[2].descriptorCount = 1;
+    bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 2;
+    layoutInfo.bindingCount = 3;
     layoutInfo.pBindings = bindings;
     VkDescriptorSetLayout descriptorSetLayout;
     VK_CHECK(vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &descriptorSetLayout));
@@ -1207,7 +1212,7 @@ VkDescriptorSetLayout VulkanBackend::CreateDescriptorSetLayout() {
 
 VkDescriptorPool VulkanBackend::CreateDescriptorPool(uint32_t maxSets) {
     VkDescriptorPoolSize poolSizes[] = {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxSets },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxSets * 2 },  // *2 for binding=0 + binding=2
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSets }
     };
 
@@ -1655,6 +1660,27 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
         uboWrite.descriptorCount = 1;
         uboWrite.pBufferInfo = &bufferInfo;
         writes.push_back(uboWrite);
+
+        // binding=2: auxiliary texture (uAuxTex)
+        if (!params.auxTextures.empty()) {
+            auto auxIt = m_textures.find(params.auxTextures[0].id);
+            if (auxIt != m_textures.end()) {
+                VkDescriptorImageInfo auxImageInfo{};
+                auxImageInfo.sampler = auxIt->second->sampler;
+                auxImageInfo.imageView = auxIt->second->view;
+                auxImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                VkWriteDescriptorSet auxWrite{};
+                auxWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                auxWrite.dstSet = pipeIt->second->descSet;
+                auxWrite.dstBinding = 2;
+                auxWrite.dstArrayElement = 0;
+                auxWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                auxWrite.descriptorCount = 1;
+                auxWrite.pImageInfo = &auxImageInfo;
+                writes.push_back(auxWrite);
+            }
+        }
 
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 

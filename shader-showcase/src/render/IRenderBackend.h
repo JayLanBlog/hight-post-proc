@@ -24,6 +24,7 @@ struct PipelineDesc {
 // ---------------------------------------------------------------------------
 struct ShaderParams {
     std::vector<TextureHandle> inputTextures;
+    std::vector<TextureHandle> auxTextures;  // binding=2: auxiliary textures
     std::vector<float>         uniformFloats;
     std::vector<int32_t>       uniformInts;
     int   viewportWidth  = 1280;
