@@ -230,6 +230,15 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     // Use actual framebuffer size, not default 1280x720
     { int fw=1280,fh=720; be->GetFramebufferSize(fw,fh); p.viewportWidth=fw; p.viewportHeight=fh; }
     p.inputTextures.push_back(m_defaultTex);
+    // Load auxiliary textures for this effect
+    if (!fx.auxTextures.empty()) {
+        for (auto& texPath : fx.auxTextures) {
+            TextureHandle tex = m_texManager->LoadTexture(texPath);
+            if (tex.id != 0) {
+                p.auxTextures.push_back(tex);
+            }
+        }
+    }
     p.uniformFloats=fx.defaultValues;
     p.eyePos={cx,cy,cz}; p.lightDir={0.3f,1.0f,0.5f}; p.lightColor={1,1,1};
     p.mvp.assign(id,id+16); p.modelView.assign(id,id+16);
