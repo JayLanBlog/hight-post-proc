@@ -97,6 +97,39 @@ static std::vector<AUS3DEffect> BuildEffects() {
     return out;
 }
 
+// ---- RTPool implementation ----
+TextureHandle RTPool::Acquire(int w, int h) {
+    for (auto& e : entries) {
+        if (!e.inUse && e.width == w && e.height == h) {
+            e.inUse = true;
+            return e.handle;
+        }
+    }
+    int texW = w > 0 ? w : 1920;
+    int texH = h > 0 ? h : 1080;
+    TextureHandle handle = backend->CreateTexture(texW, texH, TextureFormat::RGBA8, nullptr);
+    entries.push_back({handle, texW, texH, true});
+    return handle;
+}
+
+void RTPool::Release(TextureHandle handle) {
+    for (auto& e : entries) {
+        if (e.handle.id == handle.id) {
+            e.inUse = false;
+            return;
+        }
+    }
+}
+
+void RTPool::Clear() {
+    for (auto& e : entries) {
+        if (e.handle.id != 0) {
+            backend->DestroyTexture(e.handle);
+        }
+    }
+    entries.clear();
+}
+
 AUS3DScene::AUS3DScene() { m_effects=BuildEffects(); m_totalEffects=(int)m_effects.size(); }
 AUS3DScene::~AUS3DScene()=default;
 
@@ -105,6 +138,7 @@ void AUS3DScene::OnEnter() {
     if (getenv("AUS3D_START_INDEX")) { m_currentIndex = atoi(getenv("AUS3D_START_INDEX")); printf("[AUS3D] start index=%d\n",m_currentIndex); }
     m_fpsLastTime=std::chrono::high_resolution_clock::now();
     m_texManager = std::make_unique<TextureManager>(m_backend);
+    m_rtPool.backend = m_backend;
     LoadShaders();
     // NOTE: LoadShaders pre-loads the vertex shader only;
     // fragment shaders are loaded on first OnRender() pass
@@ -171,7 +205,46 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
         || fx.name.find("Alpha") != std::string::npos || fx.name.find("顶点") != std::string::npos
         || fx.name.find("植被") != std::string::npos) p.blendEnable = true;
     be->Clear(0.05f,0.05f,0.08f,1);
-    be->DrawFullscreenQuad(m_sharedVert,fx.fragShader,p);
+    // Check if effect has multi-pass configuration
+    if (fx.passes.empty()) {
+        // Old path: single-pass ray-traced sphere
+        be->DrawFullscreenQuad(m_sharedVert, fx.fragShader, p);
+    } else {
+        // New path: multi-pass sequence
+        TextureHandle prevRT = {0};
+        for (size_t i = 0; i < fx.passes.size(); i++) {
+            auto& pass = fx.passes[i];
+            // Load shader for this pass
+            ShaderHandle passShader = {0};
+            auto fd = ReadSPIRV(pass.fragShader.c_str());
+            if (!fd.empty()) {
+                passShader = be->CreateFragmentShader(fd.data(), fd.size());
+            }
+            if (!passShader.id) continue;
+            
+            ShaderParams passParams = p;
+            int pw = pass.targetWidth > 0 ? pass.targetWidth : p.viewportWidth;
+            int ph = pass.targetHeight > 0 ? pass.targetHeight : p.viewportHeight;
+            passParams.viewportWidth = pw;
+            passParams.viewportHeight = ph;
+            
+            if (pass.isOutput) {
+                // Final pass: render to screen
+                passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : std::vector<TextureHandle>{};
+                be->DrawToScreen(m_sharedVert, passShader, passParams, prevRT);
+            } else {
+                // Intermediate pass: render to RT
+                TextureHandle rt = m_rtPool.Acquire(pw, ph);
+                be->BeginRenderToTexture(rt);
+                passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : std::vector<TextureHandle>{};
+                be->DrawFullscreenQuad(m_sharedVert, passShader, passParams);
+                be->EndRenderToTexture();
+                if (prevRT.id) m_rtPool.Release(prevRT);
+                prevRT = rt;
+            }
+        }
+        if (prevRT.id) m_rtPool.Release(prevRT);
+    }
 
     // AUTO-TEST: screenshot each effect once pipeline has settled
     if (getenv("AUTO_TEST_AUS3D")) {

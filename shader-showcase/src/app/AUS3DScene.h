@@ -96,6 +96,20 @@ private:
     std::map<std::string, TextureHandle> m_cache;
 };
 
+struct RTPool {
+    struct Entry {
+        TextureHandle handle;
+        int width, height;
+        bool inUse = false;
+    };
+    std::vector<Entry> entries;
+    IRenderBackend* backend = nullptr;
+    
+    TextureHandle Acquire(int w, int h);
+    void Release(TextureHandle handle);
+    void Clear();
+};
+
 class AUS3DScene : public Scene {
 public:
     AUS3DScene();
@@ -142,4 +156,5 @@ private:
     TextureHandle m_defaultTex = {0};
 
     std::unique_ptr<TextureManager> m_texManager;
+    RTPool m_rtPool;
 };
