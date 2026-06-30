@@ -80,7 +80,21 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("玻璃v2",    "Vol.05 Glass v2",      "aus3d/v05_glass_v2.frag.spv", {0.3f,0.6f,1.0f},{"R","G","B"});
     add("玻璃v3",    "Vol.05 Glass v3",      "aus3d/v05_glass_v3.frag.spv", {0.3f,0.6f,1.0f,0.6f},{"R","G","B","透明度"});
     // --- 后处理特效 ---
-    add("径向模糊",  "Vol.08 RadialBlur",   "aus3d/v08_radial_blur.frag.spv", {0.5f,8},{"强度","采样"},{0,1},{2,32});
+    // 径向模糊: 后处理
+    {
+        AUS3DEffect fx;
+        fx.name = "径向模糊";
+        fx.description = "后处理: 中心缩放迭代采样径向模糊";
+        fx.use3DGeometry = false;
+        fx.passes = {
+            {"aus3d/v08_post_radial.frag.spv", 0, 0, true},
+        };
+        fx.defaultValues = {0.5f, 8};
+        fx.paramLabels = {"强度", "采样"};
+        fx.paramMin = {0, 1};
+        fx.paramMax = {2, 32};
+        out.push_back(fx);
+    }
     // 水幕特效: 3Pass多Pass渲染
     {
         AUS3DEffect fx;
@@ -99,8 +113,36 @@ static std::vector<AUS3DEffect> BuildEffects() {
         fx.paramMax = {2.0f, 2.0f};
         out.push_back(fx);
     }
-    add("油画特效",  "Vol.10 OilPaint",     "aus3d/v10_oil_paint.frag.spv", {0.5f,1.0f},{"半径","强度"},{0.1f,0.2f},{1.0f,3.0f});
-    add("像素化",    "Vol.11 Pixelate",     "aus3d/v11_pixelate.frag.spv", {0.5f,1.0f},{"像素数","比例"},{0.1f,0.5f},{1.0f,2.0f});
+    // 油画特效: 后处理
+    {
+        AUS3DEffect fx;
+        fx.name = "油画特效";
+        fx.description = "后处理: 邻域像素颜色平均";
+        fx.use3DGeometry = false;
+        fx.passes = {
+            {"aus3d/v10_post_oil.frag.spv", 0, 0, true},
+        };
+        fx.defaultValues = {0.5f, 1.0f};
+        fx.paramLabels = {"半径", "强度"};
+        fx.paramMin = {0.1f, 0.2f};
+        fx.paramMax = {1.0f, 3.0f};
+        out.push_back(fx);
+    }
+    // 像素化: 后处理
+    {
+        AUS3DEffect fx;
+        fx.name = "像素化";
+        fx.description = "后处理: UV坐标ceil量化";
+        fx.use3DGeometry = false;
+        fx.passes = {
+            {"aus3d/v11_post_pixelate.frag.spv", 0, 0, true},
+        };
+        fx.defaultValues = {0.5f, 1.0f};
+        fx.paramLabels = {"像素数", "比例"};
+        fx.paramMin = {0.1f, 0.5f};
+        fx.paramMax = {1.0f, 2.0f};
+        out.push_back(fx);
+    }
     // 高斯模糊: 3Pass降采样+分离高斯
     {
         AUS3DEffect fx;
