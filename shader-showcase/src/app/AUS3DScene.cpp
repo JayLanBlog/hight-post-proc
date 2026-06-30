@@ -104,6 +104,7 @@ void AUS3DScene::OnEnter() {
     printf("[AUS3D] OnEnter - %d effects\n",m_totalEffects);
     if (getenv("AUS3D_START_INDEX")) { m_currentIndex = atoi(getenv("AUS3D_START_INDEX")); printf("[AUS3D] start index=%d\n",m_currentIndex); }
     m_fpsLastTime=std::chrono::high_resolution_clock::now();
+    m_texManager = std::make_unique<TextureManager>(m_backend);
     LoadShaders();
     // NOTE: LoadShaders pre-loads the vertex shader only;
     // fragment shaders are loaded on first OnRender() pass

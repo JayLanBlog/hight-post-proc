@@ -5,8 +5,17 @@
 #include <string>
 #include <memory>
 #include <chrono>
+#include <map>
+#include <cstdlib>
 
 class Application;
+
+struct AUS3DPass {
+    std::string fragShader;   // SPIR-V路径
+    int targetWidth = 0;      // 0=全屏, N=降采样宽度
+    int targetHeight = 0;     // 0=全屏, N=降采样高度
+    bool isOutput = false;    // 最后一个Pass输出到屏幕
+};
 
 struct AUS3DEffect {
     std::string name;
@@ -17,6 +26,63 @@ struct AUS3DEffect {
     std::vector<std::string> paramLabels;
     std::vector<float> paramMin;
     std::vector<float> paramMax;
+    std::vector<AUS3DPass> passes;        // 新增: Pass序列 (空=旧路径单Pass)
+    std::vector<std::string> auxTextures; // 新增: 辅助纹理路径
+    bool use3DGeometry = true;            // 新增: 是否保留光追球体
+};
+
+class TextureManager {
+public:
+    TextureManager(IRenderBackend* backend) : m_backend(backend) {}
+    
+    TextureHandle LoadTexture(const std::string& path) {
+        auto it = m_cache.find(path);
+        if (it != m_cache.end()) return it->second;
+        TextureHandle tex = m_backend->CreateTextureFromFile(path);
+        m_cache[path] = tex;
+        return tex;
+    }
+    
+    TextureHandle GenerateRampTexture(int bands) {
+        std::string key = "ramp_" + std::to_string(bands);
+        auto it = m_cache.find(key);
+        if (it != m_cache.end()) return it->second;
+        std::vector<uint8_t> data(256 * 4);
+        for (int i = 0; i < 256; i++) {
+            float t = i / 255.0f;
+            int band = int(t * bands);
+            float v = float(band) / float(bands - 1);
+            uint8_t c = uint8_t(v * 255);
+            data[i * 4 + 0] = c;
+            data[i * 4 + 1] = c;
+            data[i * 4 + 2] = c;
+            data[i * 4 + 3] = 255;
+        }
+        TextureHandle tex = m_backend->CreateTextureFromData(256, 1, data.data());
+        m_cache[key] = tex;
+        return tex;
+    }
+    
+    TextureHandle GenerateNoiseTexture(int size) {
+        std::string key = "noise_" + std::to_string(size);
+        auto it = m_cache.find(key);
+        if (it != m_cache.end()) return it->second;
+        std::vector<uint8_t> data(size * size * 4);
+        for (int i = 0; i < size * size; i++) {
+            uint8_t v = uint8_t(rand() % 256);
+            data[i * 4 + 0] = v;
+            data[i * 4 + 1] = v;
+            data[i * 4 + 2] = v;
+            data[i * 4 + 3] = 255;
+        }
+        TextureHandle tex = m_backend->CreateTextureFromData(size, size, data.data());
+        m_cache[key] = tex;
+        return tex;
+    }
+    
+private:
+    IRenderBackend* m_backend;
+    std::map<std::string, TextureHandle> m_cache;
 };
 
 class AUS3DScene : public Scene {
@@ -63,4 +129,6 @@ private:
     int m_fpsFrameCount = 0;
 
     TextureHandle m_defaultTex = {0};
+
+    std::unique_ptr<TextureManager> m_texManager;
 };
