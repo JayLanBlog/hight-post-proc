@@ -70,7 +70,7 @@ public:
             data[i * 4 + 3] = 255;
         }
         TextureHandle tex = m_backend->CreateTextureFromData(256, 1, data.data());
-        m_cache[key] = tex;
+        if (tex.id != 0) { m_cache[key] = tex; }
         return tex;
     }
     
@@ -87,7 +87,7 @@ public:
             data[i * 4 + 3] = 255;
         }
         TextureHandle tex = m_backend->CreateTextureFromData(size, size, data.data());
-        m_cache[key] = tex;
+        if (tex.id != 0) { m_cache[key] = tex; }
         return tex;
     }
     
