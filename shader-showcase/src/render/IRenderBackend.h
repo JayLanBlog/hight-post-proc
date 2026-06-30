@@ -77,6 +77,8 @@ public:
 
     // ---- Textures ----------------------------------------------------------
     virtual TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) = 0;
+    virtual TextureHandle CreateTextureFromFile(const std::string& path) = 0;
+    virtual TextureHandle CreateTextureFromData(int width, int height, const uint8_t* rgbaData) = 0;
     virtual void          UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) = 0;
     virtual void          DestroyTexture(TextureHandle handle)                                        = 0;
     virtual void*         GetImTextureID(TextureHandle handle)                                        = 0;

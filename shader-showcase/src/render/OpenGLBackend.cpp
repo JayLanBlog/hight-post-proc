@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <cmath>
 
+// stb_image
+#include "stb_image.h"
+
 // ImGui headers
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
@@ -391,6 +394,27 @@ TextureHandle OpenGLBackend::CreateTexture(int width, int height, TextureFormat 
     m_texHeights[id] = height;
 
     return TextureHandle{id};
+}
+
+TextureHandle OpenGLBackend::CreateTextureFromFile(const std::string& path) {
+    int width, height, channels;
+    unsigned char* pixels = stbi_load(path.c_str(), &width, &height, &channels, 4); // force RGBA
+    if (!pixels) {
+        fprintf(stderr, "[OpenGL] Failed to load texture: %s\n", path.c_str());
+        return INVALID_TEXTURE;
+    }
+
+    TextureHandle handle = CreateTexture(width, height, TextureFormat::RGBA8, pixels);
+    stbi_image_free(pixels);
+
+    if (handle.id != 0) {
+        fprintf(stdout, "[OpenGL] Loaded texture from file: %s (%dx%d)\n", path.c_str(), width, height);
+    }
+    return handle;
+}
+
+TextureHandle OpenGLBackend::CreateTextureFromData(int width, int height, const uint8_t* rgbaData) {
+    return CreateTexture(width, height, TextureFormat::RGBA8, rgbaData);
 }
 
 void OpenGLBackend::DestroyTexture(TextureHandle handle) {

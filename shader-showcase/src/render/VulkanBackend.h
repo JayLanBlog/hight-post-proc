@@ -70,6 +70,8 @@ public:
 
     // Textures
     TextureHandle CreateTexture(int width, int height, TextureFormat format, const void* data) override;
+    TextureHandle CreateTextureFromFile(const std::string& path) override;
+    TextureHandle CreateTextureFromData(int width, int height, const uint8_t* rgbaData) override;
     void UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) override;
     void DestroyTexture(TextureHandle handle) override;
     void* GetImTextureID(TextureHandle handle) override;

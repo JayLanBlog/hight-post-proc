@@ -17,6 +17,9 @@
 #include <array>
 #include <fstream>
 
+// stb_image
+#include "stb_image.h"
+
 // ImGui
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -1057,6 +1060,27 @@ TextureHandle VulkanBackend::CreateTexture(int width, int height, TextureFormat 
 
     printf("[Vulkan] Texture created (id=%u, %dx%d, format=%d)\n", id, width, height, static_cast<int>(format));
     return {id};
+}
+
+TextureHandle VulkanBackend::CreateTextureFromFile(const std::string& path) {
+    int width, height, channels;
+    unsigned char* pixels = stbi_load(path.c_str(), &width, &height, &channels, 4); // force RGBA
+    if (!pixels) {
+        fprintf(stderr, "[Vulkan] Failed to load texture: %s\n", path.c_str());
+        return {0};
+    }
+
+    TextureHandle handle = CreateTexture(width, height, TextureFormat::RGBA8, pixels);
+    stbi_image_free(pixels);
+
+    if (handle.id != 0) {
+        fprintf(stdout, "[Vulkan] Loaded texture from file: %s (%dx%d)\n", path.c_str(), width, height);
+    }
+    return handle;
+}
+
+TextureHandle VulkanBackend::CreateTextureFromData(int width, int height, const uint8_t* rgbaData) {
+    return CreateTexture(width, height, TextureFormat::RGBA8, rgbaData);
 }
 
 void VulkanBackend::UpdateTexture(TextureHandle handle, int x, int y, int width, int height, const void* data) {
