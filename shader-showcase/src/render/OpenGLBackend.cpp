@@ -659,6 +659,20 @@ void OpenGLBackend::DrawMesh(ShaderHandle, ShaderHandle, const ShaderParams&,
 }
 
 // ============================================================================
+// DrawToScreen - renders a texture to the screen using a fullscreen quad
+// ============================================================================
+void OpenGLBackend::DrawToScreen(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params, TextureHandle inputTex) {
+    // Ensure we're rendering to the default framebuffer (not FBO)
+    if (m_currentFBO != m_defaultFBO) {
+        EndRenderToTexture();
+    }
+
+    ShaderParams screenParams = params;
+    screenParams.inputTextures = {inputTex};
+    DrawFullscreenQuad(vert, frag, screenParams);
+}
+
+// ============================================================================
 // Cards (3D card rendering)
 // ============================================================================
 void OpenGLBackend::DrawCards(const std::vector<CardDrawInfo>& cards, const float* viewMat, const float* projMat) {

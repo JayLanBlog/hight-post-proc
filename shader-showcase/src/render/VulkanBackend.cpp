@@ -1697,6 +1697,19 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     m_currentPipeline = {0};
 }
 
+void VulkanBackend::DrawToScreen(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params, TextureHandle inputTex) {
+    if (!m_isRecording) return;
+
+    // Ensure we're rendering to swapchain (not FBO)
+    if (m_isRenderToTexture) {
+        EndRenderToTexture();
+    }
+
+    ShaderParams screenParams = params;
+    screenParams.inputTextures = {inputTex};
+    DrawFullscreenQuad(vert, frag, screenParams);
+}
+
 void VulkanBackend::DrawCards(const std::vector<IRenderBackend::CardDrawInfo>& cards, const float* viewMatrix, const float* projMatrix) {
     (void)cards; (void)viewMatrix; (void)projMatrix;
     // TODO: Implement card rendering

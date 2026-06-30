@@ -92,6 +92,9 @@ public:
     // ---- Fullscreen quad ---------------------------------------------------
     virtual void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) = 0;
 
+    // 渲染到屏幕：将inputTex作为uInputTex采样，全屏输出
+    virtual void DrawToScreen(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params, TextureHandle inputTex) = 0;
+
     // ---- 3D Mesh drawing ----------------------------------------------------
     virtual void DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params,
                           const float* vertexData, size_t vertexCount, size_t vertexStride,

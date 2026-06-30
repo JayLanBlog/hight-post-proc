@@ -50,6 +50,7 @@ public:
 
     // ---- Fullscreen quad ---------------------------------------------------
     void DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params) override;
+    void DrawToScreen(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params, TextureHandle inputTex) override;
 
     // ---- 3D Mesh drawing ----------------------------------------------------
     void DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderParams& params,
