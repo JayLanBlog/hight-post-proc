@@ -330,7 +330,8 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     if(!be||m_currentIndex>=m_totalEffects)return;
     auto&fx=m_effects[m_currentIndex];
     if(!m_sharedVert.id)return;
-    if(!fx.fragShader.id) {
+    // Only load single-pass shader for old-path effects; multi-pass handles its own
+    if(fx.passes.empty() && !fx.fragShader.id) {
         auto fd = ReadSPIRV(fx.fragShaderPath.c_str());
         if(!fd.empty()) fx.fragShader = be->CreateFragmentShader(fd.data(), fd.size());
         if(!fx.fragShader.id) return; // keep retrying each frame
@@ -406,13 +407,13 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
             
             if (pass.isOutput) {
                 // Final pass: render to screen
-                passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : std::vector<TextureHandle>{};
+                passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : p.inputTextures;
                 be->DrawToScreen(m_sharedVert, pass.fragShaderHandle, passParams, prevRT);
             } else {
                 // Intermediate pass: render to RT
                 TextureHandle rt = m_rtPool.Acquire(pw, ph);
                 be->BeginRenderToTexture(rt);
-                passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : std::vector<TextureHandle>{};
+                passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : p.inputTextures;
                 be->DrawFullscreenQuad(m_sharedVert, pass.fragShaderHandle, passParams);
                 be->EndRenderToTexture();
                 if (prevRT.id) m_rtPool.Release(prevRT);
