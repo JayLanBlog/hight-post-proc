@@ -101,7 +101,23 @@ static std::vector<AUS3DEffect> BuildEffects() {
     }
     add("油画特效",  "Vol.10 OilPaint",     "aus3d/v10_oil_paint.frag.spv", {0.5f,1.0f},{"半径","强度"},{0.1f,0.2f},{1.0f,3.0f});
     add("像素化",    "Vol.11 Pixelate",     "aus3d/v11_pixelate.frag.spv", {0.5f,1.0f},{"像素数","比例"},{0.1f,0.5f},{1.0f,2.0f});
-    add("高斯模糊",  "Vol.15 GaussianBlur", "aus3d/v15_gaussian_blur.frag.spv", {1.0f},{"强度"},{0.1f},{5.0f});
+    // 高斯模糊: 3Pass降采样+分离高斯
+    {
+        AUS3DEffect fx;
+        fx.name = "高斯模糊";
+        fx.description = "3Pass: 降采样1/4 + 垂直7tap高斯 + 水平7tap高斯";
+        fx.use3DGeometry = false;
+        fx.passes = {
+            {"aus3d/v15_pass0_downsample.frag.spv", 960, 540, false},   // Pass0: 降采样到960x540
+            {"aus3d/v15_pass1_blur_v.frag.spv", 960, 540, false},       // Pass1: 垂直模糊
+            {"aus3d/v15_pass2_blur_h.frag.spv", 0, 0, true},            // Pass2: 水平模糊→屏幕
+        };
+        fx.defaultValues = {1.0f};
+        fx.paramLabels = {"强度"};
+        fx.paramMin = {0.1f};
+        fx.paramMax = {5.0f};
+        out.push_back(fx);
+    }
     // --- Vol.04 剔除/背面 ---
     add("背面渲染",  "Vol.04 CullFront",    "aus3d/v04_cull_front.frag.spv");
     add("顶点透明",  "Vol.04 VertexAlpha",  "aus3d/v04_vertex_alpha.frag.spv", {0.3f,0.2f,0.8f,1.0f},{"阈值","R","G","B"},{0.0f,0,0,0},{0.9f,1,1,1});
