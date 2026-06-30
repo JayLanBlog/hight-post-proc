@@ -214,13 +214,17 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
         TextureHandle prevRT = {0};
         for (size_t i = 0; i < fx.passes.size(); i++) {
             auto& pass = fx.passes[i];
-            // Load shader for this pass
-            ShaderHandle passShader = {0};
-            auto fd = ReadSPIRV(pass.fragShader.c_str());
-            if (!fd.empty()) {
-                passShader = be->CreateFragmentShader(fd.data(), fd.size());
+            // Load shader for this pass (lazy, cached)
+            if (!pass.fragShaderHandle.id) {
+                auto fd = ReadSPIRV(pass.fragShader.c_str());
+                if (!fd.empty()) {
+                    pass.fragShaderHandle = be->CreateFragmentShader(fd.data(), fd.size());
+                }
             }
-            if (!passShader.id) continue;
+            if (!pass.fragShaderHandle.id) {
+                fprintf(stderr, "[AUS3D] Pass %zu shader failed: %s\n", i, pass.fragShader.c_str());
+                continue;
+            }
             
             ShaderParams passParams = p;
             int pw = pass.targetWidth > 0 ? pass.targetWidth : p.viewportWidth;
@@ -231,13 +235,13 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
             if (pass.isOutput) {
                 // Final pass: render to screen
                 passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : std::vector<TextureHandle>{};
-                be->DrawToScreen(m_sharedVert, passShader, passParams, prevRT);
+                be->DrawToScreen(m_sharedVert, pass.fragShaderHandle, passParams, prevRT);
             } else {
                 // Intermediate pass: render to RT
                 TextureHandle rt = m_rtPool.Acquire(pw, ph);
                 be->BeginRenderToTexture(rt);
                 passParams.inputTextures = prevRT.id ? std::vector<TextureHandle>{prevRT} : std::vector<TextureHandle>{};
-                be->DrawFullscreenQuad(m_sharedVert, passShader, passParams);
+                be->DrawFullscreenQuad(m_sharedVert, pass.fragShaderHandle, passParams);
                 be->EndRenderToTexture();
                 if (prevRT.id) m_rtPool.Release(prevRT);
                 prevRT = rt;

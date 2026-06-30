@@ -11,10 +11,11 @@
 class Application;
 
 struct AUS3DPass {
-    std::string fragShader;   // SPIR-V路径
-    int targetWidth = 0;      // 0=全屏, N=降采样宽度
-    int targetHeight = 0;     // 0=全屏, N=降采样高度
-    bool isOutput = false;    // 最后一个Pass输出到屏幕
+    std::string fragShader;             // SPIR-V路径
+    int targetWidth = 0;                // 0=全屏, N=降采样宽度
+    int targetHeight = 0;               // 0=全屏, N=降采样高度
+    bool isOutput = false;              // 最后一个Pass输出到屏幕
+    ShaderHandle fragShaderHandle = {0}; // 懒加载缓存,避免每帧重建
 };
 
 struct AUS3DEffect {
