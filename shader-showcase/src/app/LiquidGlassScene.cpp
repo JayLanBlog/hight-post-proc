@@ -141,12 +141,17 @@ void LiquidGlassScene::OnRender(IRenderBackend* be) {
     }
 
     // === Stage 2: 高斯模糊 ===
+    // 参考: BlurPass::Run 首次迭代使用输入FBO全分辨率作为u_resolution
     if (m_blurIters > 0) {
         for (int i = 0; i < m_blurIters; i++) {
+            // 首次迭代: uRes=全分辨率(fw,fh) 匹配参考 fb(1600x900)
+            // 后续迭代: uRes=降采样(bw,bh) 匹配参考 blurFinal(800x450)
+            int resW = (i == 0) ? fw : bw;
+            int resH = (i == 0) ? fh : bh;
             // 水平 pass
             {
                 ShaderParams p;
-                p.viewportWidth = bw; p.viewportHeight = bh;
+                p.viewportWidth = resW; p.viewportHeight = resH;
                 p.inputTextures = {(i == 0) ? m_rtA : m_rtC};
                 p.uniformFloats = {m_blurRadius, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
                 be->BeginRenderToTexture(m_rtB);
@@ -156,7 +161,7 @@ void LiquidGlassScene::OnRender(IRenderBackend* be) {
             // 垂直 pass
             {
                 ShaderParams p;
-                p.viewportWidth = bw; p.viewportHeight = bh;
+                p.viewportWidth = resW; p.viewportHeight = resH;
                 p.inputTextures = {m_rtB};
                 p.uniformFloats = {0.0f, m_blurRadius, 0.0f, 0.0f, 0.0f, 0.0f};
                 be->BeginRenderToTexture(m_rtC);
@@ -225,7 +230,7 @@ void LiquidGlassScene::OnImGui() {
         ImGui::SliderFloat("Power", &m_powerFactor, 1.001f, 6.0f);
         ImGui::SliderFloat("Scale X", &m_glassScaleX, 1.0f, 20.0f);
         ImGui::SliderFloat("Scale Y", &m_glassScaleY, 1.0f, 20.0f);
-        if (ImGui::Button("Reset Size")) { m_glassScaleX = 7.62f; m_glassScaleY = 4.29f; }
+        if (ImGui::Button("Reset Size")) { m_glassScaleX = 4.286f; m_glassScaleY = 2.411f; }
     }
 
     if (ImGui::CollapsingHeader("Blur & Noise")) {

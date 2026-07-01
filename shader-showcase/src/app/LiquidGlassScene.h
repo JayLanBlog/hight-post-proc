@@ -54,9 +54,10 @@ private:
     float m_glowEdge0 = 0.5f;
     float m_glowEdge1 = -0.5f;
     // 玻璃尺寸 (参考: ortho=15.0, quad=3.5x3.5)
-    // scale = ortho_half / quad_half = 7.5/1.75=4.286, 乘aspect=7.62
-    float m_glassScaleX = 7.62f;
-    float m_glassScaleY = 4.29f;
+    // NDC_half = quad_half / ortho_half = 1.75/7.5=0.2333(X), 1.75/4.219=0.4148(Y)
+    // scale = 1/NDC_half = 4.286(X), 2.411(Y)
+    float m_glassScaleX = 4.286f;
+    float m_glassScaleY = 2.411f;
 
     bool m_wantsReturn = false;
     float m_elapsedTime = 0.0f;
