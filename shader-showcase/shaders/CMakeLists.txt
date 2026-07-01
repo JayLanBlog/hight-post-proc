@@ -215,3 +215,26 @@ add_custom_target(CompileAUS3DShaders ALL
     DEPENDS ${AUS3D_VERT_SPV} ${AUS3D_SPV_LIST}
     COMMENT "Compiling AUS 3D shaders"
 )
+
+# -------------------------------------------------------------------
+# LiquidGlass shaders
+# -------------------------------------------------------------------
+file(GLOB LG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/liquid_glass/*.frag")
+set(LG_SPV_LIST)
+foreach(LG_FILE ${LG_SOURCES})
+    get_filename_component(LG_NAME ${LG_FILE} NAME_WE)
+    set(LG_SPV "${SHADER_OUTPUT_DIR}/liquid_glass/${LG_NAME}.frag.spv")
+    add_custom_command(
+        OUTPUT ${LG_SPV}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}/liquid_glass"
+        COMMAND ${GLSLANG_VALIDATOR} -V "${LG_FILE}" -o "${LG_SPV}"
+        DEPENDS ${LG_FILE}
+        COMMENT "Compiling ${LG_NAME}.frag -> SPIR-V"
+    )
+    list(APPEND LG_SPV_LIST ${LG_SPV})
+endforeach()
+
+add_custom_target(CompileLiquidGlassShaders ALL
+    DEPENDS ${LG_SPV_LIST}
+    COMMENT "Compiling LiquidGlass shaders"
+)

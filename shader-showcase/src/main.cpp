@@ -4,6 +4,7 @@
 #include "app/Application.h"
 #include "app/CoverFlowScene.h"
 #include "app/AUS3DScene.h"
+#include "app/LiquidGlassScene.h"
 #include "app/SceneRegistry.h"
 #include "app/SceneGalleryScene.h"
 #include "render/IRenderBackend.h"
@@ -278,6 +279,22 @@ int main(int argc, char* argv[]) {
             "assets/images/00_grayscale_landscape.jpg",
             [be, &app]() -> std::unique_ptr<Scene> {
                 auto s = std::make_unique<AUS3DScene>();
+                s->SetBackend(be);
+                s->SetApplication(&app);
+                return s;
+            },
+            true
+        });
+
+        // Register LiquidGlass page
+        SceneRegistry::Instance().Register({
+            "liquid-glass",
+            "Liquid Glass",
+            "特效",
+            "Apple Liquid Glass 风格玻璃效果 — 超椭圆SDF折射+高斯模糊+发光",
+            "assets/images/00_grayscale_landscape.jpg",
+            [be, &app]() -> std::unique_ptr<Scene> {
+                auto s = std::make_unique<LiquidGlassScene>();
                 s->SetBackend(be);
                 s->SetApplication(&app);
                 return s;

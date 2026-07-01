@@ -165,6 +165,8 @@ set(SRC_FILES
     src/app/SceneRegistry.h
     src/app/SceneGalleryScene.cpp
     src/app/SceneGalleryScene.h
+    src/app/LiquidGlassScene.cpp
+    src/app/LiquidGlassScene.h
     src/render/BackendType.h
     src/render/FullscreenQuad.cpp
     src/render/FullscreenQuad.h
