@@ -48,7 +48,7 @@ static std::vector<AUS3DEffect> BuildEffects() {
     add("DIAG_Light发光","光照方向验证",     "aus3d/diag_light.frag.spv");
     add("TEST纯白",  "最小管线-无绑定", "aus3d/test_white.frag.spv");
     add("TEST后处理","灰度化后处理3D球", "aus3d/diag_post.frag.spv", {1.0f},{"亮度"});
-    add("TEST单色",  "有UBO无纹理",     "aus3d/v02_solid.frag.spv", {0.8f,0.3f,0.1f},{"R","G","B"});
+    add("TEST单色",  "有UBO无纹理",     "aus3d/v02_solid.frag.spv");
     // 凹凸边缘光: 噪声纹理法线扰动
     {
         AUS3DEffect fx;
@@ -64,7 +64,7 @@ static std::vector<AUS3DEffect> BuildEffects() {
         out.push_back(fx);
     }
     add("基础单色",  "Vol.02 Solid(绿)",  "aus3d/v02_solid.frag.spv", {0.2f,0.7f,0.3f},{"R","G","B"});
-    add("漫反射纹理","Vol.02 DiffuseTex", "aus3d/v02_diffuse_tex.frag.spv", {1},{"亮度"});
+    add("漫反射纹理","Vol.02 DiffuseTex", "aus3d/v02_diffuse_tex.frag.spv", {2.0f,0.5f,0.4f},{"密度","R","G"});
     // 卡通渐变: Ramp纹理
     {
         AUS3DEffect fx;
@@ -80,8 +80,8 @@ static std::vector<AUS3DEffect> BuildEffects() {
         out.push_back(fx);
     }
     add("半兰伯特",  "Vol.07 HalfLambert","aus3d/v07_halflambert.frag.spv", {1},{"亮度"});
-    add("镜面高光",  "Vol.07 Specular",   "aus3d/v07_specular.frag.spv", {0.6f,32},{"强度","光泽"},{0,1},{1,128});
-    add("边缘发光",  "Vol.14 Rim",        "aus3d/v14_rim.frag.spv", {3,0,1,1},{"强度","R","G","B"});
+    add("镜面高光",  "Vol.07 Specular",   "aus3d/v07_specular.frag.spv", {0.6f},{"强度"});
+    add("边缘发光",  "Vol.14 Rim",        "aus3d/v14_rim.frag.spv", {0.1f,0.5f,0.5f,0.5f},{"边缘指数","R","G","B"});
     // 车漆MatCap: MatCap纹理采样
     {
         AUS3DEffect fx;
@@ -95,15 +95,26 @@ static std::vector<AUS3DEffect> BuildEffects() {
         out.push_back(fx);
     }
     // --- Vol.12 可编程Shader初步 ---
-    add("简单基础色","Vol.12 SimpleShader", "aus3d/v12_simple.frag.spv", {0.4f,0.7f,1.0f},{"R","G","B"});
-    add("变色偏移",  "Vol.12 ColorChange",  "aus3d/v12_color_change.frag.spv", {0.0f},{"偏移"});
-    add("标准漫反射","Vol.12 Diffuse",      "aus3d/v12_diffuse.frag.spv", {1.0f,0.8f,0.6f},{"R","G","B"});
-    add("棋盘纹理",  "Vol.12 DiffuseTex",   "aus3d/v12_diffuse_tex.frag.spv", {1.0f,0.8f,0.3f},{"密度","R","G"});
+    add("简单基础色","Vol.12 SimpleShader", "aus3d/v12_simple.frag.spv", {0.0f,0.6f,0.8f},{"R","G","B"});
+    add("变色偏移",  "Vol.12 ColorChange",  "aus3d/v12_color_change.frag.spv", {1.0f,1.0f,1.0f},{"R","G","B"});
+    add("标准漫反射","Vol.12 Diffuse",      "aus3d/v12_diffuse.frag.spv", {1.0f,1.0f,1.0f},{"R","G","B"});
+    add("棋盘纹理",  "Vol.12 DiffuseTex",   "aus3d/v12_diffuse_tex.frag.spv", {1.0f,1.0f,0.8f},{"密度","R","G"});
     add("RGB立方体",  "Vol.12 RGB Cube",    "aus3d/v12_rgb_cube.frag.spv");
     add("透明立方体", "Vol.13 Alpha Cube",  "aus3d/v13_alpha_cube.frag.spv", {0.35f},{"透明度"});
     add("双面立方体", "Vol.13 TwoSide",     "aus3d/v13_twoside_cube.frag.spv", {0.9f},{"透明度"});
     // --- Vol.13 透明Shader ---
-    add("透明球体",  "Vol.13 SimpleAlpha",  "aus3d/v13_simple_alpha.frag.spv", {0.5f},{"透明度"});
+    // 透明球体: Blend SrcAlpha SrcAlpha (参考: SimpleAlphaShader)
+    {
+        AUS3DEffect fx;
+        fx.name = "透明球体";
+        fx.description = "Vol.13 SimpleAlpha";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v13_simple_alpha.frag.spv";
+        fx.blendSrcAlpha = true;  // Blend SrcAlpha SrcAlpha
+        fx.defaultValues = {0.6f};
+        fx.paramLabels = {"透明度"};
+        out.push_back(fx);
+    }
     add("可调色透明","Vol.13 ColorAlpha",   "aus3d/v13_color_alpha.frag.spv", {0.9f,0.1f,0.1f,0.5f},{"R","G","B","透明度"});
     // --- Vol.04 剔除/深度/Alpha测试 ---
     add("玻璃球体",  "Vol.04 Glass",        "aus3d/v04_glass.frag.spv", {0.5f},{"透明度"});
@@ -121,8 +132,19 @@ static std::vector<AUS3DEffect> BuildEffects() {
         fx.paramLabels = {"混合度"};
         out.push_back(fx);
     }
-    add("自发光球",  "Vol.03 Emissive",     "aus3d/v03_emissive.frag.spv", {0.0f,0.5f,1.0f,0.3f},{"R","G","B","强度"});
-    add("纹理全组合","Vol.03 FullCombo",    "aus3d/v03_full_combo.frag.spv", {0.0f,0.5f,1.0f,0.3f},{"R","G","B","强度"});
+    add("自发光球",  "Vol.03 Emissive",     "aus3d/v03_emissive.frag.spv");
+        // 纹理全组合: 需要auxTextures (噪声纹理)
+    {
+        AUS3DEffect fx;
+        fx.name = "纹理全组合";
+        fx.description = "Vol.03 FullCombo";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v03_full_combo.frag.spv";
+        fx.auxTextures = {"noise_64"};
+        fx.defaultValues = {0.0f, 0.0f, 0.0f};
+        fx.paramLabels = {"自发光R", "自发光G", "自发光B"};
+        out.push_back(fx);
+    }
     // --- Vol.05 混合模式+玻璃 ---
     add("乘法混合",  "Vol.05 BlendMultiply", "aus3d/v05_blend_multiply.frag.spv");
     // 玻璃v2: use3DGeometry=true (保留光追球体)
@@ -157,28 +179,26 @@ static std::vector<AUS3DEffect> BuildEffects() {
         fx.passes = {
             {"aus3d/v08_post_radial.frag.spv", 0, 0, true},
         };
-        fx.defaultValues = {0.5f, 8};
-        fx.paramLabels = {"强度", "采样"};
-        fx.paramMin = {0, 1};
-        fx.paramMax = {2, 32};
+        fx.defaultValues = {0.5f, 16, 0.5f, 0.5f};
+        fx.paramLabels = {"强度", "采样", "中心X", "中心Y"};
+        fx.paramMin = {0, 1, 0, 0};
+        fx.paramMax = {2, 32, 1, 1};
         out.push_back(fx);
     }
-    // 水幕特效: 3Pass多Pass渲染
+    // 水幕特效: 全屏后处理, 水滴纹理UV扭曲 (与 Awesome-Unity-Shader Vol.09 完全一致)
     {
         AUS3DEffect fx;
         fx.name = "水幕特效";
-        fx.description = "水滴纹理多层采样+UV偏移折射+背景涟漪";
+        fx.description = "屏幕水幕特效: 三层水滴纹理UV扭曲";
         fx.use3DGeometry = false;
         fx.passes = {
-            {"aus3d/v09_pass0_drop.frag.spv", 0, 0, false},       // Pass0: 水滴纹理→UV偏移
-            {"aus3d/v09_pass1_sphere.frag.spv", 0, 0, false},     // Pass1: 偏移UV球体渲染
-            {"aus3d/v09_pass2_composite.frag.spv", 0, 0, true},   // Pass2: 输出到屏幕
+            {"aus3d/v09_pass0_drop.frag.spv", 0, 0, true},  // 单Pass后处理: 水滴UV扭曲→屏幕
         };
         fx.auxTextures = {"assets/textures/aus3d/water_drop.png"};
-        fx.defaultValues = {1.0f, 1.0f}; // speed, distortion
-        fx.paramLabels = {"速度", "扭曲强度"};
-        fx.paramMin = {0.0f, 0.0f};
-        fx.paramMax = {2.0f, 2.0f};
+        fx.defaultValues = {3.6f, 8.0f, 1.0f, 0.5f}; // _DropSpeed, _Distortion, _SizeX, _SizeY
+        fx.paramLabels = {"流速", "扭曲强度", "X尺寸", "Y尺寸"};
+        fx.paramMin = {0.0f, 5.0f, 0.0f, 0.0f};
+        fx.paramMax = {10.0f, 64.0f, 7.0f, 7.0f};
         out.push_back(fx);
     }
     // 油画特效: 后处理
@@ -230,10 +250,10 @@ static std::vector<AUS3DEffect> BuildEffects() {
     }
     // --- Vol.04 剔除/背面 ---
     add("背面渲染",  "Vol.04 CullFront",    "aus3d/v04_cull_front.frag.spv");
-    add("顶点透明",  "Vol.04 VertexAlpha",  "aus3d/v04_vertex_alpha.frag.spv", {0.3f,0.2f,0.8f,1.0f},{"阈值","R","G","B"},{0.0f,0,0,0},{0.9f,1,1,1});
+    add("顶点透明",  "Vol.04 VertexAlpha",  "aus3d/v04_vertex_alpha.frag.spv", {0.3f},{"阈值"},{0.0f},{0.9f});
     add("植被效果",  "Vol.04 Vegetation",   "aus3d/v04_vegetation.frag.spv", {0.2f},{"裁剪阈值"},{0.0f},{0.9f});
     // --- Vol.05 可编程Shader ---
-    add("可编程管线","Vol.05 Programmable", "aus3d/v05_programmable.frag.spv", {0.8f,0.3f,0.2f,32.0f,0.5f},{"R","G","B","光泽","高光"},{0,0,0,1,0},{1,1,1,128,1});
+    add("可编程管线","Vol.05 Programmable", "aus3d/v05_programmable.frag.spv", {1.0f,1.0f,1.0f,10.0f,1.0f},{"R","G","B","光泽","高光"},{0,0,0,1,0},{1,1,1,128,1});
     // --- Vol.06 SurfaceShader概念 ---
     // 细节纹理: 噪声叠加
     {
@@ -245,7 +265,18 @@ static std::vector<AUS3DEffect> BuildEffects() {
         fx.auxTextures = {"noise_64"};
         out.push_back(fx);
     }
-    add("凹凸全组合","Vol.06 FullCombo",    "aus3d/v06_full_combo.frag.spv", {0.6f,0.3f,0.6f,0.26f,3.0f},{"R","G","B","边缘色","强度"});
+    // 凹凸全组合: 噪声纹理 + 凹凸 + 边缘光 + 细节
+    {
+        AUS3DEffect fx;
+        fx.name = "凹凸全组合";
+        fx.description = "Vol.06 FullCombo with noise detail texture";
+        fx.use3DGeometry = true;
+        fx.fragShaderPath = "aus3d/v06_full_combo.frag.spv";
+        fx.auxTextures = {"noise_64"};
+        fx.defaultValues = {0.6f,0.3f,0.6f,0.26f,0.19f,0.16f};
+        fx.paramLabels = {"R","G","B","边缘R","边缘G","边缘B"};
+        out.push_back(fx);
+    }
     return out;
 }
 
@@ -291,6 +322,13 @@ void AUS3DScene::OnEnter() {
     m_fpsLastTime=std::chrono::high_resolution_clock::now();
     m_texManager = std::make_unique<TextureManager>(m_backend);
     m_rtPool.backend = m_backend;
+    // 加载后处理输入用的风景图片
+    m_sceneBgTex = m_texManager->LoadTexture("assets/textures/aus3d/scene_bg.png");
+    if (m_sceneBgTex.id) {
+        printf("[AUS3D] Scene background loaded (id=%d)\n", m_sceneBgTex.id);
+    } else {
+        printf("[AUS3D] WARNING: Scene background not found, post-processing will have no input\n");
+    }
     LoadShaders();
     // NOTE: LoadShaders pre-loads the vertex shader only;
     // fragment shaders are loaded on first OnRender() pass
@@ -309,7 +347,9 @@ void AUS3DScene::LoadShaders() {
 }
 void AUS3DScene::NavigateTo(int i){if(i>=0&&i<m_totalEffects)m_currentIndex=i;}
 
-void AUS3DScene::OnUpdate(float) {
+void AUS3DScene::OnUpdate(float dt) {
+    m_elapsedTime += dt;
+    m_totalFrameCount++;
     ImGuiIO&io=ImGui::GetIO();
     if(ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) NavigateTo((m_currentIndex+m_totalEffects-1)%m_totalEffects);
     if(ImGui::IsKeyPressed(ImGuiKey_RightArrow)) NavigateTo((m_currentIndex+1)%m_totalEffects);
@@ -347,6 +387,8 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     float cz=m_camRadius*cosf(m_camPhi)*cosf(m_camTheta);
     float id[16]={1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
     ShaderParams p;
+    p.time = m_elapsedTime;
+    p.frameCount = m_totalFrameCount;
     // Use actual framebuffer size, not default 1280x720
     { int fw=1280,fh=720; be->GetFramebufferSize(fw,fh); p.viewportWidth=fw; p.viewportHeight=fh; }
     p.inputTextures.push_back(m_defaultTex);
@@ -376,8 +418,14 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     // Enable alpha blending for transparent effects
     if (fx.name.find("透明") != std::string::npos || fx.name.find("玻璃") != std::string::npos
         || fx.name.find("Alpha") != std::string::npos || fx.name.find("顶点") != std::string::npos
-        || fx.name.find("植被") != std::string::npos) p.blendEnable = true;
-    be->Clear(0.05f,0.05f,0.08f,1);
+        || fx.name.find("植被") != std::string::npos) {
+        p.blendEnable = true;
+        if (fx.blendSrcAlpha) {
+            p.srcColorBlendFactor = 0;  // SRC_ALPHA
+            p.dstColorBlendFactor = 0;  // SRC_ALPHA (Blend SrcAlpha SrcAlpha)
+        }
+    }
+    be->Clear(0.25f,0.25f,0.30f,1);
     // Check if effect has multi-pass configuration
     if (fx.passes.empty()) {
         // Old path: single-pass ray-traced sphere
@@ -385,6 +433,14 @@ void AUS3DScene::OnRender(IRenderBackend* be) {
     } else {
         // New path: multi-pass sequence
         TextureHandle prevRT = {0};
+
+        // 后处理效果预渲染: 使用风景图片作为后处理输入 (与项目11一致: 全屏2D特效)
+        if (!fx.use3DGeometry && fx.passes.size() == 1) {
+            if (m_sceneBgTex.id != 0) {
+                prevRT = m_sceneBgTex;  // 直接使用预加载的风景图片
+            }
+        }
+
         for (size_t i = 0; i < fx.passes.size(); i++) {
             auto& pass = fx.passes[i];
             // Load shader for this pass (lazy, cached)

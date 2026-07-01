@@ -1310,6 +1310,8 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
     cacheKey ^= (desc.useVertexInput ? (1ULL << 60) : 0);
     cacheKey ^= (desc.blendEnable ? (1ULL << 59) : 0);
+    cacheKey ^= (uint64_t(desc.srcColorBlendFactor) << 57);
+    cacheKey ^= (uint64_t(desc.dstColorBlendFactor) << 58);
     cacheKey ^= (uint64_t(renderPass) >> 3);  // pointer as hash (shift to drop alignment bits)
 
     // Check cache
@@ -1433,8 +1435,11 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
                                           VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     if (desc.blendEnable) {
         colorBlendAttachment.blendEnable = VK_TRUE;
-        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        // Map blend factor: 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
+        VkBlendFactor srcBF = (desc.srcColorBlendFactor == 0) ? VK_BLEND_FACTOR_SRC_ALPHA : VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        VkBlendFactor dstBF = (desc.dstColorBlendFactor == 0) ? VK_BLEND_FACTOR_SRC_ALPHA : VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.srcColorBlendFactor = srcBF;
+        colorBlendAttachment.dstColorBlendFactor = dstBF;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -1561,6 +1566,8 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     desc.width = params.viewportWidth;
     desc.height = params.viewportHeight;
     desc.blendEnable = params.blendEnable;
+    desc.srcColorBlendFactor = params.srcColorBlendFactor;
+    desc.dstColorBlendFactor = params.dstColorBlendFactor;
 
     PipelineHandle pipeHandle = CreatePipeline(desc);
     if (pipeHandle.id == 0) return;
@@ -1706,7 +1713,10 @@ void VulkanBackend::DrawToScreen(ShaderHandle vert, ShaderHandle frag, const Sha
     }
 
     ShaderParams screenParams = params;
-    screenParams.inputTextures = {inputTex};
+    if (inputTex.id) {
+        screenParams.inputTextures = {inputTex};
+    }
+    // else: keep params.inputTextures as-is (e.g., default texture for first pass)
     DrawFullscreenQuad(vert, frag, screenParams);
 }
 

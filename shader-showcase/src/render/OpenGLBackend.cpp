@@ -668,7 +668,10 @@ void OpenGLBackend::DrawToScreen(ShaderHandle vert, ShaderHandle frag, const Sha
     }
 
     ShaderParams screenParams = params;
-    screenParams.inputTextures = {inputTex};
+    if (inputTex.id) {
+        screenParams.inputTextures = {inputTex};
+    }
+    // else: keep params.inputTextures as-is
     DrawFullscreenQuad(vert, frag, screenParams);
 }
 

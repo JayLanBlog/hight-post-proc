@@ -1,4 +1,6 @@
 #version 460
+// Vol.02-1 基础单色: 纯蓝色，无光照，无属性
+// Reference: Volume 02 1.基础单色Shader — Color(0,0,0.6,0)
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
@@ -13,7 +15,6 @@ void main(){
     float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
-    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
-    float ndl=dot(N,L)*0.5+0.5;
-    outColor=vec4(vec3(P0,P1,P2)*ndl,1);
+    // Reference: Color(0,0,0.6,0) — 纯蓝色，无光照
+    outColor=vec4(0.0,0.0,0.6,1.0);
 }

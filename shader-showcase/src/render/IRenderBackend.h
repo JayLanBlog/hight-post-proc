@@ -17,6 +17,8 @@ struct PipelineDesc {
     int height;
     bool blendEnable = true;
     bool useVertexInput = false;  // true for DrawMesh (3D), false for DrawFullscreenQuad
+    int32_t srcColorBlendFactor = 0;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
+    int32_t dstColorBlendFactor = 1;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
 };
 
 // ---------------------------------------------------------------------------
@@ -40,6 +42,8 @@ struct ShaderParams {
     std::vector<float> eyePos;        // vec3 (3 floats)
 
     bool blendEnable = false;      // enables alpha blending (for transparent effects)
+    int32_t srcColorBlendFactor = 0;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
+    int32_t dstColorBlendFactor = 1;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
 };
 
 // ---------------------------------------------------------------------------

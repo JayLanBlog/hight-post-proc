@@ -30,6 +30,7 @@ struct AUS3DEffect {
     std::vector<AUS3DPass> passes;        // 新增: Pass序列 (空=旧路径单Pass)
     std::vector<std::string> auxTextures; // 新增: 辅助纹理路径
     bool use3DGeometry = true;            // 新增: 是否保留光追球体
+    bool blendSrcAlpha = false;           // 新增: Blend SrcAlpha SrcAlpha (vs 默认SrcAlpha OneMinusSrcAlpha)
 };
 
 class TextureManager {
@@ -153,8 +154,11 @@ private:
     float m_fpsDisplay = 0;
     std::chrono::high_resolution_clock::time_point m_fpsLastTime{};
     int m_fpsFrameCount = 0;
+    float m_elapsedTime = 0.0f;
+    uint32_t m_totalFrameCount = 0;
 
     TextureHandle m_defaultTex = {0};
+    TextureHandle m_sceneBgTex = {0};  // 后处理输入用的风景图片
 
     std::unique_ptr<TextureManager> m_texManager;
     RTPool m_rtPool;

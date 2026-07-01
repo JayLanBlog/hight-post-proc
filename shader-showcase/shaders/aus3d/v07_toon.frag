@@ -1,5 +1,6 @@
 #version 460
 // Vol.07 Toon: Ramp纹理卡通渐变
+// Reference: color.rgb = s.Albedo * _LightColor0.rgb * ramp * (atten * 2)
 // binding=2: Ramp纹理 (程序化生成)
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=2) uniform sampler2D uAuxTex; // Ramp纹理
@@ -17,8 +18,11 @@ void main(){
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
-    float ndl=dot(N,L)*0.5+0.5;
-    // Ramp纹理采样替代色阶
-    vec3 rampColor = texture(uAuxTex, vec2(ndl, 0.5)).rgb;
-    outColor = vec4(rampColor * uLightColor, 1.0);
+    // Reference: NdotL * 0.5 + 0.5 → ramp texture lookup
+    float diff = max(dot(N, L), 0.0) * 0.5 + 0.5;
+    vec3 ramp = texture(uAuxTex, vec2(diff, diff)).rgb;
+    // Reference: o.Albedo * _LightColor0.rgb * ramp * (atten * 2)
+    vec3 albedo = vec3(0.8, 0.75, 0.65); // base albedo
+    vec3 col = albedo * uLightColor * ramp * 2.0;
+    outColor = vec4(col, 1.0);
 }

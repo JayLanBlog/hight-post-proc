@@ -1,7 +1,9 @@
 #version 460
 // Vol.06-32 FullCombo: bump + rim + detail texture + color tint
+// Reference: Surface Shader Lambert + finalcolor tint + bump + detail*2 + rim emission
+//            o.Emission = _RimColor.rgb * pow(rim, _RimPower), rim = 1.0 - saturate(dot(viewDir, N))
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
-layout(binding=2) uniform sampler2D uAuxTex; // 细节纹理
+layout(binding=2) uniform sampler2D uAuxTex;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
     vec3 uLightDir; float _p0; vec3 uLightColor; float _p1; vec3 uEyePos; float _p2;
@@ -27,19 +29,25 @@ void main(){
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);
     vec2 suv=vec2(atan(P.z,P.x)*0.1591549+0.5,acos(clamp(P.y,-1.0,1.0))*0.3183099);
-    vec3 baseTex=tex(suv,4.0);vec3 detailTex=tex(suv,16.0)*2.0;
-    vec3 albedo=baseTex*detailTex; // main + detail overlay
-    vec3 detail=texture(uAuxTex,suv*5.0).rgb;
-    albedo*=(detail*1.5+0.5); // detailTex叠加
-    vec3 Nbp=bumpNormal(N,P); // perturbed normal
+    // Reference: o.Albedo = tex2D(_MainTex, uv).rgb; o.Albedo *= tex2D(_Detail, uv).rgb * 2;
+    vec3 baseTex=tex(suv,4.0);
+    vec3 detailTex=tex(suv,16.0)*2.0;
+    vec3 albedo=baseTex*detailTex;
+    // Bump normal perturbation
+    vec3 Nbp=bumpNormal(N,P);
     vec3 L=normalize(uLightDir);
-    float ndl=dot(Nbp,L)*0.5+0.5;
-    vec3 col=albedo*mix(0.15,1.0,ndl)*uLightColor;
-    vec3 tint=vec3(P0,P1,P2); // color tint
+    // Lambert lighting
+    float ndl=max(dot(Nbp,L),0.0);
+    vec3 ambient=vec3(0.15);
+    vec3 diffuse=albedo*uLightColor*ndl;
+    vec3 col=diffuse+albedo*ambient;
+    // Reference: finalcolor tint → color *= _ColorTint
+    vec3 tint=vec3(P0,P1,P2);
     col*=tint;
-    // Rim light
-    float rim=1.0-abs(dot(Nbp,V));
-    vec3 rimCol=vec3(P3,0.15,0.1)*pow(rim,P4);
+    // Reference: o.Emission = _RimColor.rgb * pow(rim, _RimPower)
+    // rim = 1.0 - saturate(dot(viewDir, N)) (NOT abs!)
+    float rim=1.0-clamp(dot(Nbp,V),0.0,1.0);
+    vec3 rimCol=vec3(P3,P4,P5)*pow(rim,3.0);
     col+=rimCol;
     outColor=vec4(col,1);
 }

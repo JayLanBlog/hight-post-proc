@@ -1,5 +1,8 @@
 #version 460
-// Vol.03-8 Alpha+Emission: texture with self-illumination glow
+// Vol.03-8 Alpha+Emission: 纹理Alpha通道作自发光遮罩
+// Reference: Material Diffuse(1,1,1,1) Ambient(1,1,1,1), Lighting On
+//            constantColor(1,1,1,1), combine constant lerp(texture) previous
+//            combine previous * texture
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(binding=0) uniform sampler2D uInputTex;
 layout(std140, binding=1) uniform Params {
@@ -17,8 +20,16 @@ void main(){
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
     vec2 suv=vec2(atan(P.z,P.x)*0.1591549+0.5,acos(clamp(P.y,-1.0,1.0))*0.3183099);
-    vec3 tex=texture(uInputTex,suv).rgb;
-    float ndl=dot(N,L)*0.5+0.5;
-    vec3 emissive=vec3(P0,P1,P2)*P3; // emission color * intensity
-    outColor=vec4(tex*ndl*uLightColor+emissive,1);
+    vec4 tex=texture(uInputTex,suv); // RGB=纹理颜色, A=自发光遮罩
+    // Reference: Material Diffuse(1,1,1,1) Ambient(1,1,1,1), Lighting On
+    // constantColor(1,1,1,1), combine constant lerp(texture) previous
+    float ndl=max(dot(N,L),0.0);
+    vec3 ambient=vec3(1.0); // Reference: Ambient(1,1,1,1)
+    vec3 diffuse=uLightColor*ndl;
+    vec3 vertexLight=ambient+diffuse;
+    // lerp between vertexLight and white (1,1,1) using texAlpha
+    vec3 result=mix(vertexLight,vec3(1.0),tex.a);
+    // multiply by texture color
+    result=result*tex.rgb;
+    outColor=vec4(result,1.0);
 }

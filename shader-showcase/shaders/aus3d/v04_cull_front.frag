@@ -1,5 +1,7 @@
 #version 460
-// Vol.04-12 CullFront: render only back faces of sphere (inside-out view)
+// Vol.04-12 CullFront: 渲染物体背面，顶点光照
+// Reference: Volume 04 1.用剔除操作渲染对象背面
+// Cull Front, Material Emission(0.3,0.3,0.3,0.3) Diffuse(1,1,1,1), Lighting On
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
@@ -20,6 +22,11 @@ void main(){
     float t;if(!hitSecond(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=-normalize(P); // flip normal for back face
     vec3 L=normalize(uLightDir);
-    float ndl=abs(dot(N,L))*0.5+0.5;
-    outColor=vec4(vec3(0.8,0.4,0.2)*ndl*uLightColor,1);
+    // Reference: Material Emission(0.3,0.3,0.3,0.3) Diffuse(1,1,1,1), Lighting On
+    float ndl=max(dot(N,L),0.0); // Lambert
+    vec3 ambient=vec3(0.15);
+    vec3 diffuse=vec3(1.0)*ndl; // Diffuse(1,1,1,1)
+    vec3 emission=vec3(0.3); // Emission(0.3,0.3,0.3,0.3)
+    vec3 col=ambient+diffuse*uLightColor+emission;
+    outColor=vec4(col,1.0);
 }

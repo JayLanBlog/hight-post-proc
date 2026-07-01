@@ -1,5 +1,8 @@
 #version 460
-// Vol.05 ProgrammableShader: diffuse+specular+ambient (vertex+fragment CGPROGRAM equivalent)
+// Vol.05 Programmable: 可编程Phong光照
+// Reference: specularReflection = atten * _LightColor0.rgb * _SpecColor.rgb * NdotL * pow(RdotV, _Shininess)
+//            lightFinal = diffuseReflection + specularReflection + UNITY_LIGHTMODEL_AMBIENT
+//            o.col = lightFinal * _Color.rgb
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
@@ -14,17 +17,23 @@ void main(){
     float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
-    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);
-    vec3 L=normalize(uLightDir);
-    // Diffuse (Lambert)
-    float ndl=max(dot(N,L),0.0);
-    vec3 diffuse=uLightColor*vec3(P0,P1,P2)*ndl;
-    // Specular (Blinn-Phong)
-    vec3 H=normalize(L+V);
-    float spec=pow(max(dot(N,H),0.0),P3);
-    vec3 specular=uLightColor*vec3(0.8,0.8,0.8)*spec*P4;
-    // Ambient
-    vec3 ambient=vec3(P0,P1,P2)*0.15;
-    vec3 col=diffuse+specular+ambient;
+    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);vec3 V=normalize(eye-P);
+    float NdotL=max(0.0,dot(N,L));
+    // Reference: diffuseReflection = _LightColor0.rgb * NdotL
+    vec3 diffuseReflection=uLightColor*NdotL;
+    // Reference: specularReflection = _LightColor0.rgb * _SpecColor.rgb * NdotL * pow(RdotV, _Shininess)
+    // _Shininess default=10, _SpecColor default=(1,1,1,1)
+    vec3 specularReflection=vec3(0.0);
+    if(NdotL>0.0){
+        vec3 R=reflect(-L,N);
+        float spec=pow(max(dot(R,V),0.0),10.0);
+        // Reference: full RGB specular, not just R channel
+        specularReflection=uLightColor*spec*NdotL;
+    }
+    // Reference: lightFinal = diffuseReflection + specularReflection + UNITY_LIGHTMODEL_AMBIENT
+    vec3 ambient=vec3(0.15);
+    vec3 lightFinal=diffuseReflection+specularReflection+ambient;
+    // Reference: o.col = lightFinal * _Color.rgb
+    vec3 col=lightFinal*vec3(P0,P1,P2);
     outColor=vec4(col,1);
 }

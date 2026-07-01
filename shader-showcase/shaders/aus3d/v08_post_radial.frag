@@ -8,17 +8,17 @@ layout(std140, binding=1) uniform Params {
 };
 
 void main() {
-    vec2 center = vec2(0.5);
+    vec2 center = vec2(P2, P3);
     vec2 uv = vUV - center;
-    float intensity = P0 * 0.1;
-    float iterations = P1 * 20.0 + 5.0;
+    float intensity = P0 * 0.085;
+    int iterations = int(P1);
     
     vec4 col = vec4(0.0);
     float scale = 1.0;
-    for (int i = 0; i < 20; i++) {
-        if (float(i) >= iterations) break;
+    for (int j = 1; j < 32; j++) {
+        if (float(j) >= float(iterations)) break;
         col += texture(uInputTex, uv * scale + center);
-        scale = 1.0 + float(i) * intensity;
+        scale = 1.0 + float(j) * intensity;
     }
-    outColor = col / iterations;
+    outColor = col / float(iterations);
 }

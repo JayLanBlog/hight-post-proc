@@ -1,5 +1,9 @@
 #version 460
+// Vol.14 Rim: Lambert漫反射+纹理+边缘发光
+// Reference: BasicRimShader — finalColor = Diffuse * (tex * _MainColor) + Emissive
+//            Emissive = _RimColor * pow(rim, _RimPower) * _RimIntensity
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
+layout(binding=0) uniform sampler2D uInputTex;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
     vec3 uLightDir; float _p0; vec3 uLightColor; float _p1; vec3 uEyePos; float _p2;
@@ -13,12 +17,21 @@ void main(){
     float a=uRes.x/uRes.y;vec2 uv=(vUV-0.5)*2.0;uv.x*=a;
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
-    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 V=normalize(eye-P);
-    float rim=1.0-abs(dot(N,V));
-    float g0=pow(max(rim,0.001),P0);
-    float g1=pow(max(rim,0.001),P0*0.5);
-    float g2=pow(max(rim,0.001),2.0);
-    vec3 rimCol=vec3(P1,P2,P3)*(g0*0.7+g1*0.2+g2*0.3);
-    vec3 baseCol=vec3(P1,P2,P3)*0.08; // dark base color at center
-    outColor=vec4(baseCol+rimCol*uLightColor,1);
+    vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);vec3 V=normalize(eye-P);
+    // Reference: Diffuse = max(0,NdotL)*AttenColor + UNITY_LIGHTMODEL_AMBIENT
+    float NdotL=max(0.0,dot(N,L));
+    vec3 Diffuse=uLightColor*NdotL+vec3(0.1,0.1,0.15);
+    // Reference: Diffuse * (texColor * _MainColor)
+    vec2 suv=vec2(atan(P.z,P.x)*0.1591549+0.5,acos(clamp(P.y,-1.0,1.0))*0.3183099);
+    vec3 texColor=texture(uInputTex,suv).rgb;
+    vec3 mainColor=vec3(P1,P2,P3); // _MainColor default (0.5,0.5,0.5)
+    vec3 diffuseTerm=Diffuse*(texColor*mainColor);
+    // Reference: Emissive = _RimColor * pow(rim, _RimPower) * _RimIntensity
+    // _RimColor default = (0.5,0.5,0.5) = same as _MainColor, _RimIntensity default = 3
+    float rim=1.0-max(0.0,dot(N,V));
+    vec3 rimColor=vec3(P1,P2,P3); // same as _MainColor by default
+    vec3 Emissive=rimColor*pow(rim,P0)*3.0;
+    // finalColor = Diffuse*(tex*mainColor) + Emissive
+    vec3 col=diffuseTerm+Emissive;
+    outColor=vec4(col,1);
 }

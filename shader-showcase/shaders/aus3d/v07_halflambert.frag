@@ -1,4 +1,7 @@
 #version 460
+// Vol.07 HalfLambert: 自制半Lambert光照
+// Reference: half NdotL = max(0, dot(s.Normal, lightDir)); hLambert = NdotL * 0.5 + 0.5;
+//            color.rgb = s.Albedo * _LightColor0.rgb * (hLambert * atten * 2)
 layout(location=0) in vec2 vUV; layout(location=0) out vec4 outColor;
 layout(std140, binding=1) uniform Params {
     float P0,P1,P2,P3,P4,P5; vec2 uRes; float uTime,uFC; mat4 m0,m1;
@@ -14,6 +17,11 @@ void main(){
     vec3 rd=normalize(fwd+uv.x*rt*0.55+uv.y*up*0.55);
     float t;if(!hit(eye,rd,1.0,t)){outColor=vec4(0.02,0.02,0.04,1);return;}
     vec3 P=eye+rd*t;vec3 N=normalize(P);vec3 L=normalize(uLightDir);
-    float hLambert=dot(N,L)*0.5+0.5;
-    outColor=vec4(vec3(1.0,0.85,0.7)*hLambert*P0*uLightColor,1);
+    // Reference: NdotL = max(0, dot(N, L)) first, then hLambert = NdotL * 0.5 + 0.5
+    float NdotL = max(0.0, dot(N, L));
+    float hLambert = NdotL * 0.5 + 0.5;
+    // Reference: s.Albedo * _LightColor0.rgb * (hLambert * atten * 2)
+    vec3 albedo = vec3(1.0, 0.85, 0.7);
+    vec3 col = albedo * uLightColor * (hLambert * 2.0) * P0;
+    outColor = vec4(col, 1);
 }
