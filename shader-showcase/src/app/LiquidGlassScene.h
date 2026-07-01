@@ -53,6 +53,10 @@ private:
     float m_glowBias = 0.0f;
     float m_glowEdge0 = 0.5f;
     float m_glowEdge1 = -0.5f;
+    // 玻璃尺寸 (参考: ortho=15.0, quad=3.5x3.5)
+    // scale = ortho_half / quad_half = 7.5/1.75=4.286, 乘aspect=7.62
+    float m_glassScaleX = 7.62f;
+    float m_glassScaleY = 4.29f;
 
     bool m_wantsReturn = false;
     float m_elapsedTime = 0.0f;

@@ -190,6 +190,13 @@ void LiquidGlassScene::OnRender(IRenderBackend* be) {
             0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f
         };
+        // m1[0].xy = (u_scaleX, u_scaleY) — 玻璃四边形尺寸缩放
+        p.modelView = {
+            m_glassScaleX, m_glassScaleY, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f
+        };
         be->DrawFullscreenQuad(m_sharedVert, m_glassShader, p);
     }
 }
@@ -216,6 +223,9 @@ void LiquidGlassScene::OnImGui() {
 
     if (ImGui::CollapsingHeader("Shape", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SliderFloat("Power", &m_powerFactor, 1.001f, 6.0f);
+        ImGui::SliderFloat("Scale X", &m_glassScaleX, 1.0f, 20.0f);
+        ImGui::SliderFloat("Scale Y", &m_glassScaleY, 1.0f, 20.0f);
+        if (ImGui::Button("Reset Size")) { m_glassScaleX = 7.62f; m_glassScaleY = 4.29f; }
     }
 
     if (ImGui::CollapsingHeader("Blur & Noise")) {

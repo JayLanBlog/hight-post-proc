@@ -10,7 +10,11 @@ layout(binding = 0) uniform sampler2D uInputTex;
 layout(std140, binding = 1) uniform Params {
     float P0;       // 方向 X (已乘以 u_radius)
     float P1;       // 方向 Y (已乘以 u_radius)
-    vec2 uRes;      // RT 分辨率
+    float _pad0;    // P2 占位 (C++ UBO offset 8)
+    float _pad1;    // P3 占位 (C++ UBO offset 12)
+    float _pad2;    // P4 占位 (C++ UBO offset 16)
+    float _pad3;    // P5 占位 (C++ UBO offset 20)
+    vec2 uRes;      // RT 分辨率 (C++ offset 24)
     float uTime;
     float uFC;
 };

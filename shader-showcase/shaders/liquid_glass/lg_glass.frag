@@ -52,9 +52,13 @@ void main() {
     float u_d = m0[0].w;
     float u_glowEdge0 = m0[1].x;
     float u_glowEdge1 = m0[1].y;
+    // 玻璃四边形尺寸缩放 (参考: ortho=15.0, quad=3.5 → scale=15/3.5≈4.29)
+    float u_scaleX = m1[0].x;
+    float u_scaleY = m1[0].y;
 
-    vec2 p = (vUV - 0.5) * 2.0;
-    float d = sdSuperellipse(p, P0, 1.0);
+    vec2 p = (vUV - 0.5) * 2.0;          // 全屏 NDC [-1,1]
+    vec2 ps = p * vec2(u_scaleX, u_scaleY); // 缩放后的局部坐标 (SDF空间)
+    float d = sdSuperellipse(ps, P0, 1.0);
 
     if (d > 0.0)
         discard;
@@ -62,9 +66,10 @@ void main() {
     float dist = -d;
     // f(x) = 1 - u_b * (u_c * e)^(-u_d * x - u_a)
     float refr = 1.0 - u_b * pow(u_c * M_E, -u_d * dist - u_a);
-    vec2 sampleP = p * pow(refr, P1);
+    vec2 sampleP = ps * pow(refr, P1);  // 缩放空间折射
 
-    vec2 coord = sampleP * 0.5 + 0.5;
+    // 映射回全屏UV: 先取消缩放，再NDC→UV
+    vec2 coord = sampleP / vec2(u_scaleX, u_scaleY) * 0.5 + 0.5;
 
     if (max(coord.x, coord.y) > 1.0 || min(coord.x, coord.y) < 0.0) {
         outColor = vec4(1.0, 0.0, 1.0, 1.0);
