@@ -35,10 +35,10 @@ public:
     void Init(const ParticleConfig& config);
     void Update(float dt, float dissolveAmount);
     void Render(IRenderBackend* backend, ShaderHandle vert, ShaderHandle frag,
-                const float* viewMat, const float* projMat);
+               const float* viewMat, const float* projMat);
     void Destroy(IRenderBackend* backend);
+    int GetAliveCount() const { return m_aliveCount; }
     void SetParticleTexture(TextureHandle tex) { m_particleTex = tex; }
-    uint32_t GetAliveCount() const { return m_aliveCount; }
 
 private:
     ParticleConfig m_config;

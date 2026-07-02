@@ -1,7 +1,9 @@
 #pragma once
 #include "Scene.h"
 #include "render/BackendType.h"
+#include "render/IRenderBackend.h"
 #include <memory>
+#include <vector>
 
 class IRenderBackend;
 class Application;
@@ -9,6 +11,20 @@ class BookMeshRenderer;
 class BookParticleSystem;
 class DissolvePostProcess;
 class AudioPlayer;
+
+struct VFXRTPool {
+    struct Entry {
+        TextureHandle handle;
+        int width, height;
+        bool inUse = false;
+    };
+    std::vector<Entry> entries;
+    IRenderBackend* backend = nullptr;
+
+    TextureHandle Acquire(int w, int h);
+    void Release(TextureHandle handle);
+    void Clear();
+};
 
 class VFXFireBookScene : public Scene {
 public:
@@ -38,6 +54,10 @@ private:
 
     ShaderHandle m_bookVert = {0};
     ShaderHandle m_bookFrag = {0};
+    ShaderHandle m_particleVert = {0};
+    ShaderHandle m_particleFrag = {0};
+
+    VFXRTPool m_rtPool;
 
     // Camera orbit
     float m_camTheta = 0.8f;
