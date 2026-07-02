@@ -1852,10 +1852,10 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
     vkCmdSetScissor(m_commandBuffer, 0, 1, &sc);
 
     // --- Create temporary vertex buffer ---
-    VkDeviceSize vbSize = vertexCount * vertexStride;
     VkBuffer vb = VK_NULL_HANDLE;
     VkDeviceMemory vbMem = VK_NULL_HANDLE;
-    {
+    if (vertexCount > 0) {
+        VkDeviceSize vbSize = vertexCount * vertexStride;
         VkBufferCreateInfo ci{};
         ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         ci.size = vbSize;
@@ -1879,12 +1879,11 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         memcpy(mapped, vertexData, static_cast<size_t>(vbSize));
         vkUnmapMemory(m_device, vbMem);
     }
-
     // --- Create temporary index buffer ---
     VkDeviceSize ibSize = indexCount * sizeof(uint32_t);
     VkBuffer ib = VK_NULL_HANDLE;
     VkDeviceMemory ibMem = VK_NULL_HANDLE;
-    {
+    if (indexCount > 0) {
         VkBufferCreateInfo ci{};
         ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         ci.size = ibSize;
@@ -1908,11 +1907,6 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
         memcpy(mapped, indexData, static_cast<size_t>(ibSize));
         vkUnmapMemory(m_device, ibMem);
     }
-
-    // --- Bind vertex and index buffers ---
-    VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vb, offsets);
-    vkCmdBindIndexBuffer(m_commandBuffer, ib, 0, VK_INDEX_TYPE_UINT32);
 
     // --- Update UBO (224 bytes) and bind descriptor set ---
     auto pipeIt = m_pipelines.find(pipeHandle.id);
@@ -1992,8 +1986,16 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
             pipeIt->second->layout, 0, 1, &pipeIt->second->descSet, 0, nullptr);
     }
 
-    // Draw indexed
-    vkCmdDrawIndexed(m_commandBuffer, static_cast<uint32_t>(indexCount), 1, 0, 0, 0);
+    // Draw
+    VkDeviceSize vbOffset = 0;
+    if (indexCount > 0) {
+        vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vb, &vbOffset);
+        vkCmdBindIndexBuffer(m_commandBuffer, ib, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(m_commandBuffer, static_cast<uint32_t>(indexCount), 1, 0, 0, 0);
+    } else {
+        vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &vb, &vbOffset);
+        vkCmdDraw(m_commandBuffer, static_cast<uint32_t>(vertexCount), 1, 0, 0);
+    }
 
     // NOTE: Destroying vertex/index buffers immediately is unsafe in Vulkan
     // (GPU commands are asynchronous). For production, use a ring buffer or

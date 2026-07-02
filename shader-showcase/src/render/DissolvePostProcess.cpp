@@ -32,8 +32,8 @@ bool DissolvePostProcess::Init(IRenderBackend* backend) {
         return false;
     }
 
-    m_vertShader = backend->CreateVertexShader(vertData.data(), vertData.size() * 4);
-    m_fragShader = backend->CreateFragmentShader(fragData.data(), fragData.size() * 4);
+    m_vertShader = backend->CreateVertexShader(vertData.data(), vertData.size());
+    m_fragShader = backend->CreateFragmentShader(fragData.data(), fragData.size());
     if (m_vertShader.id == 0 || m_fragShader.id == 0) {
         printf("[Dissolve] Failed to create shaders\n");
         Destroy(backend);

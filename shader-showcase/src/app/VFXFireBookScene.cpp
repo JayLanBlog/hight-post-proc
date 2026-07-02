@@ -67,16 +67,17 @@ void VFXFireBookScene::OnEnter() {
     auto bookVertData = readSPIRV("shaders/vfx_fire/book.vert.spv");
     auto bookFragData = readSPIRV("shaders/vfx_fire/book.frag.spv");
     if (!bookVertData.empty() && !bookFragData.empty()) {
-        m_bookVert = m_backend->CreateVertexShader(bookVertData.data(), bookVertData.size() * 4);
-        m_bookFrag = m_backend->CreateFragmentShader(bookFragData.data(), bookFragData.size() * 4);
+        m_bookVert = m_backend->CreateVertexShader(bookVertData.data(), bookVertData.size());
+        m_bookFrag = m_backend->CreateFragmentShader(bookFragData.data(), bookFragData.size());
     }
+    printf("[VFXFireBook] Book shaders loaded (vert=%u, frag=%u)\n", m_bookVert.id, m_bookFrag.id);
 
     // Particle shaders
     auto particleVertData = readSPIRV("shaders/vfx_fire/particle.vert.spv");
     auto particleFragData = readSPIRV("shaders/vfx_fire/particle.frag.spv");
     if (!particleVertData.empty() && !particleFragData.empty()) {
-        m_particleVert = m_backend->CreateVertexShader(particleVertData.data(), particleVertData.size() * 4);
-        m_particleFrag = m_backend->CreateFragmentShader(particleFragData.data(), particleFragData.size() * 4);
+        m_particleVert = m_backend->CreateVertexShader(particleVertData.data(), particleVertData.size());
+        m_particleFrag = m_backend->CreateFragmentShader(particleFragData.data(), particleFragData.size());
     }
 
     // 1. Book renderer

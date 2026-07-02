@@ -346,6 +346,12 @@ int main(int argc, char* argv[]) {
             s->SetBackend(backend);
             s->SetApplication(&app);
             app.SetScene(std::move(s));
+        } else if (getenv("VFX_FIRE_BOOK")) {
+            printf("[main] VFX_FIRE_BOOK mode: launching VFXFireBookScene directly\n");
+            auto s = std::make_unique<VFXFireBookScene>();
+            s->SetBackend(backend);
+            s->SetApplication(&app);
+            app.SetScene(std::move(s));
         } else {
             app.SetScene(std::move(gallery));
         }
