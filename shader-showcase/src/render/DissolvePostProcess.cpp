@@ -25,7 +25,7 @@ bool DissolvePostProcess::Init(IRenderBackend* backend) {
         return data;
     };
 
-    auto vertData = readSPIRV("shaders/common/fullscreen.vert.spv");
+    auto vertData = readSPIRV("shaders/common/fullscreen_vk.vert.spv");
     auto fragData = readSPIRV("shaders/vfx_fire/dissolve.frag.spv");
     if (vertData.empty() || fragData.empty()) {
         printf("[Dissolve] Failed to read SPIR-V files\n");

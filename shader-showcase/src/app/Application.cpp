@@ -81,27 +81,25 @@ int Application::Run(int argc, char* argv[])
 
 void Application::InitBackend(BackendType type)
 {
-    // ---- Destroy old backend resources (but NOT the window) ----------------
-    if (m_currentScene) {
-        m_currentScene->OnExit();
-        m_currentScene.reset();
-    }
-
-    if (m_backend) {
-        m_backend->ImGuiShutdown();
-        m_backend->Shutdown();
-        m_backend.reset();
-    }
-
-    // Don't destroy ImGui context — the backend's ImGuiShutdown already freed
-    // GPU resources. Just reset the font atlas so the next backend can rebuild.
-    if (ImGui::GetCurrentContext() != nullptr) {
-        ImGui::GetIO().Fonts->Clear();
-    }
-
-    m_pendingNextScene.reset();
     BackendType oldType = m_backendType;
     m_backendType = type;
+
+    // Only destroy scene+backend on actual backend switch (not initial init where oldType==type)
+    if (oldType != type) {
+        if (m_currentScene) {
+            m_currentScene->OnExit();
+            m_currentScene.reset();
+        }
+        if (m_backend) {
+            m_backend->ImGuiShutdown();
+            m_backend->Shutdown();
+            m_backend.reset();
+        }
+        if (ImGui::GetCurrentContext() != nullptr) {
+            ImGui::GetIO().Fonts->Clear();
+        }
+        m_pendingNextScene.reset();
+    }
 
     // ---- Create/reuse window -----------------------------------------------
     // Always use GLFW_OPENGL_API — Vulkan creates its surface via native Win32

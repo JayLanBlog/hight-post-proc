@@ -20,22 +20,7 @@ layout(location = 2) in vec2 vUV;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    vec3 N = normalize(vNormal);
-    vec3 L = normalize(uLightDir.xyz);
-    vec3 V = normalize(uEyePos.xyz - vViewPos);
-    vec3 H = normalize(L + V);
-
-    vec3 diffuse = texture(uInputTex, vUV).rgb;
-    vec3 normalMap = texture(uAuxTex, vUV).rgb * 2.0 - 1.0;
-    N = normalize(N + normalMap);
-
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotH = max(dot(N, H), 0.0);
-    float spec = pow(NdotH, 32.0);
-
-    vec3 ambient = diffuse * 0.15;
-    vec3 diff = diffuse * uLightColor.rgb * NdotL * 2.0;
-    vec3 specular = uLightColor.rgb * spec * 0.5;
-
-    outColor = vec4(ambient + diff + specular, 1.0);
+    // DIAGNOSTIC: if you see RED, geometry+camera+projection are correct
+    outColor = vec4(1.0, 0.0, 0.0, 1.0);
+    return;
 }
