@@ -20,13 +20,13 @@ layout(binding = 1, std140) uniform Params {
     vec4 uParams;      // offset 224
 };
 
-layout(location = 0) out float vLife;
+layout(location = 0) out vec3 vData;   // x=size, y=lifeRatio, z=rotation
 layout(location = 1) out vec2 vUV;
 
 void main() {
     vec4 clipPos = uMVP * vec4(aPos, 1.0);
     gl_Position = clipPos;
     gl_PointSize = aParticle.x * 50.0 / -clipPos.z;  // 透视缩放
-    vLife = aParticle.y;
+    vData = aParticle;  // size, life, rotation
     vUV = vec2(0.5, 0.5);
 }

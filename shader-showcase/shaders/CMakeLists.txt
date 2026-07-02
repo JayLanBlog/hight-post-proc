@@ -238,3 +238,41 @@ add_custom_target(CompileLiquidGlassShaders ALL
     DEPENDS ${LG_SPV_LIST}
     COMMENT "Compiling LiquidGlass shaders"
 )
+
+# -------------------------------------------------------------------
+# VFX Fire Book shaders
+# -------------------------------------------------------------------
+file(GLOB VFX_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/vfx_fire/*.frag")
+set(VFX_SPV_LIST)
+foreach(VFX_FILE ${VFX_SOURCES})
+    get_filename_component(VFX_NAME ${VFX_FILE} NAME_WE)
+    set(VFX_SPV "${SHADER_OUTPUT_DIR}/vfx_fire/${VFX_NAME}.frag.spv")
+    add_custom_command(
+        OUTPUT ${VFX_SPV}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}/vfx_fire"
+        COMMAND ${GLSLANG_VALIDATOR} -V "${VFX_FILE}" -o "${VFX_SPV}"
+        DEPENDS ${VFX_FILE}
+        COMMENT "Compiling ${VFX_NAME}.frag -> SPIR-V"
+    )
+    list(APPEND VFX_SPV_LIST ${VFX_SPV})
+endforeach()
+
+# Also compile .vert files in vfx_fire (book.vert, particle.vert)
+file(GLOB VFX_VERT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/vfx_fire/*.vert")
+foreach(VFX_VERT_FILE ${VFX_VERT_SOURCES})
+    get_filename_component(VFX_VERT_NAME ${VFX_VERT_FILE} NAME_WE)
+    set(VFX_VERT_SPV "${SHADER_OUTPUT_DIR}/vfx_fire/${VFX_VERT_NAME}.vert.spv")
+    add_custom_command(
+        OUTPUT ${VFX_VERT_SPV}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}/vfx_fire"
+        COMMAND ${GLSLANG_VALIDATOR} -V "${VFX_VERT_FILE}" -o "${VFX_VERT_SPV}"
+        DEPENDS ${VFX_VERT_FILE}
+        COMMENT "Compiling ${VFX_VERT_NAME}.vert -> SPIR-V"
+    )
+    list(APPEND VFX_SPV_LIST ${VFX_VERT_SPV})
+endforeach()
+
+add_custom_target(CompileVFXFireBookShaders ALL
+    DEPENDS ${VFX_SPV_LIST}
+    COMMENT "Compiling VFX Fire Book shaders"
+)

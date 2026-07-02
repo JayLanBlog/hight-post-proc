@@ -124,8 +124,27 @@ bool BookMeshRenderer::LoadTextures(IRenderBackend* backend) {
 
 void BookMeshRenderer::Render(IRenderBackend* backend, ShaderHandle vert, ShaderHandle frag,
                                const float* viewMat, const float* projMat,
-                               const float* lightDir, const float* lightColor) {
+                               const float* lightDir, const float* lightColor,
+                               float elapsedTime) {
     if (!m_loaded) return;
+
+    // --- Idle page-flutter animation (matches Unity Idle.anim) ---
+    // 0.25s triangle wave: z-rotation 0° → -6.324° → 0°
+    float animT = fmodf(elapsedTime, 0.25f) / 0.25f; // 0..1 cycle
+    float t = animT < 0.333f ? animT / 0.333f :
+              animT < 0.666f ? 1.0f - (animT - 0.333f) / 0.333f : 0.0f;
+    float angle = t * (-6.324f * 3.14159265f / 180.0f); // radians
+
+    // Build Z-rotation matrix for left-page submeshes
+    float rz[16] = {
+        cosf(angle), -sinf(angle), 0, 0,
+        sinf(angle),  cosf(angle), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    };
+
+    // SubMesh indices that belong to left page (X-negative in transforms table)
+    const bool leftPageIndices[10] = {true, false, true, false, false, false, true, true, false, false};
 
     for (size_t mi = 0; mi < m_data.subMeshes.size(); mi++) {
         auto& sm = m_data.subMeshes[mi];
@@ -133,6 +152,18 @@ void BookMeshRenderer::Render(IRenderBackend* backend, ShaderHandle vert, Shader
 
         float mvp[16], modelView[16];
         const float* nodeT = &m_data.nodeTransforms[mi * 16];
+
+        // Apply Z-rotation animation to left-page submeshes
+        float animatedNodeT[16];
+        if (mi < 10 && leftPageIndices[mi]) {
+            for (int r = 0; r < 4; r++)
+                for (int c = 0; c < 4; c++) {
+                    float sum = 0;
+                    for (int k = 0; k < 4; k++) sum += rz[r*4 + k] * nodeT[k*4 + c];
+                    animatedNodeT[r*4 + c] = sum;
+                }
+            nodeT = animatedNodeT;
+        }
 
         for (int r = 0; r < 4; r++) {
             for (int c = 0; c < 4; c++) {

@@ -21,7 +21,8 @@ public:
     bool Load(const std::string& binPath);
     void Destroy(IRenderBackend* backend);
     void Render(IRenderBackend* backend, ShaderHandle vert, ShaderHandle frag,
-                const float* viewMat, const float* projMat, const float* lightDir, const float* lightColor);
+                const float* viewMat, const float* projMat, const float* lightDir, const float* lightColor,
+                float elapsedTime = 0.0f);
     bool LoadTextures(IRenderBackend* backend);
 
 private:

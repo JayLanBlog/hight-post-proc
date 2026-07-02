@@ -9,6 +9,7 @@ public:
                float dissolveAmount, float edgeWidth, float noiseScaleX, float noiseScaleY,
                float noiseOffsetX, float noiseOffsetY);
     void Destroy(IRenderBackend* backend);
+    TextureHandle GetNoiseTexture() const { return m_noiseTex; }
 
 private:
     ShaderHandle m_vertShader = {0};

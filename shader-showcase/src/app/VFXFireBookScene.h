@@ -55,15 +55,26 @@ private:
     ShaderHandle m_bookVert = {0};
     ShaderHandle m_bookFrag = {0};
     ShaderHandle m_particleVert = {0};
-    ShaderHandle m_particleFrag = {0};
+    ShaderHandle m_particleFrag = {0};      // smoke particles (sequence-frame)
+    ShaderHandle m_paperFrag = {0};          // paper debris particles (dissolve)
+    ShaderHandle m_smokeFrag = {0};          // smoke particles (sequence-frame)
+
+    TextureHandle m_smokeTex = {0};          // RealisticSmoke02_6x6.png
+    TextureHandle m_noiseTex = {0};          // procedural dissolve noise (reuse DissolvePostProcess)
+    TextureHandle m_paperTex = {0};          // paper page texture for debris
 
     VFXRTPool m_rtPool;
+
+    // Lighting (matches Unity directional light: white, intensity 2)
+    float m_lightDir[3] = {0.0f, -1.0f, 0.0f};
+    float m_lightColor[3] = {2.0f, 2.0f, 2.0f};
 
     // Camera orbit
     float m_camTheta = 0.8f;
     float m_camPhi = 0.6f;
     float m_camRadius = 50.0f;
     float m_camTarget[3] = {0, 0, 0};
+    float m_camFov = 66.0f * 3.14159265f / 180.0f;  // Unity FOV=66°
     bool m_dragging = false;
     float m_dragStartX = 0, m_dragStartY = 0;
     float m_dragStartTheta = 0, m_dragStartPhi = 0;
