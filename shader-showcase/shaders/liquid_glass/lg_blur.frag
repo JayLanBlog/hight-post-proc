@@ -14,9 +14,14 @@ layout(std140, binding = 1) uniform Params {
     float _pad1;    // P3 占位 (C++ UBO offset 12)
     float _pad2;    // P4 占位 (C++ UBO offset 16)
     float _pad3;    // P5 占位 (C++ UBO offset 20)
-    vec2 uRes;      // RT 分辨率 (C++ offset 24)
+    vec2 uRes;      // viewport 分辨率 (C++ offset 24, =RT尺寸)
     float uTime;
     float uFC;
+    mat4 m0;        // offset 48 (未使用)
+    mat4 m1;        // offset 112, m1[0].xy = 真实模糊分辨率
+    vec3 uLightDir; float _p0;
+    vec3 uLightColor; float _p1;
+    vec3 uEyePos; float _p2;
 };
 
 vec4 blur13(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
@@ -35,5 +40,8 @@ vec4 blur13(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
 }
 
 void main() {
-    outColor = blur13(uInputTex, vUV, uRes, vec2(P0, P1));
+    // 使用 m1[0].xy 作为真实模糊分辨率（与viewport分离）
+    // 参考: BlurPass 中 u_resolution=输入FBO尺寸, viewport=输出FBO尺寸
+    vec2 blurRes = (m1[0].x > 0.0 && m1[0].y > 0.0) ? m1[0].xy : uRes;
+    outColor = blur13(uInputTex, vUV, blurRes, vec2(P0, P1));
 }

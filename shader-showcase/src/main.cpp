@@ -323,6 +323,12 @@ int main(int argc, char* argv[]) {
             s->SetBackend(backend);
             s->SetApplication(&app);
             app.SetScene(std::move(s));
+        } else if (getenv("LIQUID_GLASS")) {
+            printf("[main] LIQUID_GLASS mode: launching LiquidGlassScene directly\n");
+            auto s = std::make_unique<LiquidGlassScene>();
+            s->SetBackend(backend);
+            s->SetApplication(&app);
+            app.SetScene(std::move(s));
         } else {
             app.SetScene(std::move(gallery));
         }

@@ -6,6 +6,40 @@
 #include <vector>
 #include <cstdint>
 
+// 读取图片文件尺寸 (支持PNG和JPEG)
+static bool GetImageSize(const std::string& path, int& w, int& h) {
+    std::ifstream f(path, std::ios::binary);
+    if (!f.is_open()) return false;
+    uint8_t sig[8];
+    f.read((char*)sig, 8);
+    // PNG
+    if (sig[0]==0x89 && sig[1]=='P' && sig[2]=='N' && sig[3]=='G') {
+        f.seekg(16);
+        uint8_t buf[8]; f.read((char*)buf, 8);
+        w = (buf[0]<<24)|(buf[1]<<16)|(buf[2]<<8)|buf[3];
+        h = (buf[4]<<24)|(buf[5]<<16)|(buf[6]<<8)|buf[7];
+        return true;
+    }
+    // JPEG
+    if (sig[0]==0xFF && sig[1]==0xD8) {
+        f.seekg(2);
+        while (f) {
+            uint8_t m[2]; f.read((char*)m, 2);
+            if (m[0]!=0xFF) return false;
+            while (m[1]==0xFF) f.read((char*)&m[1],1);
+            if (m[1]>=0xC0 && m[1]<=0xC2) {
+                f.seekg(3, std::ios::cur);
+                uint8_t d[4]; f.read((char*)d, 4);
+                h = (d[0]<<8)|d[1]; w = (d[2]<<8)|d[3];
+                return true;
+            }
+            uint8_t l[2]; f.read((char*)l,2);
+            f.seekg((l[0]<<8)|l[1]-2, std::ios::cur);
+        }
+    }
+    return false;
+}
+
 static std::vector<uint32_t> ReadSPIRV(const char* relPath) {
     const char* tries[] = {"shaders/", "build/shaders/"};
     for (int t = 0; t < 2; t++) {
@@ -81,7 +115,10 @@ void LiquidGlassScene::OnEnter() {
         if (tex.id != 0) {
             m_bgTextures.push_back(tex);
             m_bgNames.push_back(bgNames[i]);
-            printf("[LiquidGlass] Loaded: %s (id=%d)\n", path.c_str(), tex.id);
+            int tw=1, th=1;
+            GetImageSize(path, tw, th);
+            m_bgTexSizes.push_back({tw, th});
+            printf("[LiquidGlass] Loaded: %s (id=%d, %dx%d)\n", path.c_str(), tex.id, tw, th);
         } else {
             printf("[LiquidGlass] FAILED: %s\n", path.c_str());
         }
@@ -114,14 +151,12 @@ void LiquidGlassScene::OnUpdate(float dt) {
 }
 
 void LiquidGlassScene::OnRender(IRenderBackend* be) {
-    if (!be || !m_sharedVert.id || !m_bgShader.id || !m_blurShader.id || !m_glassShader.id)
-        return;
+    if (!be || !m_sharedVert.id || !m_bgShader.id || !m_blurShader.id || !m_glassShader.id) return;
     if (m_bgTextures.empty()) return;
 
     int fw = 1280, fh = 720;
     be->GetFramebufferSize(fw, fh);
 
-    // 按需重建 RT
     int bw = (int)(fw * m_blurDownscale);
     int bh = (int)(fh * m_blurDownscale);
     if (m_lastRTSizeW != fw || m_lastRTSizeH != fh) {
@@ -129,41 +164,43 @@ void LiquidGlassScene::OnRender(IRenderBackend* be) {
     }
 
     TextureHandle bgTex = m_bgTextures[m_currentBgIndex];
+    int texW = m_bgTexSizes[m_currentBgIndex].first;
+    int texH = m_bgTexSizes[m_currentBgIndex].second;
+    float bgHalfX = 0.375f;
+    float bgHalfY = (5.0f * (float)texH / (float)texW) / 7.5f;
 
-    // === Stage 1: 背景渲染 ===
+    // Step 1: bg → RT A (居中四边形 + 暗色边框)
     {
         ShaderParams p;
         p.viewportWidth = fw; p.viewportHeight = fh;
         p.inputTextures = {bgTex};
+        p.uniformFloats = {bgHalfX, bgHalfY, 0.0f, 0.0f, 0.0f, 0.0f};
         be->BeginRenderToTexture(m_rtA);
         be->DrawFullscreenQuad(m_sharedVert, m_bgShader, p);
         be->EndRenderToTexture();
     }
 
-    // === Stage 2: 高斯模糊 ===
-    // 参考: BlurPass::Run 首次迭代使用输入FBO全分辨率作为u_resolution
+    // Step 2: 模糊 (水平+垂直)
     if (m_blurIters > 0) {
         for (int i = 0; i < m_blurIters; i++) {
-            // 首次迭代: uRes=全分辨率(fw,fh) 匹配参考 fb(1600x900)
-            // 后续迭代: uRes=降采样(bw,bh) 匹配参考 blurFinal(800x450)
             int resW = (i == 0) ? fw : bw;
             int resH = (i == 0) ? fh : bh;
-            // 水平 pass
             {
                 ShaderParams p;
-                p.viewportWidth = resW; p.viewportHeight = resH;
+                p.viewportWidth = bw; p.viewportHeight = bh;
                 p.inputTextures = {(i == 0) ? m_rtA : m_rtC};
                 p.uniformFloats = {m_blurRadius, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+                p.modelView = {(float)resW,(float)resH,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
                 be->BeginRenderToTexture(m_rtB);
                 be->DrawFullscreenQuad(m_sharedVert, m_blurShader, p);
                 be->EndRenderToTexture();
             }
-            // 垂直 pass
             {
                 ShaderParams p;
-                p.viewportWidth = resW; p.viewportHeight = resH;
+                p.viewportWidth = bw; p.viewportHeight = bh;
                 p.inputTextures = {m_rtB};
                 p.uniformFloats = {0.0f, m_blurRadius, 0.0f, 0.0f, 0.0f, 0.0f};
+                p.modelView = {(float)resW,(float)resH,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
                 be->BeginRenderToTexture(m_rtC);
                 be->DrawFullscreenQuad(m_sharedVert, m_blurShader, p);
                 be->EndRenderToTexture();
@@ -171,10 +208,8 @@ void LiquidGlassScene::OnRender(IRenderBackend* be) {
         }
     }
 
+    // Step 3: Clear + glass shader 背景直通 (P2=2.0) → 屏幕
     be->Clear(0.1f, 0.1f, 0.1f, 1.0f);
-
-    // === Stage 3: 合成 ===
-    // Pass 3a: 背景全屏 (P2=2.0 → 纹理直通)
     {
         ShaderParams p;
         p.viewportWidth = fw; p.viewportHeight = fh;
@@ -182,26 +217,17 @@ void LiquidGlassScene::OnRender(IRenderBackend* be) {
         p.uniformFloats = {0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f};
         be->DrawFullscreenQuad(m_sharedVert, m_glassShader, p);
     }
-    // Pass 3b: squircle 玻璃 (P2=1.0 → LiquidGlass)
+
+    // Step 4: squircle 玻璃 (P2=1.0) + 模糊
     {
         TextureHandle blurTex = (m_blurIters > 0) ? m_rtC : m_rtA;
         ShaderParams p;
         p.viewportWidth = fw; p.viewportHeight = fh;
         p.inputTextures = {blurTex};
+        p.blendEnable = true;  // alpha blending: GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
         p.uniformFloats = {m_powerFactor, m_fPower, 1.0f, m_noise, m_glowWeight, m_glowBias};
-        p.mvp = {
-            m_a, m_b, m_c, m_d,
-            m_glowEdge0, m_glowEdge1, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f
-        };
-        // m1[0].xy = (u_scaleX, u_scaleY) — 玻璃四边形尺寸缩放
-        p.modelView = {
-            m_glassScaleX, m_glassScaleY, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f
-        };
+        p.mvp = {m_a,m_b,m_c,m_d, m_glowEdge0,m_glowEdge1,0,0, 0,0,0,0, 0,0,0,0};
+        p.modelView = {m_glassScaleX,m_glassScaleY,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
         be->DrawFullscreenQuad(m_sharedVert, m_glassShader, p);
     }
 }
@@ -230,7 +256,7 @@ void LiquidGlassScene::OnImGui() {
         ImGui::SliderFloat("Power", &m_powerFactor, 1.001f, 6.0f);
         ImGui::SliderFloat("Scale X", &m_glassScaleX, 1.0f, 20.0f);
         ImGui::SliderFloat("Scale Y", &m_glassScaleY, 1.0f, 20.0f);
-        if (ImGui::Button("Reset Size")) { m_glassScaleX = 4.286f; m_glassScaleY = 2.411f; }
+        if (ImGui::Button("Reset Size")) { m_glassScaleX = 7.62f; m_glassScaleY = 4.29f; }
     }
 
     if (ImGui::CollapsingHeader("Blur & Noise")) {

@@ -29,9 +29,9 @@
 // Configuration
 // ============================================================================
 #ifdef _DEBUG
-const bool ENABLE_VALIDATION_LAYERS = false;
+const bool ENABLE_VALIDATION_LAYERS = true;
 #else
-const bool ENABLE_VALIDATION_LAYERS = false;
+const bool ENABLE_VALIDATION_LAYERS = true;
 #endif
 
 const std::vector<const char*> VALIDATION_LAYERS = {
@@ -51,6 +51,31 @@ const std::vector<const char*> DEVICE_EXTENSIONS = {
         fprintf(stderr, "[Vulkan] VK_CHECK failed at %s:%d: %d\n", __FILE__, __LINE__, err); \
     } \
 } while(0)
+
+// ============================================================================
+// Debug Messenger
+// ============================================================================
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagsEXT,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void*) {
+    fprintf(stderr, "[Vulkan Validation] %s\n", pCallbackData->pMessage);
+    return VK_FALSE;
+}
+
+static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func) return func(instance, pCreateInfo, pAllocator, pMessenger);
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
+}
+
+static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+    const VkAllocationCallbacks* pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func) func(instance, messenger, pAllocator);
+}
 
 // ============================================================================
 // Constructor / Destructor
@@ -133,6 +158,21 @@ void VulkanBackend::CreateInstance() {
 
     VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance));
     printf("[Vulkan] Instance created\n");
+
+    // Create debug messenger
+    if (ENABLE_VALIDATION_LAYERS) {
+        VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
+        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugInfo.pfnUserCallback = debugCallback;
+        CreateDebugUtilsMessengerEXT(m_instance, &debugInfo, nullptr, &m_debugMessenger);
+        printf("[Vulkan] Debug messenger created\n");
+    }
 }
 
 void VulkanBackend::CreateSurface() {
@@ -686,6 +726,12 @@ void VulkanBackend::Shutdown() {
         m_surface = VK_NULL_HANDLE;
     }
 
+    // Destroy debug messenger
+    if (m_debugMessenger != VK_NULL_HANDLE) {
+        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+        m_debugMessenger = VK_NULL_HANDLE;
+    }
+
     // Destroy instance
     if (m_instance != VK_NULL_HANDLE) {
         vkDestroyInstance(m_instance, nullptr);
@@ -778,6 +824,16 @@ void VulkanBackend::BeginFrame() {
         if (dd.renderPass != VK_NULL_HANDLE)   vkDestroyRenderPass(m_device, dd.renderPass, nullptr);
     }
     m_deferredTexDestroys.clear();
+
+    // Free all per-frame descriptor sets (GPU is done with previous frame)
+    for (auto& [id, pipe] : m_pipelines) {
+        if (!pipe->inFlightDescSets.empty()) {
+            vkFreeDescriptorSets(m_device, pipe->descPool,
+                static_cast<uint32_t>(pipe->inFlightDescSets.size()),
+                pipe->inFlightDescSets.data());
+            pipe->inFlightDescSets.clear();
+        }
+    }
 
     // Acquire next image
     VkResult result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, 
@@ -1218,6 +1274,7 @@ VkDescriptorPool VulkanBackend::CreateDescriptorPool(uint32_t maxSets) {
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     poolInfo.poolSizeCount = 2;
     poolInfo.pPoolSizes = poolSizes;
     poolInfo.maxSets = maxSets;
@@ -1247,7 +1304,7 @@ VkRenderPass VulkanBackend::CreateRenderPassForFormat(VkFormat format) {
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkAttachmentReference colorAttachmentRef{};
@@ -1305,8 +1362,8 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
         return {0};
     }
 
-    // Cache key: vert shader + frag shader + vertex input mode
-    VkRenderPass renderPass = m_renderPass;  // always use swapchain render pass
+    // Cache key: vert shader + frag shader + vertex input mode + render pass
+    VkRenderPass renderPass = m_isRenderToTexture ? m_currentRenderPass : m_renderPass;
     uint64_t cacheKey = (uint64_t(desc.vertShader.id) << 32) | uint64_t(desc.fragShader.id);
     cacheKey ^= (desc.useVertexInput ? (1ULL << 60) : 0);
     cacheKey ^= (desc.blendEnable ? (1ULL << 59) : 0);
@@ -1538,6 +1595,13 @@ void VulkanBackend::DestroyPipeline(PipelineHandle handle) {
             vkFreeMemory(m_device, pipe->uboMemory, nullptr);
             pipe->uboMemory = VK_NULL_HANDLE;
         }
+        // Free any remaining in-flight descriptor sets before destroying the pool
+        if (!pipe->inFlightDescSets.empty() && pipe->descPool != VK_NULL_HANDLE) {
+            vkFreeDescriptorSets(m_device, pipe->descPool,
+                static_cast<uint32_t>(pipe->inFlightDescSets.size()),
+                pipe->inFlightDescSets.data());
+            pipe->inFlightDescSets.clear();
+        }
         if (pipe->descPool != VK_NULL_HANDLE) {
             vkDestroyDescriptorPool(m_device, pipe->descPool, nullptr);
         }
@@ -1590,9 +1654,10 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
     scissor.extent = {static_cast<uint32_t>(params.viewportWidth), static_cast<uint32_t>(params.viewportHeight)};
     vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-    // Bind pre-allocated descriptor set (UBO is pipeline-owned, texture is per-frame)
+    // Allocate a NEW descriptor set per call to avoid updating a bound set
+    // (fixes VUID-vkCmdSetScissor-commandBuffer-recording when same pipeline is used twice in one frame)
     auto pipeIt = m_pipelines.find(pipeHandle.id);
-    if (pipeIt != m_pipelines.end() && pipeIt->second->descSet != VK_NULL_HANDLE) {
+    if (pipeIt != m_pipelines.end()) {
         const size_t UBO_SIZE = 224;  // std140: 6f + vec2 + 2f + pad8 + mat4 + mat4 + 3× vec3(16)
 
         // --- Update UBO data via map/memcpy/unmap (HOST_COHERENT, no flush needed) ---
@@ -1630,7 +1695,24 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
             vkUnmapMemory(m_device, pipeIt->second->uboMemory);
         }
 
-        // --- Update pre-allocated descriptor set with current texture + UBO ---
+        // --- Allocate a fresh descriptor set from the pipeline's pool ---
+        VkDescriptorSet newDescSet = VK_NULL_HANDLE;
+        {
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = pipeIt->second->descPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &pipeIt->second->descSetLayout;
+            VkResult allocResult = vkAllocateDescriptorSets(m_device, &allocInfo, &newDescSet);
+            if (allocResult != VK_SUCCESS) {
+                fprintf(stderr, "[Vulkan] Failed to allocate descriptor set: %d\n", allocResult);
+                m_currentPipeline = {0};
+                return;
+            }
+        }
+        pipeIt->second->inFlightDescSets.push_back(newDescSet);
+
+        // --- Write descriptors to the new descriptor set ---
         VkDescriptorImageInfo imageInfo{};
         VkDescriptorBufferInfo bufferInfo{};
         std::vector<VkWriteDescriptorSet> writes;
@@ -1644,7 +1726,7 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 
                 VkWriteDescriptorSet texWrite{};
                 texWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                texWrite.dstSet = pipeIt->second->descSet;
+                texWrite.dstSet = newDescSet;
                 texWrite.dstBinding = 0;
                 texWrite.dstArrayElement = 0;
                 texWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1660,7 +1742,7 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 
         VkWriteDescriptorSet uboWrite{};
         uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        uboWrite.dstSet = pipeIt->second->descSet;
+        uboWrite.dstSet = newDescSet;
         uboWrite.dstBinding = 1;
         uboWrite.dstArrayElement = 0;
         uboWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1679,7 +1761,7 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 
                 VkWriteDescriptorSet auxWrite{};
                 auxWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                auxWrite.dstSet = pipeIt->second->descSet;
+                auxWrite.dstSet = newDescSet;
                 auxWrite.dstBinding = 2;
                 auxWrite.dstArrayElement = 0;
                 auxWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1691,8 +1773,9 @@ void VulkanBackend::DrawFullscreenQuad(ShaderHandle vert, ShaderHandle frag, con
 
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
+        // Bind the freshly allocated descriptor set (not stale/reused)
         vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipeIt->second->layout, 0, 1, &pipeIt->second->descSet, 0, nullptr);
+            pipeIt->second->layout, 0, 1, &newDescSet, 0, nullptr);
     }
 
     // Draw fullscreen triangle (3 vertices, no vertex buffer)

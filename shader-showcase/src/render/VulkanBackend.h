@@ -34,12 +34,14 @@ struct VulkanPipeline {
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout descSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool descPool = VK_NULL_HANDLE;
-    VkDescriptorSet descSet = VK_NULL_HANDLE;   // pre-allocated: binds texture(0)+UBO(1)
+    VkDescriptorSet descSet = VK_NULL_HANDLE;   // legacy: pre-allocated (kept for backward compat, no longer used for binding)
     ShaderHandle vertShader;
     ShaderHandle fragShader;
     // UBO for shader Params block (binding=1), reused every frame
     VkBuffer uboBuffer = VK_NULL_HANDLE;
     VkDeviceMemory uboMemory = VK_NULL_HANDLE;
+    // Per-frame descriptor sets allocated in DrawFullscreenQuad, freed at BeginFrame
+    std::vector<VkDescriptorSet> inFlightDescSets;
 };
 
 // ============================================================================
@@ -123,6 +125,7 @@ private:
     // Core Vulkan Objects
     // ============================================================================
     VkInstance m_instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
     VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
     VkDevice m_device = VK_NULL_HANDLE;
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
