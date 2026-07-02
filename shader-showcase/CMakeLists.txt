@@ -167,6 +167,16 @@ set(SRC_FILES
     src/app/SceneGalleryScene.h
     src/app/LiquidGlassScene.cpp
     src/app/LiquidGlassScene.h
+    src/app/VFXFireBookScene.cpp
+    src/app/VFXFireBookScene.h
+    src/render/BookMeshRenderer.cpp
+    src/render/BookMeshRenderer.h
+    src/render/BookParticleSystem.cpp
+    src/render/BookParticleSystem.h
+    src/render/DissolvePostProcess.cpp
+    src/render/DissolvePostProcess.h
+    src/render/AudioPlayer.cpp
+    src/render/AudioPlayer.h
     src/render/BackendType.h
     src/render/FullscreenQuad.cpp
     src/render/FullscreenQuad.h

@@ -5,6 +5,7 @@
 #include "app/CoverFlowScene.h"
 #include "app/AUS3DScene.h"
 #include "app/LiquidGlassScene.h"
+#include "app/VFXFireBookScene.h"
 #include "app/SceneRegistry.h"
 #include "app/SceneGalleryScene.h"
 #include "render/IRenderBackend.h"
@@ -295,6 +296,22 @@ int main(int argc, char* argv[]) {
             "assets/images/00_grayscale_landscape.jpg",
             [be, &app]() -> std::unique_ptr<Scene> {
                 auto s = std::make_unique<LiquidGlassScene>();
+                s->SetBackend(be);
+                s->SetApplication(&app);
+                return s;
+            },
+            true
+        });
+
+        // Register VFX Fire Book page
+        SceneRegistry::Instance().Register({
+            "vfx-fire-book",
+            "VFX Fire Book",
+            "VFX",
+            "Magic Fire Book - 3D书本+溶解+粒子+音频",
+            "assets/images/00_grayscale_landscape.jpg",
+            [be, &app]() -> std::unique_ptr<Scene> {
+                auto s = std::make_unique<VFXFireBookScene>();
                 s->SetBackend(be);
                 s->SetApplication(&app);
                 return s;
