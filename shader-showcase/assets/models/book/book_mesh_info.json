@@ -1,0 +1,167 @@
+[
+  {
+    "name": "",
+    "v": 224,
+    "i": 753,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 753,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 224,
+    "i": 753,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 753,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 224,
+    "i": 753,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 753,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 224,
+    "i": 753,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 753,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 60,
+    "i": 228,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 224,
+        "material": "Book_Base"
+      },
+      {
+        "first_index": 4,
+        "num_indices": 224,
+        "material": "Book_Page_Left"
+      },
+      {
+        "first_index": 12,
+        "num_indices": 208,
+        "material": "Book_Page_Right"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 4,
+    "i": 4,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 4,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 60,
+    "i": 228,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 224,
+        "material": "Book_Base"
+      },
+      {
+        "first_index": 4,
+        "num_indices": 224,
+        "material": "Book_Page_Left"
+      },
+      {
+        "first_index": 12,
+        "num_indices": 208,
+        "material": "Book_Page_Right"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 4,
+    "i": 4,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 4,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 4,
+    "i": 4,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 4,
+        "material": "Book_Base"
+      }
+    ],
+    "uv": true,
+    "n": true
+  },
+  {
+    "name": "",
+    "v": 1110,
+    "i": 4416,
+    "parts": [
+      {
+        "first_index": 0,
+        "num_indices": 4288,
+        "material": "Book_Base"
+      },
+      {
+        "first_index": 4288,
+        "num_indices": 128,
+        "material": "Book_Page_Left"
+      }
+    ],
+    "uv": true,
+    "n": true
+  }
+]

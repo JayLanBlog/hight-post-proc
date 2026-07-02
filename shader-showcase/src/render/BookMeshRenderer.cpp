@@ -1,6 +1,7 @@
 #include "render/BookMeshRenderer.h"
 #include <fstream>
 #include <cstring>
+#include <cstdio>
 
 bool BookMeshRenderer::Load(const std::string& binPath) {
     std::ifstream file(binPath, std::ios::binary);
@@ -8,6 +9,11 @@ bool BookMeshRenderer::Load(const std::string& binPath) {
 
     uint32_t meshCount;
     file.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
+
+    if (meshCount == 0 || meshCount > 10) {
+        printf("[BookMesh] Invalid meshCount: %u\n", meshCount);
+        return false;
+    }
 
     m_data.subMeshes.resize(meshCount);
     m_data.nodeTransforms.resize(meshCount * 16, 0.0f);
@@ -69,15 +75,56 @@ void BookMeshRenderer::Destroy(IRenderBackend* backend) {
 }
 
 bool BookMeshRenderer::LoadTextures(IRenderBackend* backend) {
-    // Create a 1x1 white texture as default
-    uint8_t white[4] = {255, 255, 255, 255};
-    m_defaultTex = backend->CreateTexture(1, 1, TextureFormat::RGBA8, white);
-    return m_defaultTex.id != 0;
+    // 清理旧纹理
+    for (auto& tex : m_textures) backend->DestroyTexture(tex);
+    for (auto& tex : m_normals) backend->DestroyTexture(tex);
+    m_textures.clear();
+    m_normals.clear();
+
+    const char* texPaths[] = {
+        "assets/models/book/textures/Book Texture 1.jpg",
+        "assets/models/book/textures/Book Texture 2.jpg",
+        "assets/models/book/textures/Book Texture 3.jpg",
+        "assets/models/book/textures/Book Page Left.jpg",
+    };
+    const char* normPaths[] = {
+        "assets/models/book/textures/Book Texture 1 Normal Map.jpg",
+        "assets/models/book/textures/Book Texture 2 Normal Map.jpg",
+        "assets/models/book/textures/Book Texture 3 Normal Map.jpg",
+        "assets/models/book/textures/Book Texture 1 Normal Map.jpg",  // 页面无独立法线贴图，复用
+    };
+
+    for (int i = 0; i < 4; i++) {
+        auto tex = backend->CreateTextureFromFile(texPaths[i]);
+        if (tex.id == 0) {
+            printf("[BookMesh] Failed to load texture: %s\n", texPaths[i]);
+            // 清理已加载的纹理
+            for (auto& t : m_textures) backend->DestroyTexture(t);
+            for (auto& t : m_normals) backend->DestroyTexture(t);
+            m_textures.clear();
+            m_normals.clear();
+            return false;
+        }
+        m_textures.push_back(tex);
+
+        auto norm = backend->CreateTextureFromFile(normPaths[i]);
+        if (norm.id == 0) {
+            printf("[BookMesh] Failed to load normal: %s\n", normPaths[i]);
+            for (auto& t : m_textures) backend->DestroyTexture(t);
+            for (auto& t : m_normals) backend->DestroyTexture(t);
+            m_textures.clear();
+            m_normals.clear();
+            return false;
+        }
+        m_normals.push_back(norm);
+    }
+    printf("[BookMesh] Loaded %d textures\n", (int)m_textures.size());
+    return true;
 }
 
 void BookMeshRenderer::Render(IRenderBackend* backend, ShaderHandle vert, ShaderHandle frag,
                                const float* viewMat, const float* projMat,
-                               const float* lightDir, const float* lightColor, const float* eyePos) {
+                               const float* lightDir, const float* lightColor) {
     if (!m_loaded) return;
 
     for (size_t mi = 0; mi < m_data.subMeshes.size(); mi++) {

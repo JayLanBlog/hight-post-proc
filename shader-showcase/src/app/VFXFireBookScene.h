@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.h"
+#include "render/BackendType.h"
 #include <memory>
 
 class IRenderBackend;
@@ -34,6 +35,21 @@ private:
     std::unique_ptr<BookParticleSystem> m_smokeParticles;
     std::unique_ptr<DissolvePostProcess> m_dissolve;
     std::unique_ptr<AudioPlayer> m_audio;
+
+    ShaderHandle m_bookVert = {0};
+    ShaderHandle m_bookFrag = {0};
+
+    // Camera orbit
+    float m_camTheta = 0.8f;
+    float m_camPhi = 0.6f;
+    float m_camRadius = 50.0f;
+    float m_camTarget[3] = {0, 0, 0};
+    bool m_dragging = false;
+    float m_dragStartX = 0, m_dragStartY = 0;
+    float m_dragStartTheta = 0, m_dragStartPhi = 0;
+
+    void BuildViewMatrix(float* out);
+    void BuildProjMatrix(float* out, int w, int h);
 
     float m_dissolveAmount = 0.5f;
     float m_dissolveSpeed = 0.05f;

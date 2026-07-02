@@ -21,12 +21,13 @@ public:
     bool Load(const std::string& binPath);
     void Destroy(IRenderBackend* backend);
     void Render(IRenderBackend* backend, ShaderHandle vert, ShaderHandle frag,
-                const float* viewMat, const float* projMat, const float* lightDir, const float* lightColor, const float* eyePos);
+                const float* viewMat, const float* projMat, const float* lightDir, const float* lightColor);
     bool LoadTextures(IRenderBackend* backend);
 
 private:
     BookMeshData m_data;
     std::vector<TextureHandle> m_textures;
     std::vector<TextureHandle> m_normals;
+    TextureHandle m_defaultTex = {0};
     bool m_loaded = false;
 };
