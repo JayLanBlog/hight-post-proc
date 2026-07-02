@@ -1,17 +1,17 @@
-#include "app/VFXFireBookScene.h"
+#include "VFXFireBookScene.h"
 #include "render/BookMeshRenderer.h"
 #include "render/BookParticleSystem.h"
 #include "render/DissolvePostProcess.h"
 #include "render/AudioPlayer.h"
 #include "app/Application.h"
+#include <cstdio>
 
 VFXFireBookScene::VFXFireBookScene() = default;
 VFXFireBookScene::~VFXFireBookScene() = default;
 
-void VFXFireBookScene::SetBackend(IRenderBackend* be) { m_backend = be; }
-void VFXFireBookScene::SetApplication(Application* app) { m_app = app; }
-
-void VFXFireBookScene::OnEnter() {}
+void VFXFireBookScene::OnEnter() {
+    printf("[VFXFireBook] OnEnter\n");
+}
 
 void VFXFireBookScene::OnExit() {
     if (m_bookRenderer) { m_bookRenderer->Destroy(m_backend); m_bookRenderer.reset(); }

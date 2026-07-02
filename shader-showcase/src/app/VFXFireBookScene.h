@@ -1,5 +1,5 @@
 #pragma once
-#include "app/Scene.h"
+#include "Scene.h"
 #include <memory>
 
 class IRenderBackend;
@@ -21,8 +21,8 @@ public:
     void OnImGui() override;
     bool WantsReturn() const override { return m_wantsReturn; }
 
-    void SetBackend(IRenderBackend* be);
-    void SetApplication(Application* app);
+    void SetBackend(IRenderBackend* be) { m_backend = be; }
+    void SetApplication(Application* app) { m_app = app; }
 
 private:
     IRenderBackend* m_backend = nullptr;
