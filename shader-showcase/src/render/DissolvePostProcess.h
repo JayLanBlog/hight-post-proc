@@ -15,4 +15,5 @@ private:
     ShaderHandle m_fragShader = {0};
     TextureHandle m_noiseTex = {0};
     PipelineHandle m_pipeline = {0};
+    bool m_initialized = false;
 };
