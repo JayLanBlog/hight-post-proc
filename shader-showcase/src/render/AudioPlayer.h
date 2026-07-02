@@ -10,7 +10,7 @@ public:
     bool IsPlaying() const;
 
 private:
-    void* m_device = nullptr;
-    void* m_sound = nullptr;
+    void* m_handle = nullptr;  // MCI device handle
     bool m_initialized = false;
+    bool m_playing = false;
 };
