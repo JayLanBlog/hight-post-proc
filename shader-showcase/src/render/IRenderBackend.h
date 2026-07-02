@@ -10,6 +10,11 @@
 struct GLFWwindow;
 
 // Pipeline description for creating pipelines
+enum class PrimitiveTopology {
+    TriangleList,  // default
+    PointList      // for particle point sprites
+};
+
 struct PipelineDesc {
     ShaderHandle vertShader;
     ShaderHandle fragShader;
@@ -17,6 +22,8 @@ struct PipelineDesc {
     int height;
     bool blendEnable = true;
     bool useVertexInput = false;  // true for DrawMesh (3D), false for DrawFullscreenQuad
+    PrimitiveTopology topology = PrimitiveTopology::TriangleList;
+    int vertexStride = 32;       // bytes per vertex (default: pos+normal+uv = 8 floats)
     int32_t srcColorBlendFactor = 0;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
     int32_t dstColorBlendFactor = 1;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
 };
@@ -44,6 +51,7 @@ struct ShaderParams {
     bool blendEnable = false;      // enables alpha blending (for transparent effects)
     int32_t srcColorBlendFactor = 0;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
     int32_t dstColorBlendFactor = 1;  // 0=SRC_ALPHA, 1=ONE_MINUS_SRC_ALPHA
+    PrimitiveTopology topology = PrimitiveTopology::TriangleList;  // for DrawMesh
 };
 
 // ---------------------------------------------------------------------------

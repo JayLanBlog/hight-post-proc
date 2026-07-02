@@ -1369,6 +1369,7 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     cacheKey ^= (desc.blendEnable ? (1ULL << 59) : 0);
     cacheKey ^= (uint64_t(desc.srcColorBlendFactor) << 57);
     cacheKey ^= (uint64_t(desc.dstColorBlendFactor) << 58);
+    cacheKey ^= (desc.topology == PrimitiveTopology::PointList ? (1ULL << 56) : 0);
     cacheKey ^= (uint64_t(renderPass) >> 3);  // pointer as hash (shift to drop alignment bits)
 
     // Check cache
@@ -1410,8 +1411,9 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
 
     if (desc.useVertexInput) {
         // 3D mesh vertex layout: pos(3) + normal(3) + uv(2) = 8 floats * 4 = 32 bytes stride
+        // Particle: pos(3) + size/life/rotation(3) + padding(2) = 8 floats = 32 bytes stride
         bindingDesc.binding = 0;
-        bindingDesc.stride = 32;
+        bindingDesc.stride = desc.vertexStride;
         bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         // Position: location=0, format R32G32B32, offset 0
@@ -1446,7 +1448,8 @@ PipelineHandle VulkanBackend::CreatePipeline(const PipelineDesc& desc) {
     // Input assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = (desc.topology == PrimitiveTopology::PointList)
+        ? VK_PRIMITIVE_TOPOLOGY_POINT_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // Viewport and scissor
@@ -1825,6 +1828,7 @@ void VulkanBackend::DrawMesh(ShaderHandle vert, ShaderHandle frag, const ShaderP
     desc.height = params.viewportHeight;
     desc.blendEnable = false;
     desc.useVertexInput = true;
+    desc.topology = params.topology;
 
     PipelineHandle pipeHandle = CreatePipeline(desc);
     if (pipeHandle.id == 0) return;
